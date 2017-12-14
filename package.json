@@ -14,6 +14,10 @@
     "validate:stack": "cd scripts && ./validate_stack.sh",
     "delete:stack": "cd scripts && ./delete_stack.sh",
     "describe:stack": "cd scripts && ./describe_stack.sh",
-    "deploy:stack": "cd scripts && ./deploy_stack.sh"
+    "deploy:stack": "cd scripts && ./deploy_stack.sh",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^21.2.1"
   }
 }

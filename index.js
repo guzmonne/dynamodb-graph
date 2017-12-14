@@ -16,7 +16,8 @@ var GSI_PARTITIONS = 5;
 var NODES = (module.exports = {
   createNode,
   createEdge,
-  getNodesOfType,
+  getNodesByType,
+  getNodesByData,
   deleteNode,
   addPropertyToNode
 });
@@ -89,7 +90,7 @@ function deleteNode(organizationId, nodeId) {
     });
 }
 
-function getNodesOfType(organizationId, type, depth) {
+function getNodesByType(organizationId, type, depth) {
   depth || (depth = 0);
   var response = { Items: [], Count: 0, ScannedCount: 0 };
   return new Promise((resolve, reject) => {
