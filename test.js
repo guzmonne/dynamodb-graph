@@ -35,10 +35,31 @@ var aps = {
   }
 };
 
-g
-  .getNodesOfType(organizationId, 'AP', 1)
-  .then(createLogger('Success\n'))
-  .catch(createLogger('Error\n'));
+var locations = [
+  {
+    Data: 'Multi Ahorro Hogar Tres Cruces',
+    Latitude: -34.89316841809772,
+    Longitude: -56.166004794366714
+  },
+  {
+    Data: 'BAS 502',
+    Latitude: -34.90627850279898,
+    Longitude: -56.19505552502825
+  }
+];
+
+var connections = {
+  '2c4d37a2#02e6d0a4': '2c4d37a2#59c63849',
+  '2c4d37a2#9bb9dee4': '2c4d37a2#59c63849',
+  '2c4d37a2#357cacf1': '2c4d37a2#59c63849',
+  '2c4d37a2#41823a20': '2c4d37a2#299b7aa0',
+  '2c4d37a2#1cc9201d': '2c4d37a2#299b7aa0',
+  '2c4d37a2#008e14fe': '2c4d37a2#299b7aa0'
+};
+
+var promises = [];
+
+g.getNodesByData(organizationId);
 
 // ---
 

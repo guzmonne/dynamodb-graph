@@ -15,6 +15,7 @@ var ORGANIZATION_ID = hash('Conatel S.A.');
 var GSI_PARTITIONS = 5;
 var NODES = (module.exports = {
   createNode,
+  createEdge,
   getNodesOfType,
   deleteNode,
   addPropertyToNode
@@ -31,7 +32,7 @@ function nodeItem(organizationId, type, data) {
   return {
     Node: node,
     Type: type,
-    Data: data,
+    Data: JSON.stringify(data),
     Target: node,
     GSIK: organizationId + '#' + chance.d4().toString()
   };
@@ -42,7 +43,7 @@ function edgeItem(organizationId, type, data, target) {
   return {
     Node: node,
     Type: type,
-    Data: data,
+    Data: JSON.stringify(data),
     Target: target,
     GSIK: organizationId + '#' + chance.d4().toString()
   };
@@ -115,11 +116,17 @@ function getNodesOfType(organizationId, type, depth) {
             .promise()
         );
       })
+      .map(response => {
+        response.Items.forEach(item => {
+          item.Data = JSON.parse(item.Data);
+        });
+        return response;
+      })
       .reduce(
-        (acc, value) => ({
-          Items: acc.Items.concat(value.Items),
-          Count: acc.Count + value.Count,
-          ScannedCount: acc.ScannedCount + value.ScannedCount
+        (acc, response) => ({
+          Items: acc.Items.concat(response.Items),
+          Count: acc.Count + response.Count,
+          ScannedCount: acc.ScannedCount + response.ScannedCount
         }),
         Object.assign({}, response)
       )
@@ -147,7 +154,7 @@ function getNodesOfType(organizationId, type, depth) {
                   return item.Node === node;
                 });
                 response.Items.forEach(item => {
-                  current[item.Type] = item.Data;
+                  current[item.Type] = JSON.parse(item.Data);
                 });
                 return current;
               })
@@ -163,6 +170,40 @@ function getNodesOfType(organizationId, type, depth) {
   });
 }
 
+function createEdge(organizationId, startNode, endNode, type) {
+  return db
+    .query({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: `#Node = :Node`,
+      ExpressionAttributeNames: {
+        '#Node': 'Node',
+        '#Target': 'Target',
+        '#Data': 'Data'
+      },
+      ExpressionAttributeValues: {
+        ':Node': endNode
+      },
+      FilterExpression: '#Target = :Node',
+      ProjectionExpression: '#Data'
+    })
+    .promise()
+    .then(response => {
+      if (response.Items.length === 0)
+        throw new Error('End node does not exists.');
+      return db
+        .put({
+          TableName: TABLE_NAME,
+          Item: {
+            Node: startNode,
+            Type: type,
+            Data: response.Items[0].Data,
+            Target: endNode
+          }
+        })
+        .promise();
+    });
+}
+
 function addPropertyToNode(organizationId, node, type, data) {
   return db
     .put({
@@ -170,7 +211,7 @@ function addPropertyToNode(organizationId, node, type, data) {
       Item: {
         Node: node,
         Type: type,
-        Data: data
+        Data: JSON.stringify(data)
       }
     })
     .promise();
