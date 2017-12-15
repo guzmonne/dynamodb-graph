@@ -6,6 +6,48 @@ var g = require('../src/index.js');
 
 var table = 'ExampleTable';
 
+describe('#_hashCode()', () => {
+  var string = 'Test Me';
+
+  test('should return a number', () => {
+    expect(typeof g._hashCode(string)).toEqual('number');
+  });
+
+  test('should return 0 if given an empty string or undefined', () => {
+    expect(g._hashCode()).toEqual(0);
+    expect(g._hashCode('')).toEqual(0);
+  });
+
+  test('should return the same hash for the same string', () => {
+    var first = g._hashCode(string);
+    var second = g._hashCode(string);
+    expect(first).toEqual(second);
+  });
+});
+
+describe('#_calculateGSIK()', () => {
+  var node = cuid();
+
+  test('should throw an error if `node` is undefined', () => {
+    expect(() => g._calculateGSIK()).toThrow('Node is undefined');
+  });
+
+  test('should return a string', () => {
+    expect(typeof g._calculateGSIK(node)).toEqual('string');
+  });
+
+  test('should end with #1 if the maxGSIK value is undefined or less than 2', () => {
+    expect(g._calculateGSIK(node, 0).indexOf('#1') > -1).toBe(true);
+    expect(g._calculateGSIK(node, 1).indexOf('#1') > -1).toBe(true);
+  });
+
+  test('should end with a # plus a number between 0 and maxGSIK', () => {
+    var maxGSIK = Math.floor(Math.random() * 4) + 2;
+    var gsik = g._calculateGSIK(node, maxGSIK);
+    expect(gsik.indexOf('#' + gsik[gsik.length - 1]) > -1).toBe(true);
+  });
+});
+
 describe('#nodeItem()', () => {
   var tenant = cuid();
 
@@ -13,11 +55,18 @@ describe('#nodeItem()', () => {
     var actual = g.nodeItem({
       tenant,
       type: 'Test',
-      data: 123
+      data: 123,
+      maxGSIK: 10
     });
-    expect(actual.Node).toBeDefined();
-    expect(actual.Target).toEqual(actual.Node);
-    expect(typeof actual.Data).toEqual('string');
+    var node = actual.Node;
+    var gsik = g._calculateGSIK(node, 10);
+    expect(actual).toEqual({
+      Node: node,
+      Data: JSON.stringify(123),
+      Type: 'Test',
+      Target: node,
+      GSIK: gsik
+    });
   });
 
   test('should throw an error if the type is not defined', () => {
@@ -95,7 +144,8 @@ describe('#propertyItem()', () => {
     var actual = g.propertyItem({
       node,
       type: 'Property',
-      data: 'test'
+      data: 'test',
+      gsik: 1
     });
     expect(actual.Node).toEqual(node);
     expect(actual.Type).toEqual('Property');
@@ -135,8 +185,9 @@ describe('#createNode()', () => {
     var actual = g.createNode({ db: db(), table });
     var node = cuid(),
       type = 'Node',
+      tenant = cuid(),
       data = 'test';
-    actual({ node, type, data, maxGSIK: 0 }).then(params => {
+    actual({ node, type, data, tenant, maxGSIK: 0 }).then(params => {
       expect(params).toEqual({
         TableName: table,
         Item: {
@@ -144,7 +195,7 @@ describe('#createNode()', () => {
           Type: type,
           Data: JSON.stringify(data),
           Target: node,
-          GSIK: 1
+          GSIK: g._calculateGSIK(node, 0)
         }
       });
       done();
@@ -162,6 +213,12 @@ describe('#getNodeTypes()', () => {
   test('should return a function', () => {
     var actual = g.getNodeTypes({ db, table });
     expect(typeof actual).toEqual('function');
+  });
+
+  test('should fail if the node is undefined', () => {
+    expect(() => {
+      g.getNodeTypes({ db: db(), table })();
+    }).toThrow('Node is undefined.');
   });
 
   test('should return a valid DynamoDB query object', done => {
@@ -182,6 +239,45 @@ describe('#getNodeTypes()', () => {
       });
       done();
     });
+  });
+});
+
+describe('#getNodeData()', () => {
+  var db = function() {
+    return {
+      query: params => ({ promise: () => Promise.resolve(params) })
+    };
+  };
+
+  test('should return a function', () => {
+    expect(typeof g.getNodeData({ db, table })).toEqual('function');
+  });
+
+  test('should fail if the node is undefined', () => {
+    expect(() => {
+      g.getNodeData({ db: db(), table })();
+    }).toThrow('Node is undefined.');
+  });
+
+  test('should return a valid DynamoDB params query object', done => {
+    var node = cuid();
+    g
+      .getNodeData({ db: db(), table })(node)
+      .then(params => {
+        expect(params).toEqual({
+          ExpressionAttributeNames: {
+            '#Data': 'Data',
+            '#Node': 'Node',
+            '#Target': 'Target'
+          },
+          ExpressionAttributeValues: { ':Node': node },
+          FilterExpression: '#Target = :Node',
+          KeyConditionExpression: '#Node = :Node',
+          ProjectionExpression: '#Data',
+          TableName: table
+        });
+        done();
+      });
   });
 });
 
@@ -226,7 +322,7 @@ describe('#deleteNode()', () => {
   });
 });
 
-describe('#addPropertyToNode()', () => {
+describe('#createProperty()', () => {
   var db = function() {
     return {
       put: params => ({ promise: () => Promise.resolve(params) })
@@ -234,11 +330,11 @@ describe('#addPropertyToNode()', () => {
   };
 
   test('should return a function', () => {
-    expect(typeof g.addPropertyToNode({ db, table })).toEqual('function');
+    expect(typeof g.createProperty({ db, table })).toEqual('function');
   });
 
   test('should build valid DynamoDB put params object', done => {
-    var actual = g.addPropertyToNode({ db: db(), table });
+    var actual = g.createProperty({ db: db(), table });
     var node = cuid(),
       type = 'Property',
       data = 'test';
@@ -249,10 +345,66 @@ describe('#addPropertyToNode()', () => {
           Node: node,
           Type: type,
           Data: JSON.stringify(data),
-          GSIK: 1
+          GSIK: g._calculateGSIK(node, 0)
         }
       });
       done();
+    });
+  });
+});
+
+describe('#createEdge()', () => {
+  var response = {
+    Items: [{ Data: 'Test' }]
+  };
+  var db = function(response) {
+    return {
+      query: params => ({ promise: () => Promise.resolve(response) }),
+      put: params => ({ promise: () => Promise.resolve(params) })
+    };
+  };
+
+  test('should return a function', () => {
+    expect(typeof g.createEdge({ db, table })).toEqual('function');
+  });
+
+  var node = cuid();
+  var target = cuid();
+  var type = 'Edge';
+
+  test('should fail if the node is not defined', () => {
+    expect(() => {
+      g.createEdge({ db: db(), table })({ target, type });
+    }).toThrow('Node is undefined.');
+  });
+
+  test('should fail if the target is not defined', () => {
+    var createEdge = g.createEdge({ db: db(response), table });
+    return createEdge({ node }).catch(error => {
+      expect(error.message).toEqual('Target is undefined');
+    });
+  });
+
+  test('should fail if the type is not defined', () => {
+    var createEdge = g.createEdge({ db: db(response), table });
+    return createEdge({ node, target }).catch(error => {
+      expect(error.message).toEqual('Type is undefined');
+    });
+  });
+
+  test('should return a valid DynamoDB put params object', () => {
+    var createEdge = g.createEdge({ db: db(response), table });
+    return createEdge({ node, target, type, maxGSIK: 0 }).then(result => {
+      expect(result).toEqual({
+        TableName: table,
+        Item: {
+          Node: node,
+          Type: type,
+          Data: JSON.stringify('Test'),
+          Target: target,
+          GSIK: g._calculateGSIK(node, 0)
+        }
+      });
     });
   });
 });

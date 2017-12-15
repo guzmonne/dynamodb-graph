@@ -6,16 +6,33 @@ var cuid = require('cuid');
 //=======
 
 module.exports = {
+  _hashCode: hashCode,
+  _calculateGSIK: calculateGSIK,
   nodeItem,
   edgeItem,
   propertyItem,
   createNode,
   deleteNode,
-  addPropertyToNode,
-  getNodeTypes
+  createProperty,
+  getNodeTypes,
+  getNodeData,
+  createEdge
 };
 
 //=======
+
+function hashCode(string = '') {
+  var hash = 0,
+    i,
+    chr;
+  if (string.length === 0) return hash;
+  for (i = 0; i < string.length; i++) {
+    chr = string.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return hash;
+}
 
 /**
  * @param {number} n - Maximum random int.
@@ -23,6 +40,18 @@ module.exports = {
  */
 function randomInt(n) {
   return Math.floor(Math.random() * n) + 1;
+}
+
+/**
+ * Returns a random GSIK based on the tenant and a random number.
+ * @property {string} tenant='' - Identifier of the current tenant.
+ * @param {number} n - Maximum GSIK value.
+ * @returns {number} Random number between 0 and n.
+ */
+function calculateGSIK(node, maxGSIK = 4) {
+  if (!node) throw new Error('Node is undefined');
+  if (maxGSIK < 2) return node + '#' + 1;
+  return node + '#' + Math.abs(hashCode(node)) % maxGSIK;
 }
 /**
  * Returns a NodeItem structure as a JavaScript object. If a `node` is not
@@ -33,7 +62,7 @@ function randomInt(n) {
  * @returns {NodeItem} Node item object.
  */
 function nodeItem(config) {
-  var { tenant, type, data, node } = config;
+  var { tenant, type, data, node, maxGSIK } = config;
 
   if (!type) throw new Error('Type is undefined');
   if (!data) throw new Error('Data is undefined');
@@ -45,7 +74,7 @@ function nodeItem(config) {
     Type: type,
     Data: JSON.stringify(data),
     Target: node,
-    GSIK: randomInt(config.maxGSIK >= 0 ? config.maxGSIK : 4)
+    GSIK: calculateGSIK(node, maxGSIK)
   };
 }
 /**
@@ -57,7 +86,7 @@ function nodeItem(config) {
  * @returns {EdgeItem} Node item object.
  */
 function edgeItem(config) {
-  var { tenant, node, target, type, data } = config;
+  var { tenant, node, target, type, data, maxGSIK } = config;
 
   if (!node) throw new Error('Node is undefined');
   if (!target) throw new Error('Target is undefined');
@@ -69,7 +98,7 @@ function edgeItem(config) {
     Type: type,
     Data: JSON.stringify(data),
     Target: target,
-    GSIK: randomInt(config.maxGSIK >= 0 ? config.maxGSIK : 4)
+    GSIK: calculateGSIK(node, maxGSIK)
   };
 }
 
@@ -82,7 +111,7 @@ function edgeItem(config) {
  * @returns {EdgeItem} Node item object.
  */
 function propertyItem(config) {
-  var { node, type, data } = config;
+  var { node, type, data, gsik, maxGSIK } = config;
 
   if (!node) throw new Error('Node is undefined');
   if (!type) throw new Error('Type is undefined');
@@ -92,7 +121,7 @@ function propertyItem(config) {
     Node: node,
     Type: type,
     Data: JSON.stringify(data),
-    GSIK: randomInt(config.maxGSIK >= 0 ? config.maxGSIK : 4)
+    GSIK: calculateGSIK(node, maxGSIK)
   };
 }
 
@@ -129,8 +158,9 @@ function createNode(options) {
  */
 function getNodeTypes(options) {
   var { db, table = process.env.TABLE_NAME } = options;
-  return node =>
-    db
+  return node => {
+    if (!node) throw new Error('Node is undefined.');
+    return db
       .query({
         TableName: table,
         KeyConditionExpression: '#Node = :Node',
@@ -144,6 +174,40 @@ function getNodeTypes(options) {
         ProjectionExpression: '#Type'
       })
       .promise();
+  };
+}
+/**
+ * Factory function that returns a function that follows the DynamoDB query
+ * interface, to get all the data stored inside a node.
+ * The table name can be provided while calling the factory, or it can use an
+ * environment variable called TABLE_NAME.
+ * Gets all the nodes and edges type associated to a node.
+ * @param {DBConfig} options - Database driver and table configuration.
+ * @returns {function} Function ready to put Node on a DynamoDB table.
+ * @param {string} node - Node to query.
+ * @returns {promise} With the data returned from the database.
+ */
+function getNodeData(options) {
+  var { db, table = process.env.TABLE_NAME } = options;
+  return node => {
+    if (!node) throw new Error('Node is undefined.');
+    return db
+      .query({
+        TableName: table,
+        KeyConditionExpression: `#Node = :Node`,
+        ExpressionAttributeNames: {
+          '#Node': 'Node',
+          '#Target': 'Target',
+          '#Data': 'Data'
+        },
+        ExpressionAttributeValues: {
+          ':Node': node
+        },
+        FilterExpression: '#Target = :Node',
+        ProjectionExpression: '#Data'
+      })
+      .promise();
+  };
 }
 /**
  * Factory function that returns a function that follows the DynamoDB delete
@@ -187,7 +251,7 @@ function deleteNode(options) {
  * @param {PropertyItemConfig} config - Property configuration object.
  * @returns {promise} With the data returned from the database.
  */
-function addPropertyToNode(options) {
+function createProperty(options) {
   var { db, table = process.env.TABLE_NAME } = options;
   return config =>
     db
@@ -196,6 +260,136 @@ function addPropertyToNode(options) {
         Item: propertyItem(config)
       })
       .promise();
+}
+/**
+ * Factory function that returns a function that follows the DynamoDB put
+ * interface, to add a new edge between two nodes.
+ * The table name can be provided while calling the factory, or it can use an
+ * environment variable called TABLE_NAME.
+ * Gets all the nodes and edges type associated to a node.
+ * @param {DBConfig} options - Database driver and table configuration.
+ * @returns {function} Function ready to put Node on a DynamoDB table.
+ * @param {EdgeItemConfig} config - Property configuration object.
+ * @returns {promise} With the data returned from the database.
+ */
+function createEdge(options) {
+  var { db, table = process.env.TABLE_NAME } = options;
+  var getNodeDataPromise = getNodeData(options);
+  return (config = {}) => {
+    return getNodeDataPromise(config.node).then(response => {
+      if (response.Items.length === 0)
+        throw new Error(`Empty data for Node ${node}`);
+      config.data = response.Items[0].Data;
+      return db
+        .put({
+          TableName: table,
+          Item: edgeItem(config)
+        })
+        .promise();
+    });
+  };
+}
+/**
+ * Factory function that returns a function that follows the DynamoDB query
+ * interface, to get all the nodes with a certain type, by traversing the
+ * ByType GSI Index.
+ * The table name can be provided while calling the factory, or it can use an
+ * environment variable called TABLE_NAME.
+ * Gets all the nodes and edges type associated to a node.
+ * @param {DBConfig} options - Database driver and table configuration.
+ * @returns {function} Function ready to put Node on a DynamoDB table.
+ * @param {object} config - Property configuration object.
+ * @property {string} tenant='' - Identifier of the current tenant.
+ * @property {string} type - Type to look for.
+ * @property {number} gsik=1 - GSIK number to look in.
+ * @returns {promise} With the data returned from the database.
+ */
+function getNodesWithType(options) {
+  var { db, table = process.env.TABLE_NAME } = options;
+  return config => {
+    var { tenant = '', type, gsik = 1 } = config;
+    if (!type) throw new Error('Type is undefined');
+    return db
+      .query({
+        TableName: table,
+        IndexName: 'ByType',
+        KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+        ExpressionAttributeNames: {
+          '#GSIK': 'GSIK',
+          '#Type': 'Type',
+          '#Data': 'Data',
+          '#Node': 'Node'
+        },
+        ExpressionAttributeValues: {
+          ':GSIK': tenant + '#' + i.toString(),
+          ':Type': type
+        },
+        ProjectionExpression: '#Data,#Node'
+      })
+      .promise();
+  };
+}
+
+function getNodesByType(organizationId, type, depth) {
+  depth || (depth = 0);
+  var response = { Items: [], Count: 0, ScannedCount: 0 };
+  return new Promise((resolve, reject) => {
+    Rx.Observable.range(0, GSI_PARTITIONS)
+      .mergeMap(i => {
+        return Rx.Observable.fromPromise(getNodesOfType);
+      })
+      .map(response => {
+        response.Items.forEach(item => {
+          item.Data = JSON.parse(item.Data);
+        });
+        return response;
+      })
+      .reduce(
+        (acc, response) => ({
+          Items: acc.Items.concat(response.Items),
+          Count: acc.Count + response.Count,
+          ScannedCount: acc.ScannedCount + response.ScannedCount
+        }),
+        Object.assign({}, response)
+      )
+      .mergeMap(result => {
+        if (depth > 0) {
+          return Rx.Observable.from(result.Items.map(item => item.Node))
+            .mergeMap(node =>
+              Rx.Observable.fromPromise(
+                db
+                  .query({
+                    TableName: TABLE_NAME,
+                    KeyConditionExpression: `#Node = :Node`,
+                    ExpressionAttributeNames: {
+                      '#Node': 'Node',
+                      '#Target': 'Target'
+                    },
+                    ExpressionAttributeValues: {
+                      ':Node': node
+                    },
+                    FilterExpression: '#Target <> :Node'
+                  })
+                  .promise()
+              ).map(response => {
+                var current = result.Items.find(item => {
+                  return item.Node === node;
+                });
+                response.Items.forEach(item => {
+                  current[item.Type] = JSON.parse(item.Data);
+                });
+                return current;
+              })
+            )
+            .reduce(acc => acc, result);
+        }
+        return Rx.Observable.of(result);
+      })
+      .subscribe({
+        next: resolve,
+        error: reject
+      });
+  });
 }
 
 // TYPE DEFINITIONS
