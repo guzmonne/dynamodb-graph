@@ -86,3 +86,37 @@ describe('#edgeItem()', () => {
     );
   });
 });
+
+describe('#createNode()', () => {
+  var db = function() {
+    return {
+      put: params => ({ promise: () => Promise.resolve(params) })
+    };
+  };
+  var table = 'ExampleTable';
+
+  test('should return a function', () => {
+    var actual = g.createNode(db(), table);
+    expect(typeof actual).toEqual('function');
+  });
+
+  test('should build valid DynamoDB put params object', done => {
+    var actual = g.createNode(db(), table);
+    var node = cuid(),
+      type = 'Node',
+      data = 'test';
+    actual({ node, type, data, maxGSIK: 0 }).then(params => {
+      expect(params).toEqual({
+        TableName: table,
+        Item: {
+          Node: node,
+          Type: type,
+          Data: JSON.stringify(data),
+          Target: node,
+          GSIK: 1
+        }
+      });
+      done();
+    });
+  });
+});
