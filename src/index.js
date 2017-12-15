@@ -8,8 +8,10 @@ var cuid = require('cuid');
 module.exports = {
   nodeItem,
   edgeItem,
+  propertyItem,
   createNode,
   deleteNode,
+  addPropertyToNode,
   getNodeTypes
 };
 
@@ -67,6 +69,29 @@ function edgeItem(config) {
     Type: type,
     Data: JSON.stringify(data),
     Target: target,
+    GSIK: randomInt(config.maxGSIK >= 0 ? config.maxGSIK : 4)
+  };
+}
+
+/**
+ * Returns an PropertyItem structure as a JavaScript object. The node and the
+ * target must be defined for te edge to be created. The GISK number is
+ * generated as a random value from 0 to 4 by default. This can be modified by
+ * passing the `maxGSKI` value as a parameter.
+ * @param {PropertyItemConfig} config PropertyItem configuration object.
+ * @returns {EdgeItem} Node item object.
+ */
+function propertyItem(config) {
+  var { node, type, data } = config;
+
+  if (!node) throw new Error('Node is undefined');
+  if (!type) throw new Error('Type is undefined');
+  if (!data) throw new Error('Data is undefined');
+
+  return {
+    Node: node,
+    Type: type,
+    Data: JSON.stringify(data),
     GSIK: randomInt(config.maxGSIK >= 0 ? config.maxGSIK : 4)
   };
 }
@@ -159,20 +184,18 @@ function deleteNode(options) {
  * Gets all the nodes and edges type associated to a node.
  * @param {DBConfig} options - Database driver and table configuration.
  * @returns {function} Function ready to put Node on a DynamoDB table.
- * @param {string} node - Node to query.
+ * @param {PropertyItemConfig} config - Property configuration object.
  * @returns {promise} With the data returned from the database.
  */
-function addPropertyToNode(organizationId, node, type, data) {
-  return db
-    .put({
-      TableName: TABLE_NAME,
-      Item: {
-        Node: node,
-        Type: type,
-        Data: JSON.stringify(data)
-      }
-    })
-    .promise();
+function addPropertyToNode(options) {
+  var { db, table = process.env.TABLE_NAME } = options;
+  return config =>
+    db
+      .put({
+        TableName: table,
+        Item: propertyItem(config)
+      })
+      .promise();
 }
 
 // TYPE DEFINITIONS
@@ -223,6 +246,19 @@ function addPropertyToNode(organizationId, node, type, data) {
  *                           is not provided.
  * @property {string} target - Existing node reference. Will be created if it
  *                             is not provided.
+ * @property {number} [maxGSIK=4] - Maximum GSIK value to add on the node.
+ */
+
+/**
+ * @typedef {Object} PropertyItemConfig
+ * @description EdgeItem configuration object.
+ * @property {string} tenant='' - Identifier of the current tenant.
+ * @property {string} type - Node type.
+ * @property {any}    data - Main data of the node. Will be encoded so it
+ *                           maintains its type even though it is stored as
+ *                           a string.
+ * @property {string} node - Existing node reference. Will be created if it
+ *                           is not provided.
  * @property {number} [maxGSIK=4] - Maximum GSIK value to add on the node.
  */
 

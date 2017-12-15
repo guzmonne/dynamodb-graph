@@ -89,6 +89,36 @@ describe('#edgeItem()', () => {
   });
 });
 
+describe('#propertyItem()', () => {
+  test('should return a PropertyItem', () => {
+    var node = cuid();
+    var actual = g.propertyItem({
+      node,
+      type: 'Property',
+      data: 'test'
+    });
+    expect(actual.Node).toEqual(node);
+    expect(actual.Type).toEqual('Property');
+    expect(typeof actual.Data).toEqual('string');
+  });
+
+  var node = cuid();
+  var type = 'property';
+  var data = 'test';
+
+  test('should throw an error if the type is not defined', () => {
+    expect(() => g.propertyItem({ node, data })).toThrow('Type is undefined');
+  });
+
+  test('should throw an error if the data is not defined', () => {
+    expect(() => g.propertyItem({ node, type })).toThrow('Data is undefined');
+  });
+
+  test('should throw an error if the node is not defined', () => {
+    expect(() => g.propertyItem({ type, data })).toThrow('Node is undefined');
+  });
+});
+
 describe('#createNode()', () => {
   var db = function() {
     return {
@@ -193,5 +223,36 @@ describe('#deleteNode()', () => {
         ]);
         done();
       });
+  });
+});
+
+describe('#addPropertyToNode()', () => {
+  var db = function() {
+    return {
+      put: params => ({ promise: () => Promise.resolve(params) })
+    };
+  };
+
+  test('should return a function', () => {
+    expect(typeof g.addPropertyToNode({ db, table })).toEqual('function');
+  });
+
+  test('should build valid DynamoDB put params object', done => {
+    var actual = g.addPropertyToNode({ db: db(), table });
+    var node = cuid(),
+      type = 'Property',
+      data = 'test';
+    actual({ node, type, data, maxGSIK: 0 }).then(params => {
+      expect(params).toEqual({
+        TableName: table,
+        Item: {
+          Node: node,
+          Type: type,
+          Data: JSON.stringify(data),
+          GSIK: 1
+        }
+      });
+      done();
+    });
   });
 });
