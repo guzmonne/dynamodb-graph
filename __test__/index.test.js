@@ -4,6 +4,8 @@
 var cuid = require('cuid');
 var g = require('../src/index.js');
 
+var table = 'ExampleTable';
+
 describe('#nodeItem()', () => {
   var tenant = cuid();
 
@@ -93,15 +95,14 @@ describe('#createNode()', () => {
       put: params => ({ promise: () => Promise.resolve(params) })
     };
   };
-  var table = 'ExampleTable';
 
   test('should return a function', () => {
-    var actual = g.createNode(db(), table);
+    var actual = g.createNode({ db: db(), table });
     expect(typeof actual).toEqual('function');
   });
 
   test('should build valid DynamoDB put params object', done => {
-    var actual = g.createNode(db(), table);
+    var actual = g.createNode({ db: db(), table });
     var node = cuid(),
       type = 'Node',
       data = 'test';
@@ -115,6 +116,39 @@ describe('#createNode()', () => {
           Target: node,
           GSIK: 1
         }
+      });
+      done();
+    });
+  });
+});
+
+describe('#getNodeTypes()', () => {
+  var db = function() {
+    return {
+      query: params => ({ promise: () => Promise.resolve(params) })
+    };
+  };
+
+  test('should return a function', () => {
+    var actual = g.getNodeTypes({ db, table });
+    expect(typeof actual).toEqual('function');
+  });
+
+  test('should return a valid DynamoDB query object', done => {
+    var actual = g.getNodeTypes({ db: db(), table });
+    var node = cuid();
+    actual(node).then(params => {
+      expect(params).toEqual({
+        TableName: table,
+        KeyConditionExpression: '#Node = :Node',
+        ExpressionAttributeNames: {
+          '#Node': 'Node',
+          '#Type': 'Type'
+        },
+        ExpressionAttributeValues: {
+          ':Node': node
+        },
+        ProjectionExpression: '#Type'
       });
       done();
     });

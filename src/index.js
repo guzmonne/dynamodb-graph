@@ -53,13 +53,21 @@ var cuid = require('cuid');
  * @property {number} [maxGSIK=4] - Maximum GSIK value to add on the node.
  */
 
+/**
+ * @typedef {object} DBConfig
+ * @description Database driver and table configuration.
+ * @property {object} db - DynamoDB put interface compatible object.
+ * @property {string} table=TABLE_NAME - Name of the DynamoDB table to use.
+ */
+
 //EXPORTS
 //=======
 
 module.exports = {
   nodeItem,
   edgeItem,
-  createNode
+  createNode,
+  getNodeTypes
 };
 
 //=======
@@ -125,12 +133,12 @@ function edgeItem(config) {
  * interface, to store items on a table. The table name can be provided while
  * instantiating the factory, or it can use an environment variable called
  * TABLE_NAME.
- * @param {object} db - DynamoDB put interface compatible object.
- * @param {string} table=TABLE_NAME - Name of the DynamoDB table to use.
+ * @param {DBConfig} options - Database driver and table configuration.
  * @returns {function} Function ready to put Node on a DynamoDB table.
  * @param {NodeItemConfig} config - NodeItem configuration object.
  */
-function createNode(db, table = process.env.TABLE_NAME) {
+function createNode(options) {
+  var { db, table = process.env.TABLE_NAME } = options;
   return config =>
     db
       .put({
@@ -138,4 +146,61 @@ function createNode(db, table = process.env.TABLE_NAME) {
         Item: nodeItem(config)
       })
       .promise();
+}
+/**
+ * Gets all the nodes and edges type associated to a node.
+ * @param {DBConfig} options - Database driver and table configuration.
+ * @returns {function} Function ready to put Node on a DynamoDB table.
+ * @param {string} node - Node to query.
+ */
+function getNodeTypes(options) {
+  var { db, table = process.env.TABLE_NAME } = options;
+  return node =>
+    db
+      .query({
+        TableName: table,
+        KeyConditionExpression: '#Node = :Node',
+        ExpressionAttributeNames: {
+          '#Node': 'Node',
+          '#Type': 'Type'
+        },
+        ExpressionAttributeValues: {
+          ':Node': node
+        },
+        ProjectionExpression: '#Type'
+      })
+      .promise();
+}
+
+function deleteNode(organizationId, nodeId) {
+  var node = organizationId + '#' + nodeId;
+  return db
+    .query({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: '#Node = :Node',
+      ExpressionAttributeNames: {
+        '#Node': 'Node',
+        '#Type': 'Type'
+      },
+      ExpressionAttributeValues: {
+        ':Node': node
+      },
+      ProjectionExpression: '#Type'
+    })
+    .promise()
+    .then(response => {
+      return Promise.all(
+        response.Items.map(item =>
+          db
+            .delete({
+              TableName: TABLE_NAME,
+              Key: {
+                Node: node,
+                Type: item.Type
+              }
+            })
+            .promise()
+        )
+      );
+    });
 }
