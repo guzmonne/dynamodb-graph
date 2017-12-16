@@ -2,7 +2,7 @@
 'use strict';
 
 var cuid = require('cuid');
-var g = require('../src/index.js');
+var getNodesWithType = require('../src/getNodesWithType.js');
 var utils = require('../src/modules/utils.js');
 var dynamoResponse = require('./dynamoResponse.js');
 
@@ -29,24 +29,23 @@ describe('#getNodesWithType()', () => {
   });
 
   test('should return a function', () => {
-    expect(typeof g.getNodesWithType({ tenant, type })).toEqual('function');
+    expect(typeof getNodesWithType({ tenant, type })).toEqual('function');
   });
 
   test('should return an error if maxGSIK is undefined', () => {
-    return g
-      .getNodesWithType({ db: db(), table })({ tenant, type })
-      .catch(error => expect(error.message).toEqual('Max GSIK is undefined'));
+    return getNodesWithType({ db: db(), table })({ tenant, type }).catch(
+      error => expect(error.message).toEqual('Max GSIK is undefined')
+    );
   });
 
   test('should return an error if type is undefined', () => {
-    return g
-      .getNodesWithType({ db: db(), table })({ tenant, maxGSIK })
-      .catch(error => expect(error.message).toEqual('Type is undefined'));
+    return getNodesWithType({ db: db(), table })({ tenant, maxGSIK }).catch(
+      error => expect(error.message).toEqual('Type is undefined')
+    );
   });
 
   test('should return a response object with all nodes', () => {
-    return g
-      .getNodesWithType({ db: db(), table })({ tenant, type, maxGSIK })
+    return getNodesWithType({ db: db(), table })({ tenant, type, maxGSIK })
       .then(response => {
         expect(response).toEqual({
           Count: 3,
