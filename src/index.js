@@ -22,6 +22,15 @@ module.exports = {
 };
 
 //=======
+
+function mergeDynamoResponses(response1, response2) {
+  if (!response1) return response2;
+  return {
+    Items: response1.Items.concat(response2.Items),
+    Count: response1.Count + response2.Count,
+    ScannedCount: response1.ScannedCount + response2.ScannedCount
+  };
+}
 /**
  * Takes a DynamoDB response, and parses all the Data attibute of all its items.
  * @param {DynamoDBResponse} response DynamoDB response object.
@@ -62,11 +71,14 @@ function randomInt(n) {
 }
 /**
  * Returns a random GSIK based on the tenant and a random number.
+ * @param {object} config - GSIK configuration object.
+ * @property {string} node - Identifier of the Node.
  * @property {string} tenant='' - Identifier of the current tenant.
- * @param {number} n - Maximum GSIK value.
+ * @property {number} n - Maximum GSIK value.
  * @returns {number} Random number between 0 and n.
  */
-function calculateGSIK(node, maxGSIK = 4) {
+function calculateGSIK(config = {}) {
+  var { tenant = '', node, maxGSIK = 0 } = config;
   if (!node) throw new Error('Node is undefined');
   if (maxGSIK < 2) return node + '#' + 1;
   return node + '#' + Math.abs(hashCode(node)) % maxGSIK;
@@ -80,7 +92,7 @@ function calculateGSIK(node, maxGSIK = 4) {
  * @returns {NodeItem} Node item object.
  */
 function nodeItem(config) {
-  var { tenant, type, data, node, maxGSIK } = config;
+  var { tenant = '', type, data, node, maxGSIK } = config;
 
   if (!type) throw new Error('Type is undefined');
   if (!data) throw new Error('Data is undefined');
@@ -92,7 +104,7 @@ function nodeItem(config) {
     Type: type,
     Data: JSON.stringify(data),
     Target: node,
-    GSIK: calculateGSIK(node, maxGSIK)
+    GSIK: calculateGSIK({ node, tenant, maxGSIK })
   };
 }
 /**
@@ -104,7 +116,7 @@ function nodeItem(config) {
  * @returns {EdgeItem} Node item object.
  */
 function edgeItem(config) {
-  var { tenant, node, target, type, data, maxGSIK } = config;
+  var { tenant = '', node, target, type, data, maxGSIK } = config;
 
   if (!node) throw new Error('Node is undefined');
   if (!target) throw new Error('Target is undefined');
@@ -116,7 +128,7 @@ function edgeItem(config) {
     Type: type,
     Data: JSON.stringify(data),
     Target: target,
-    GSIK: calculateGSIK(node, maxGSIK)
+    GSIK: calculateGSIK({ tenant, node, maxGSIK })
   };
 }
 
@@ -129,7 +141,7 @@ function edgeItem(config) {
  * @returns {EdgeItem} Node item object.
  */
 function propertyItem(config) {
-  var { node, type, data, gsik, maxGSIK } = config;
+  var { tenant = '', node, type, data, gsik, maxGSIK } = config;
 
   if (!node) throw new Error('Node is undefined');
   if (!type) throw new Error('Type is undefined');
@@ -139,7 +151,7 @@ function propertyItem(config) {
     Node: node,
     Type: type,
     Data: JSON.stringify(data),
-    GSIK: calculateGSIK(node, maxGSIK)
+    GSIK: calculateGSIK({ tenant, node, maxGSIK })
   };
 }
 
@@ -351,24 +363,26 @@ function getNodesWithType(options) {
   };
 }
 
-function getNodesByType(organizationId, type, depth) {
+function getNodesByType(options) {
+  return config =>
+    new Promise((resolve, reject) => {
+      var { maxGSIK, type } = config;
+      if (!maxGSIK) return 'Max GSIK is undefined';
+      Rx.Observable.range(0, maxGSIK).mergeMap(i =>
+        Rx.Observable.fromPromise(getNodesWithType(options)({ gsik, type }))
+      );
+      getNodesWithType(options)(config);
+    });
+}
+
+function getNodesByType__(organizationId, type, depth) {
   depth || (depth = 0);
   var response = { Items: [], Count: 0, ScannedCount: 0 };
   var getNodesWithTypePromise = getNodesWithType(options);
   return new Promise((resolve, reject) => {
     Rx.Observable.range(0, GSI_PARTITIONS)
-      .mergeMap(i => {
-        return Rx.Observable.fromPromise(getNodesWithTypePromise(config));
-      })
-      .map(parseResponseItems)
-      .reduce(
-        (acc, response) => ({
-          Items: acc.Items.concat(response.Items),
-          Count: acc.Count + response.Count,
-          ScannedCount: acc.ScannedCount + response.ScannedCount
-        }),
-        Object.assign({}, response)
-      )
+      .mergeMap(i => Rx.Observable.fromPromise(getNodesWithTypePromise(config)))
+      .reduce(mergeDynamoResponses)
       .mergeMap(result => {
         if (depth > 0) {
           return Rx.Observable.from(result.Items.map(item => item.Node))
