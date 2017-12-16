@@ -1,7 +1,7 @@
 {
   "name": "dynamodb-graph",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
   "repository": {},
   "license": "MIT",
   "dependencies": {

@@ -1,35 +1,3 @@
-'use strict';
-
-var nodeItem = require('./nodeItem.js');
-var edgeItem = require('./edgeItem.js');
-var propertyItem = require('./propertyItem.js');
-var createNode = require('./createNode.js');
-var getNodeTypes = require('./getNodeTypes.js');
-var getNodeData = require('./getNodeData.js');
-var deleteNode = require('./deleteNode.js');
-var createEdge = require('./createEdge.js');
-var createProperty = require('./createProperty.js');
-var getNodesWithTypeOnGSI = require('./getNodesWithTypeOnGSI.js');
-var getNodesWithType = require('./getNodesWithType.js');
-var getNodeProperties = require('./getNodeProperties.js');
-var getNodesWithPropertiesByType = require('./getNodesWithPropertiesByType.js');
-//EXPORTS
-//=======
-
-module.exports = {
-  createEdge,
-  createNode,
-  createProperty,
-  edgeItem,
-  deleteNode,
-  getNodeData,
-  getNodeTypes,
-  getNodesWithPropertiesByType,
-  getNodesWithTypeOnGSI,
-  getNodesWithType,
-  propertyItem
-};
-
 // TYPE DEFINITIONS
 // ================
 
