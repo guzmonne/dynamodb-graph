@@ -101,6 +101,33 @@ All the data is stored as strings. Which doesn't mean that you can't store other
 data on the Table. You just have to encode it first. This library takes care of
 thar for you.
 
+## Getting Started
+
+Install the library on your project using `npm` or `yarn`.
+
+```
+npm install --save dynamodb-graph
+
+yarn install dynamodb-graph
+```
+
+Then you can import it to your project using `require`, and you must initialize
+it before you can use it, by passing the DynamoDB DocumentClient driver and
+the table name. The table name can also be taken from an environment table
+called `TABLE_NAME`.
+
+```javascript
+var AWS = require('aws-sdk');
+var dynamoGraph = require('dynamodb-graph');
+
+var db = new AWS.DynamoDB.DocumentClient();
+var table = process.env.TABLE_NAME;
+
+var dg = dynamoGraph({ db, table });
+```
+
+Each function returns a promise.
+
 ## Documentation
 
 **TODO**
@@ -111,6 +138,17 @@ something like `Sphix` for JavaScript.
 
 There is also a `types.js` file with information on the types of most of the
 consumable interfaces.
+
+## Test
+
+I am using `jest` to test the library. So, just clone the repo, install the
+dependencies, and run `yarn test` or `npm run test` to run them.
+
+```
+git clone git@github.com:guzmonne/dynamodb-graph.git
+yarn install
+yarn test
+```
 
 ## Licence
 
