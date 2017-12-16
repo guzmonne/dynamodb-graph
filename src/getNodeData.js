@@ -4,7 +4,7 @@ var { parseResponseItemsData } = require('./modules/utils.js');
 
 /**
  * Factory function that returns a function that follows the DynamoDB query
- * interface, to get all the data stored inside a node.
+ * interface, to get the data stored inside a node.
  * The table name can be provided while calling the factory, or it can use an
  * environment variable called TABLE_NAME.
  * Gets all the nodes and edges type associated to a node.
