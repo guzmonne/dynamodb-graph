@@ -3,129 +3,9 @@
 
 var cuid = require('cuid');
 var g = require('../src/index.js');
+var utils = require('../src/modules/utils.js');
 
 var table = 'ExampleTable';
-
-describe('#_hashCode()', () => {
-  var string = 'Test Me';
-
-  test('should return a number', () => {
-    expect(typeof g._hashCode(string)).toEqual('number');
-  });
-
-  test('should return 0 if given an empty string or undefined', () => {
-    expect(g._hashCode()).toEqual(0);
-    expect(g._hashCode('')).toEqual(0);
-  });
-
-  test('should return the same hash for the same string', () => {
-    var first = g._hashCode(string);
-    var second = g._hashCode(string);
-    expect(first).toEqual(second);
-  });
-});
-
-describe('#_calculateGSIK()', () => {
-  var tenant = cuid();
-  var node = cuid();
-
-  test('should throw an error if `node` is undefined', () => {
-    expect(() => g._calculateGSIK()).toThrow('Node is undefined');
-  });
-
-  test('should return a string', () => {
-    expect(typeof g._calculateGSIK({ tenant, node })).toEqual('string');
-  });
-
-  test('should end with #1 if the maxGSIK value is undefined or less than 2', () => {
-    expect(g._calculateGSIK({ tenant, node }).indexOf('#1') > -1).toBe(true);
-    expect(g._calculateGSIK({ tenant, node }).indexOf('#1') > -1).toBe(true);
-  });
-
-  test('should end with a # plus a number between 0 and maxGSIK', () => {
-    var maxGSIK = Math.floor(Math.random() * 4) + 2;
-    var gsik = g._calculateGSIK({ tenant, node, maxGSIK });
-    expect(gsik.indexOf('#' + gsik[gsik.length - 1]) > -1).toBe(true);
-  });
-});
-
-describe('#_parseResponseItemsData', () => {
-  var response = {
-    Items: [
-      { Data: JSON.stringify(true) },
-      { Data: JSON.stringify(123) },
-      {
-        Data: JSON.stringify('text')
-      },
-      {
-        Data: JSON.stringify([1, true, 'string'])
-      }
-    ]
-  };
-
-  test('should return another response object with parsed data items', () => {
-    var actual = g.__parseResponseItemsData(response);
-    var expected = {
-      Items: [
-        { Data: true },
-        { Data: 123 },
-        {
-          Data: 'text'
-        },
-        {
-          Data: [1, true, 'string']
-        }
-      ]
-    };
-    expect(actual).toEqual(expected);
-  });
-});
-
-describe('#nodeItem()', () => {
-  var tenant = cuid();
-
-  test('should return a correctly build NodeItem', () => {
-    var maxGSIK = 10;
-    var actual = g.nodeItem({
-      tenant,
-      type: 'Test',
-      data: 123,
-      maxGSIK
-    });
-    var node = actual.Node;
-    var gsik = g._calculateGSIK({ node, maxGSIK });
-    expect(actual).toEqual({
-      Node: node,
-      Data: JSON.stringify(123),
-      Type: 'Test',
-      Target: node,
-      GSIK: gsik
-    });
-  });
-
-  test('should throw an error if the type is not defined', () => {
-    expect(() => g.nodeItem({ data: 'test' })).toThrow('Type is undefined');
-  });
-
-  test('should throw an error if the data is not defined', () => {
-    expect(() => g.nodeItem({ type: 'test' })).toThrow('Data is undefined');
-  });
-
-  test('should contain the tenant id on its node, unless the node is defined', () => {
-    var withoutNode = g.nodeItem({
-      tenant,
-      type: 'Test',
-      data: 123
-    });
-    var withNode = g.nodeItem({
-      node: tenant,
-      type: 'Test',
-      data: 123
-    });
-    expect(withoutNode.Node.indexOf(tenant) > -1).toBe(true);
-    expect(withNode.Node).toEqual(tenant);
-  });
-});
 
 describe('#edgeItem()', () => {
   test('should return an EdgeItem', () => {
@@ -229,7 +109,7 @@ describe('#createNode()', () => {
           Type: type,
           Data: JSON.stringify(data),
           Target: node,
-          GSIK: g._calculateGSIK({ node })
+          GSIK: utils.calculateGSIK({ node })
         }
       });
       done();
@@ -407,7 +287,7 @@ describe('#createProperty()', () => {
           Node: node,
           Type: type,
           Data: JSON.stringify(data),
-          GSIK: g._calculateGSIK({ node })
+          GSIK: utils.calculateGSIK({ node })
         }
       });
       done();
@@ -464,7 +344,7 @@ describe('#createEdge()', () => {
           Type: type,
           Data: JSON.stringify('Test'),
           Target: target,
-          GSIK: g._calculateGSIK({ node })
+          GSIK: utils.calculateGSIK({ node })
         }
       });
     });
@@ -474,7 +354,7 @@ describe('#createEdge()', () => {
 describe('#getNodesWithTypeOnGSI()', () => {
   var type = 'Test';
   var node = cuid() + '#' + cuid();
-  var gsik = g._calculateGSIK({ node });
+  var gsik = utils.calculateGSIK({ node });
 
   var db = () => ({
     query: params => ({ promise: () => Promise.resolve(params) })
