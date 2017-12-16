@@ -1,6 +1,7 @@
 'use strict';
 
 var { parseResponseItemsData } = require('./modules/utils.js');
+
 /**
  * Factory function that returns a function that follows the DynamoDB query
  * interface, to get all the data stored inside a node.
