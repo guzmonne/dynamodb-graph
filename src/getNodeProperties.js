@@ -24,12 +24,14 @@ module.exports = function getNodeProperties(options) {
         KeyConditionExpression: `#Node = :Node`,
         ExpressionAttributeNames: {
           '#Node': 'Node',
-          '#Target': 'Target'
+          '#Target': 'Target',
+          '#Type': 'Type'
         },
         ExpressionAttributeValues: {
           ':Node': node
         },
-        FilterExpression: 'attribute_not_exists(#Target)'
+        FilterExpression: 'attribute_not_exists(#Target)',
+        ProjectionExpression: '#Node, #Type, #Data'
       })
       .promise()
       .then(parseResponseItemsData);
