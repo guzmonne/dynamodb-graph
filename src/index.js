@@ -28,10 +28,12 @@ module.exports = {
  * @returns {DynamoDBResponse} DynamoDB response, with all its items Data parsed
  */
 function parseResponseItemsData(response) {
-  response = Object.assign({}, response);
-  response.Items.forEach(item => {
-    if (item.Data) item.Data = JSON.parse(item.Data);
-  });
+  if (response && response.Items) {
+    response = Object.assign({}, response);
+    response.Items.forEach(item => {
+      if (item.Data) item.Data = JSON.parse(item.Data);
+    });
+  }
   return response;
 }
 /**
@@ -321,7 +323,7 @@ function createEdge(options) {
  */
 function getNodesWithType(options) {
   var { db, table = process.env.TABLE_NAME } = options;
-  return config => {
+  return (config = {}) => {
     var { gsik, type } = config;
     if (!type) throw new Error('Type is undefined');
     if (!gsik) throw new Error('GSIK is undefined');
@@ -342,7 +344,8 @@ function getNodesWithType(options) {
         },
         ProjectionExpression: '#Data,#Node'
       })
-      .promise();
+      .promise()
+      .then(parseResponseItemsData);
   };
 }
 

@@ -272,6 +272,61 @@ describe('#getNodeTypes()', () => {
       done();
     });
   });
+
+  var node = cuid();
+
+  test('should return the response parsed', () => {
+    var response = {
+      Items: [
+        {
+          Data: JSON.stringify(1)
+        },
+        {
+          Data: JSON.stringify('string')
+        },
+        {
+          Data: JSON.stringify(true)
+        },
+        {
+          Data: JSON.stringify([1, 'string', true])
+        },
+        {
+          Data: JSON.stringify({ key: 'value' })
+        }
+      ]
+    };
+    var database = {
+      query: params => ({
+        promise: () => Promise.resolve(response)
+      })
+    };
+    var node = cuid();
+    var type = 'Type';
+    var gsik = g._calculateGSIK(node, 0);
+    return g
+      .getNodesWithType({ db: database, table })({ type, gsik })
+      .then(response => {
+        expect(response).toEqual({
+          Items: [
+            {
+              Data: 1
+            },
+            {
+              Data: 'string'
+            },
+            {
+              Data: true
+            },
+            {
+              Data: [1, 'string', true]
+            },
+            {
+              Data: { key: 'value' }
+            }
+          ]
+        });
+      });
+  });
 });
 
 describe('#getNodeData()', () => {
