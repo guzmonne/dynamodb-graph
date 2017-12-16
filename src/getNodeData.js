@@ -1,11 +1,9 @@
 'use strict';
 
-var nodeItem = require('./nodeItem.js');
 var { parseResponseItemsData } = require('./modules/utils.js');
-
 /**
  * Factory function that returns a function that follows the DynamoDB query
- * interface, to get all the node types from the table.
+ * interface, to get all the data stored inside a node.
  * The table name can be provided while calling the factory, or it can use an
  * environment variable called TABLE_NAME.
  * Gets all the nodes and edges type associated to a node.
@@ -14,22 +12,24 @@ var { parseResponseItemsData } = require('./modules/utils.js');
  * @param {string} node - Node to query.
  * @returns {promise} With the data returned from the database.
  */
-module.exports = function getNodeTypes(options) {
+module.exports = function getNodeData(options) {
   var { db, table = process.env.TABLE_NAME } = options;
   return node => {
     if (!node) throw new Error('Node is undefined.');
     return db
       .query({
         TableName: table,
-        KeyConditionExpression: '#Node = :Node',
+        KeyConditionExpression: `#Node = :Node`,
         ExpressionAttributeNames: {
           '#Node': 'Node',
-          '#Type': 'Type'
+          '#Target': 'Target',
+          '#Data': 'Data'
         },
         ExpressionAttributeValues: {
           ':Node': node
         },
-        ProjectionExpression: '#Type'
+        FilterExpression: '#Target = :Node',
+        ProjectionExpression: '#Data'
       })
       .promise()
       .then(parseResponseItemsData);

@@ -14,6 +14,7 @@ var edgeItem = require('./edgeItem.js');
 var propertyItem = require('./propertyItem.js');
 var createNode = require('./createNode.js');
 var getNodeTypes = require('./getNodeTypes.js');
+var getNodeData = require('./getNodeData.js');
 //EXPORTS
 //=======
 
@@ -31,40 +32,6 @@ module.exports = {
 };
 
 //=======
-/**
- * Factory function that returns a function that follows the DynamoDB query
- * interface, to get all the data stored inside a node.
- * The table name can be provided while calling the factory, or it can use an
- * environment variable called TABLE_NAME.
- * Gets all the nodes and edges type associated to a node.
- * @param {DBConfig} options - Database driver and table configuration.
- * @returns {function} Function ready to put Node on a DynamoDB table.
- * @param {string} node - Node to query.
- * @returns {promise} With the data returned from the database.
- */
-function getNodeData(options) {
-  var { db, table = process.env.TABLE_NAME } = options;
-  return node => {
-    if (!node) throw new Error('Node is undefined.');
-    return db
-      .query({
-        TableName: table,
-        KeyConditionExpression: `#Node = :Node`,
-        ExpressionAttributeNames: {
-          '#Node': 'Node',
-          '#Target': 'Target',
-          '#Data': 'Data'
-        },
-        ExpressionAttributeValues: {
-          ':Node': node
-        },
-        FilterExpression: '#Target = :Node',
-        ProjectionExpression: '#Data'
-      })
-      .promise()
-      .then(parseResponseItemsData);
-  };
-}
 /**
  * Factory function that returns a function that follows the DynamoDB delete
  * interface, to get delete a node and all its edged from the table.
