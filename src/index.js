@@ -191,7 +191,8 @@ function getNodeTypes(options) {
         },
         ProjectionExpression: '#Type'
       })
-      .promise();
+      .promise()
+      .then(parseResponseItemsData);
   };
 }
 /**

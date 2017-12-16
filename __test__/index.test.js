@@ -282,7 +282,7 @@ describe('#getNodeTypes()', () => {
       })
     };
     return g
-      .getNodesWithType({ db: database, table })({ type: 1, gsik: 2 })
+      .getNodeTypes({ db: database, table })({ type: 1, gsik: 2 })
       .then(response => {
         expect(response).toEqual(dynamoResponse.parsed());
       });
@@ -515,6 +515,19 @@ describe('#getNodesWithType()', () => {
           TableName: 'ExampleTable'
         })
       );
+  });
+
+  test('should return the response parsed', () => {
+    var database = {
+      query: params => ({
+        promise: () => Promise.resolve(dynamoResponse.raw())
+      })
+    };
+    return g
+      .getNodesWithType({ db: database, table })({ type: 1, gsik: 2 })
+      .then(response => {
+        expect(response).toEqual(dynamoResponse.parsed());
+      });
   });
 });
 
