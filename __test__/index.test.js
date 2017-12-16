@@ -276,55 +276,15 @@ describe('#getNodeTypes()', () => {
   var node = cuid();
 
   test('should return the response parsed', () => {
-    var response = {
-      Items: [
-        {
-          Data: JSON.stringify(1)
-        },
-        {
-          Data: JSON.stringify('string')
-        },
-        {
-          Data: JSON.stringify(true)
-        },
-        {
-          Data: JSON.stringify([1, 'string', true])
-        },
-        {
-          Data: JSON.stringify({ key: 'value' })
-        }
-      ]
-    };
     var database = {
       query: params => ({
-        promise: () => Promise.resolve(response)
+        promise: () => Promise.resolve(dynamoResponse.raw())
       })
     };
-    var node = cuid();
-    var type = 'Type';
-    var gsik = g._calculateGSIK(node, 0);
     return g
-      .getNodesWithType({ db: database, table })({ type, gsik })
+      .getNodesWithType({ db: database, table })({ type: 1, gsik: 2 })
       .then(response => {
-        expect(response).toEqual({
-          Items: [
-            {
-              Data: 1
-            },
-            {
-              Data: 'string'
-            },
-            {
-              Data: true
-            },
-            {
-              Data: [1, 'string', true]
-            },
-            {
-              Data: { key: 'value' }
-            }
-          ]
-        });
+        expect(response).toEqual(dynamoResponse.parsed());
       });
   });
 });
@@ -364,6 +324,19 @@ describe('#getNodeData()', () => {
           TableName: table
         });
         done();
+      });
+  });
+
+  test('should return the response parsed', () => {
+    var database = {
+      query: params => ({
+        promise: () => Promise.resolve(dynamoResponse.raw())
+      })
+    };
+    return g
+      .getNodeData({ db: database, table })({ type: 1, gsik: 2 })
+      .then(response => {
+        expect(response).toEqual(dynamoResponse.parsed());
       });
   });
 });
@@ -441,12 +414,12 @@ describe('#createProperty()', () => {
 });
 
 describe('#createEdge()', () => {
-  var response = {
-    Items: [{ Data: 'Test' }]
-  };
+  var response = () => ({
+    Items: [{ Data: JSON.stringify('Test') }]
+  });
   var db = function(response) {
     return {
-      query: params => ({ promise: () => Promise.resolve(response) }),
+      query: params => ({ promise: () => Promise.resolve(response()) }),
       put: params => ({ promise: () => Promise.resolve(params) })
     };
   };
@@ -544,3 +517,44 @@ describe('#getNodesWithType()', () => {
       );
   });
 });
+
+var dynamoResponse = {
+  raw: () => ({
+    Items: [
+      {
+        Data: JSON.stringify(1)
+      },
+      {
+        Data: JSON.stringify('string')
+      },
+      {
+        Data: JSON.stringify(true)
+      },
+      {
+        Data: JSON.stringify([1, 'string', true])
+      },
+      {
+        Data: JSON.stringify({ key: 'value' })
+      }
+    ]
+  }),
+  parsed: () => ({
+    Items: [
+      {
+        Data: 1
+      },
+      {
+        Data: 'string'
+      },
+      {
+        Data: true
+      },
+      {
+        Data: [1, 'string', true]
+      },
+      {
+        Data: { key: 'value' }
+      }
+    ]
+  })
+};

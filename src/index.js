@@ -224,7 +224,8 @@ function getNodeData(options) {
         FilterExpression: '#Target = :Node',
         ProjectionExpression: '#Data'
       })
-      .promise();
+      .promise()
+      .then(parseResponseItemsData);
   };
 }
 /**
