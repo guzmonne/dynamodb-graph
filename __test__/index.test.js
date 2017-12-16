@@ -4,62 +4,9 @@
 var cuid = require('cuid');
 var g = require('../src/index.js');
 var utils = require('../src/modules/utils.js');
+var dynamoResponse = require('./dynamoResponse.js');
 
 var table = 'ExampleTable';
-
-describe('#getNodeTypes()', () => {
-  var db = function() {
-    return {
-      query: params => ({ promise: () => Promise.resolve(params) })
-    };
-  };
-
-  test('should return a function', () => {
-    var actual = g.getNodeTypes({ db, table });
-    expect(typeof actual).toEqual('function');
-  });
-
-  test('should fail if the node is undefined', () => {
-    expect(() => {
-      g.getNodeTypes({ db: db(), table })();
-    }).toThrow('Node is undefined.');
-  });
-
-  test('should return a valid DynamoDB query object', done => {
-    var actual = g.getNodeTypes({ db: db(), table });
-    var node = cuid();
-    actual(node).then(params => {
-      expect(params).toEqual({
-        TableName: table,
-        KeyConditionExpression: '#Node = :Node',
-        ExpressionAttributeNames: {
-          '#Node': 'Node',
-          '#Type': 'Type'
-        },
-        ExpressionAttributeValues: {
-          ':Node': node
-        },
-        ProjectionExpression: '#Type'
-      });
-      done();
-    });
-  });
-
-  var node = cuid();
-
-  test('should return the response parsed', () => {
-    var database = {
-      query: params => ({
-        promise: () => Promise.resolve(dynamoResponse.raw())
-      })
-    };
-    return g
-      .getNodeTypes({ db: database, table })({ type: 1, gsik: 2 })
-      .then(response => {
-        expect(response).toEqual(dynamoResponse.parsed());
-      });
-  });
-});
 
 describe('#getNodeData()', () => {
   var db = function() {
@@ -352,55 +299,3 @@ describe('#getNodesWithType()', () => {
       .catch(error => expect(error).toEqual(null));
   });
 });
-
-var dynamoResponse = {
-  raw: response => {
-    if (response && response.Items) {
-      response = Object.assign({}, response);
-      response.Items.forEach(item => {
-        if (item.Data) item.Data = JSON.stringify(item.Data);
-      });
-      response.Count = response.Items.length;
-      response.ScannedCount = response.Items.length * 10;
-      return response;
-    }
-    return {
-      Items: [
-        {
-          Data: JSON.stringify(1)
-        },
-        {
-          Data: JSON.stringify('string')
-        },
-        {
-          Data: JSON.stringify(true)
-        },
-        {
-          Data: JSON.stringify([1, 'string', true])
-        },
-        {
-          Data: JSON.stringify({ key: 'value' })
-        }
-      ]
-    };
-  },
-  parsed: () => ({
-    Items: [
-      {
-        Data: 1
-      },
-      {
-        Data: 'string'
-      },
-      {
-        Data: true
-      },
-      {
-        Data: [1, 'string', true]
-      },
-      {
-        Data: { key: 'value' }
-      }
-    ]
-  })
-};
