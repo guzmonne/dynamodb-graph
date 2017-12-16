@@ -12,6 +12,7 @@ var {
 var nodeItem = require('./nodeItem.js');
 var edgeItem = require('./edgeItem.js');
 var propertyItem = require('./propertyItem.js');
+var createNode = require('./createNode.js');
 //EXPORTS
 //=======
 
@@ -29,26 +30,6 @@ module.exports = {
 };
 
 //=======
-/**
- * Factory function that returns a function that follow the DynamoDB put
- * interface, to store items on a table. The table name can be provided while
- * calling the factory, or it can use an environment variable called
- * TABLE_NAME.
- * @param {DBConfig} options - Database driver and table configuration.
- * @returns {function} Function ready to put Node on a DynamoDB table.
- * @param {NodeItemConfig} config - NodeItem configuration object.
- * @returns {promise} With the data returned from the database.
- */
-function createNode(options) {
-  var { db, table = process.env.TABLE_NAME } = options;
-  return config =>
-    db
-      .put({
-        TableName: table,
-        Item: nodeItem(config)
-      })
-      .promise();
-}
 /**
  * Factory function that returns a function that follows the DynamoDB query
  * interface, to get all the node types from the table.
