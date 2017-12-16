@@ -16,16 +16,37 @@ var getNodesWithPropertiesByType = require('../src/getNodesWithPropertiesByType.
 
 //EXPORTS
 //=======
-module.exports = {
+var fns = {
   createEdge,
   createNode,
   createProperty,
-  edgeItem,
   deleteNode,
   getNodeData,
-  getNodeTypes,
+  getNodeProperties,
   getNodesWithPropertiesByType,
-  getNodesWithTypeOnGSI,
   getNodesWithType,
-  propertyItem
+  getNodesWithTypeOnGSI,
+  getNodeTypes
+};
+
+module.exports = function dynamodbGraoh(options = {}) {
+  options.table || (options.table = process.env.TABLE_NAME);
+
+  if (!options.db) throw new Error('DB is undefined');
+  if (!options.table) throw new Error('Table is undefined');
+
+  return Object.assign(
+    Object.keys(fns).reduce(
+      (acc, key) =>
+        Object.assign(acc, {
+          [key]: fns[key](options)
+        }),
+      {}
+    ),
+    {
+      edgeItem,
+      nodeItem,
+      propertyItem
+    }
+  );
 };
