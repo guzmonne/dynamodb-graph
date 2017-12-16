@@ -1,7 +1,6 @@
 'use strict';
 
 var _ = require('lodash');
-var chance = require('chance').Chance();
 
 module.exports = {
   randomMac,
