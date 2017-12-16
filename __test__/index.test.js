@@ -8,47 +8,6 @@ var dynamoResponse = require('./dynamoResponse.js');
 
 var table = 'ExampleTable';
 
-describe('#deleteNode()', () => {
-  var response = {
-    Items: [{ Type: 'Edge1' }, { Type: 'Edge2' }]
-  };
-  var db = function() {
-    return {
-      query: params => ({ promise: () => Promise.resolve(response) }),
-      delete: params => ({ promise: () => Promise.resolve(params) })
-    };
-  };
-
-  test('should return a function', () => {
-    expect(typeof g.deleteNode({ db, table })).toEqual('function');
-  });
-
-  test('should return a valid DynamoDB delete interface object', done => {
-    var node = cuid();
-    g
-      .deleteNode({ db: db(), table })(node)
-      .then(params => {
-        expect(params).toEqual([
-          {
-            TableName: table,
-            Key: {
-              Node: node,
-              Type: 'Edge1'
-            }
-          },
-          {
-            TableName: table,
-            Key: {
-              Node: node,
-              Type: 'Edge2'
-            }
-          }
-        ]);
-        done();
-      });
-  });
-});
-
 describe('#createProperty()', () => {
   var db = function() {
     return {
