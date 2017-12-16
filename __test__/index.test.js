@@ -48,6 +48,38 @@ describe('#_calculateGSIK()', () => {
   });
 });
 
+describe('#_parseResponseItemsData', () => {
+  var response = {
+    Items: [
+      { Data: JSON.stringify(true) },
+      { Data: JSON.stringify(123) },
+      {
+        Data: JSON.stringify('text')
+      },
+      {
+        Data: JSON.stringify([1, true, 'string'])
+      }
+    ]
+  };
+
+  test('should return another response object with parsed data items', () => {
+    var actual = g.__parseResponseItemsData(response);
+    var expected = {
+      Items: [
+        { Data: true },
+        { Data: 123 },
+        {
+          Data: 'text'
+        },
+        {
+          Data: [1, true, 'string']
+        }
+      ]
+    };
+    expect(actual).toEqual(expected);
+  });
+});
+
 describe('#nodeItem()', () => {
   var tenant = cuid();
 
@@ -406,5 +438,54 @@ describe('#createEdge()', () => {
         }
       });
     });
+  });
+});
+
+describe('#getNodesWithType()', () => {
+  var type = 'Test';
+  var node = cuid() + '#' + cuid();
+  var gsik = g._calculateGSIK(node, 0);
+
+  var db = () => ({
+    query: params => ({ promise: () => Promise.resolve(params) })
+  });
+
+  test('should return a function', () => {
+    expect(typeof g.getNodesWithType({ type, gsik })).toEqual('function');
+  });
+
+  test('should fail if type is undefined', () => {
+    expect(() => g.getNodesWithType({ db, table })({ type })).toThrow(
+      'GSIK is undefined'
+    );
+  });
+
+  test('should fail if type is undefined', () => {
+    expect(() => g.getNodesWithType({ db, table })({ gsik })).toThrow(
+      'Type is undefined'
+    );
+  });
+
+  test('should return a valid DynamoDB query params object', () => {
+    return g
+      .getNodesWithType({ db: db(), table })({ type, gsik })
+      .then(params =>
+        expect(params).toEqual({
+          ExpressionAttributeNames: {
+            '#Data': 'Data',
+            '#GSIK': 'GSIK',
+            '#Node': 'Node',
+            '#Type': 'Type'
+          },
+          ExpressionAttributeValues: {
+            ':GSIK': gsik,
+            ':Type': type
+          },
+          IndexName: 'ByType',
+          KeyConditionExpression: '#GSIK = :GSIK AND #Type = :Type',
+          ProjectionExpression: '#Data,#Node',
+          TableName: 'ExampleTable'
+        })
+      );
   });
 });

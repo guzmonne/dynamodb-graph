@@ -8,6 +8,7 @@ var cuid = require('cuid');
 module.exports = {
   _hashCode: hashCode,
   _calculateGSIK: calculateGSIK,
+  __parseResponseItemsData: parseResponseItemsData,
   nodeItem,
   edgeItem,
   propertyItem,
@@ -16,11 +17,28 @@ module.exports = {
   createProperty,
   getNodeTypes,
   getNodeData,
+  getNodesWithType,
   createEdge
 };
 
 //=======
-
+/**
+ * Takes a DynamoDB response, and parses all the Data attibute of all its items.
+ * @param {DynamoDBResponse} response DynamoDB response object.
+ * @returns {DynamoDBResponse} DynamoDB response, with all its items Data parsed
+ */
+function parseResponseItemsData(response) {
+  response = Object.assign({}, response);
+  response.Items.forEach(item => {
+    if (item.Data) item.Data = JSON.parse(item.Data);
+  });
+  return response;
+}
+/**
+ * Applies the hashcode algorithm to turn a string into a number.
+ * @param {string} string - String to encode to a number.
+ * @returns {number} Encoded string
+ */
 function hashCode(string = '') {
   var hash = 0,
     i,
@@ -33,7 +51,6 @@ function hashCode(string = '') {
   }
   return hash;
 }
-
 /**
  * @param {number} n - Maximum random int.
  * @returns {number} Random number between 0 and n.
@@ -41,7 +58,6 @@ function hashCode(string = '') {
 function randomInt(n) {
   return Math.floor(Math.random() * n) + 1;
 }
-
 /**
  * Returns a random GSIK based on the tenant and a random number.
  * @property {string} tenant='' - Identifier of the current tenant.
@@ -299,16 +315,16 @@ function createEdge(options) {
  * @param {DBConfig} options - Database driver and table configuration.
  * @returns {function} Function ready to put Node on a DynamoDB table.
  * @param {object} config - Property configuration object.
- * @property {string} tenant='' - Identifier of the current tenant.
  * @property {string} type - Type to look for.
- * @property {number} gsik=1 - GSIK number to look in.
+ * @property {number} gsik - GSIK number to look in.
  * @returns {promise} With the data returned from the database.
  */
 function getNodesWithType(options) {
   var { db, table = process.env.TABLE_NAME } = options;
   return config => {
-    var { tenant = '', type, gsik = 1 } = config;
+    var { gsik, type } = config;
     if (!type) throw new Error('Type is undefined');
+    if (!gsik) throw new Error('GSIK is undefined');
     return db
       .query({
         TableName: table,
@@ -321,7 +337,7 @@ function getNodesWithType(options) {
           '#Node': 'Node'
         },
         ExpressionAttributeValues: {
-          ':GSIK': tenant + '#' + i.toString(),
+          ':GSIK': gsik,
           ':Type': type
         },
         ProjectionExpression: '#Data,#Node'
@@ -333,17 +349,13 @@ function getNodesWithType(options) {
 function getNodesByType(organizationId, type, depth) {
   depth || (depth = 0);
   var response = { Items: [], Count: 0, ScannedCount: 0 };
+  var getNodesWithTypePromise = getNodesWithType(options);
   return new Promise((resolve, reject) => {
     Rx.Observable.range(0, GSI_PARTITIONS)
       .mergeMap(i => {
-        return Rx.Observable.fromPromise(getNodesOfType);
+        return Rx.Observable.fromPromise(getNodesWithTypePromise(config));
       })
-      .map(response => {
-        response.Items.forEach(item => {
-          item.Data = JSON.parse(item.Data);
-        });
-        return response;
-      })
+      .map(parseResponseItems)
       .reduce(
         (acc, response) => ({
           Items: acc.Items.concat(response.Items),
