@@ -4,9 +4,10 @@ var Rx = require('rxjs/Rx');
 var getNodesWithTypeOnGSI = require('./getNodesWithTypeOnGSI.js');
 var { mergeDynamoResponses } = require('./modules/utils.js');
 /**
- * Factory function that returns a function that follows calls a GSI to retrieve
- * all the nodes that exist of the a given type. The maxGSIK is mandatory to
- * check all the possible GSIK where the types might be stored.
+ * Factory function that returns a function that retrieves
+ * all the nodes that exist for a given type.
+ * The maxGSIK is mandatory to check all the possible GSIK where the types
+ * might be stored.
  * The table name can be provided while calling the factory, or it can use an
  * environment variable called TABLE_NAME.
  * Gets all the nodes and edges type associated to a node.

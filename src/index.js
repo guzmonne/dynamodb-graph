@@ -12,20 +12,22 @@ var createProperty = require('./createProperty.js');
 var getNodesWithTypeOnGSI = require('./getNodesWithTypeOnGSI.js');
 var getNodesWithType = require('./getNodesWithType.js');
 var getNodeProperties = require('./getNodeProperties.js');
+var getNodesWithPropertiesByType = require('./getNodesWithPropertiesByType.js');
 //EXPORTS
 //=======
 
 module.exports = {
-  edgeItem,
-  propertyItem,
+  createEdge,
   createNode,
-  deleteNode,
   createProperty,
-  getNodeTypes,
+  edgeItem,
+  deleteNode,
   getNodeData,
+  getNodeTypes,
+  getNodesWithPropertiesByType,
   getNodesWithTypeOnGSI,
   getNodesWithType,
-  createEdge
+  propertyItem
 };
 
 // TYPE DEFINITIONS
