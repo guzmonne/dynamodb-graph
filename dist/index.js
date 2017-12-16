@@ -29,6 +29,12 @@ var fns = {
   getNodeTypes
 };
 
+var props = {
+  edgeItem,
+  nodeItem,
+  propertyItem
+};
+
 module.exports = function dynamodbGraoh(options = {}) {
   options.table || (options.table = process.env.TABLE_NAME);
 
@@ -43,10 +49,6 @@ module.exports = function dynamodbGraoh(options = {}) {
         }),
       {}
     ),
-    {
-      edgeItem,
-      nodeItem,
-      propertyItem
-    }
+    props
   );
 };
