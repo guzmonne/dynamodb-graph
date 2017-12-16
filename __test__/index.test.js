@@ -7,51 +7,6 @@ var utils = require('../src/modules/utils.js');
 
 var table = 'ExampleTable';
 
-describe('#edgeItem()', () => {
-  test('should return an EdgeItem', () => {
-    var node = cuid(),
-      target = cuid();
-    var actual = g.edgeItem({
-      node,
-      target,
-      type: 'Edge',
-      data: 'test'
-    });
-    expect(actual.Node).toEqual(node);
-    expect(actual.Target).toEqual(target);
-    expect(typeof actual.Data).toEqual('string');
-  });
-
-  var node = cuid();
-  var target = cuid();
-  var type = 'edge';
-  var data = 'test';
-
-  test('should throw an error if the type is not defined', () => {
-    expect(() => g.edgeItem({ node, target, data })).toThrow(
-      'Type is undefined'
-    );
-  });
-
-  test('should throw an error if the data is not defined', () => {
-    expect(() => g.edgeItem({ node, target, type })).toThrow(
-      'Data is undefined'
-    );
-  });
-
-  test('should throw an error if the node is not defined', () => {
-    expect(() => g.edgeItem({ target, type, data })).toThrow(
-      'Node is undefined'
-    );
-  });
-
-  test('should throw an error if the target is not defined', () => {
-    expect(() => g.edgeItem({ node, type, data })).toThrow(
-      'Target is undefined'
-    );
-  });
-});
-
 describe('#propertyItem()', () => {
   test('should return a PropertyItem', () => {
     var node = cuid();
