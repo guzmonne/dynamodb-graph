@@ -471,7 +471,7 @@ describe('#createEdge()', () => {
   });
 });
 
-describe('#getNodesWithType()', () => {
+describe('#getNodesWithTypeOnGSI()', () => {
   var type = 'Test';
   var node = cuid() + '#' + cuid();
   var gsik = g._calculateGSIK({ node });
@@ -481,24 +481,24 @@ describe('#getNodesWithType()', () => {
   });
 
   test('should return a function', () => {
-    expect(typeof g.getNodesWithType({ type, gsik })).toEqual('function');
+    expect(typeof g.getNodesWithTypeOnGSI({ type, gsik })).toEqual('function');
   });
 
   test('should fail if type is undefined', () => {
-    expect(() => g.getNodesWithType({ db, table })({ type })).toThrow(
+    expect(() => g.getNodesWithTypeOnGSI({ db, table })({ type })).toThrow(
       'GSIK is undefined'
     );
   });
 
   test('should fail if type is undefined', () => {
-    expect(() => g.getNodesWithType({ db, table })({ gsik })).toThrow(
+    expect(() => g.getNodesWithTypeOnGSI({ db, table })({ gsik })).toThrow(
       'Type is undefined'
     );
   });
 
   test('should return a valid DynamoDB query params object', () => {
     return g
-      .getNodesWithType({ db: db(), table })({ type, gsik })
+      .getNodesWithTypeOnGSI({ db: db(), table })({ type, gsik })
       .then(params =>
         expect(params).toEqual({
           ExpressionAttributeNames: {
@@ -526,33 +526,94 @@ describe('#getNodesWithType()', () => {
       })
     };
     return g
-      .getNodesWithType({ db: database, table })({ type: 1, gsik: 2 })
+      .getNodesWithTypeOnGSI({ db: database, table })({ type: 1, gsik: 2 })
       .then(response => {
         expect(response).toEqual(dynamoResponse.parsed());
       });
   });
 });
 
-var dynamoResponse = {
-  raw: () => ({
-    Items: [
-      {
-        Data: JSON.stringify(1)
-      },
-      {
-        Data: JSON.stringify('string')
-      },
-      {
-        Data: JSON.stringify(true)
-      },
-      {
-        Data: JSON.stringify([1, 'string', true])
-      },
-      {
-        Data: JSON.stringify({ key: 'value' })
+describe('#getNodesWithType()', () => {
+  var type = 'Testing';
+  var tenant = cuid();
+  var maxGSIK = 3;
+
+  var db = () => ({
+    query: params => ({
+      promise: () => {
+        var gsik = params.ExpressionAttributeValues[':GSIK'];
+        if (gsik === tenant + '#' + 0)
+          return Promise.resolve(dynamoResponse.raw({ Items: [{ Data: 1 }] }));
+        if (gsik === tenant + '#' + 1)
+          return Promise.resolve(dynamoResponse.raw({ Items: [{ Data: 2 }] }));
+        if (gsik === tenant + '#' + 2)
+          return Promise.resolve(dynamoResponse.raw({ Items: [{ Data: 3 }] }));
+        return Promise.resolve();
       }
-    ]
-  }),
+    })
+  });
+
+  test('should return a function', () => {
+    expect(typeof g.getNodesWithType({ tenant, type })).toEqual('function');
+  });
+
+  test('should return an error if maxGSIK is undefined', () => {
+    return g
+      .getNodesWithType({ db: db(), table })({ tenant, type })
+      .catch(error => expect(error.message).toEqual('Max GSIK is undefined'));
+  });
+
+  test('should return an error if type is undefined', () => {
+    return g
+      .getNodesWithType({ db: db(), table })({ tenant, maxGSIK })
+      .catch(error => expect(error.message).toEqual('Type is undefined'));
+  });
+
+  test('should return a response object with all nodes', () => {
+    return g
+      .getNodesWithType({ db: db(), table })({ tenant, type, maxGSIK })
+      .then(response => {
+        expect(response).toEqual({
+          Count: 3,
+          Items: [{ Data: 1 }, { Data: 2 }, { Data: 3 }],
+          ScannedCount: 30
+        });
+      })
+      .catch(error => expect(error).toEqual(null));
+  });
+});
+
+var dynamoResponse = {
+  raw: response => {
+    if (response && response.Items) {
+      response = Object.assign({}, response);
+      response.Items.forEach(item => {
+        if (item.Data) item.Data = JSON.stringify(item.Data);
+      });
+      response.Count = response.Items.length;
+      response.ScannedCount = response.Items.length * 10;
+      return response;
+    }
+    return {
+      Items: [
+        {
+          Data: JSON.stringify(1)
+        },
+        {
+          Data: JSON.stringify('string')
+        },
+        {
+          Data: JSON.stringify(true)
+        },
+        {
+          Data: JSON.stringify([1, 'string', true])
+        },
+        {
+          Data: JSON.stringify({ key: 'value' })
+        }
+      ]
+    };
+  },
   parsed: () => ({
     Items: [
       {
