@@ -9,7 +9,7 @@ var Rx = require('rxjs/Rx');
 module.exports = {
   _hashCode: hashCode,
   _calculateGSIK: calculateGSIK,
-  __parseResponseItemsData: parseResponseItemsData,
+  _parseResponseItemsData: parseResponseItemsData,
   nodeItem,
   edgeItem,
   propertyItem,
