@@ -1,14 +1,5 @@
 'use strict';
 
-var cuid = require('cuid');
-var Rx = require('rxjs/Rx');
-var {
-  randomMac,
-  hashCode,
-  calculateGSIK,
-  parseResponseItemsData,
-  mergeDynamoResponses
-} = require('./modules/utils.js');
 var nodeItem = require('./nodeItem.js');
 var edgeItem = require('./edgeItem.js');
 var propertyItem = require('./propertyItem.js');
@@ -20,6 +11,7 @@ var createEdge = require('./createEdge.js');
 var createProperty = require('./createProperty.js');
 var getNodesWithTypeOnGSI = require('./getNodesWithTypeOnGSI.js');
 var getNodesWithType = require('./getNodesWithType.js');
+var getNodeProperties = require('./getNodeProperties.js');
 //EXPORTS
 //=======
 
@@ -35,56 +27,6 @@ module.exports = {
   getNodesWithType,
   createEdge
 };
-
-//=======
-
-function getNodesByType__(organizationId, type, depth) {
-  depth || (depth = 0);
-  var response = { Items: [], Count: 0, ScannedCount: 0 };
-  var getNodesWithTypePromise = getNodesWithType(options);
-  return new Promise((resolve, reject) => {
-    Rx.Observable.range(0, GSI_PARTITIONS)
-      .mergeMap(i => Rx.Observable.fromPromise(getNodesWithTypePromise(config)))
-      .reduce(mergeDynamoResponses)
-      .mergeMap(result => {
-        if (depth > 0) {
-          return Rx.Observable.from(result.Items.map(item => item.Node))
-            .mergeMap(node =>
-              Rx.Observable.fromPromise(
-                db
-                  .query({
-                    TableName: TABLE_NAME,
-                    KeyConditionExpression: `#Node = :Node`,
-                    ExpressionAttributeNames: {
-                      '#Node': 'Node',
-                      '#Target': 'Target'
-                    },
-                    ExpressionAttributeValues: {
-                      ':Node': node
-                    },
-                    FilterExpression: '#Target <> :Node'
-                  })
-                  .promise()
-              ).map(response => {
-                var current = result.Items.find(item => {
-                  return item.Node === node;
-                });
-                response.Items.forEach(item => {
-                  current[item.Type] = JSON.parse(item.Data);
-                });
-                return current;
-              })
-            )
-            .reduce(acc => acc, result);
-        }
-        return Rx.Observable.of(result);
-      })
-      .subscribe({
-        next: resolve,
-        error: reject
-      });
-  });
-}
 
 // TYPE DEFINITIONS
 // ================
