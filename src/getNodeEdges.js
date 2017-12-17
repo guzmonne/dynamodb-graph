@@ -31,7 +31,7 @@ module.exports = function getNodeData(options) {
           ':Node': node
         },
         FilterExpression: '#Target <> :Node',
-        ProjectionExpression: '#Type, #Data'
+        ProjectionExpression: '#Type, #Data, #Target'
       })
       .promise()
       .then(parseResponseItemsData);

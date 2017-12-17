@@ -37,7 +37,7 @@ describe('#getNodeEdges()', () => {
         ExpressionAttributeValues: { ':Node': node },
         FilterExpression: '#Target <> :Node',
         KeyConditionExpression: '#Node = :Node',
-        ProjectionExpression: '#Type, #Data',
+        ProjectionExpression: '#Type, #Data, #Target',
         TableName: table
       });
       done();
