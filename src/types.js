@@ -39,9 +39,6 @@
  * @typedef {Object} EdgeItemConfig
  * @property {string} tenant='' - Identifier of the current tenant.
  * @property {string} type - Node type.
- * @property {any}    data - Main data of the node. Will be encoded so it
- *                           maintains its type even though it is stored as
- *                           a string.
  * @property {string} node - Existing node reference. Will be created if it
  *                           is not provided.
  * @property {string} target - Existing node reference. Will be created if it
