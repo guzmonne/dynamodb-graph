@@ -21,6 +21,7 @@ var fns = {
   createEdge,
   createNode,
   createProperty,
+  createProperties,
   deleteNode,
   getNodeData,
   getNodeProperties,
