@@ -40,15 +40,15 @@ module.exports = function getNodesWithPropertiesByType(options) {
         .switchMap(result =>
           Rx.Observable.from(result.Items.map(item => item.Node))
             .mergeMap(node =>
-              Rx.Observable.fromPromise(getNodePropertiesPromise(node))
-                .map(response => {
+              Rx.Observable.fromPromise(getNodePropertiesPromise(node)).map(
+                response => {
                   var current = result.Items.find(item => item.Node === node);
                   response.Items.forEach(item => {
                     current[item.Type] = JSON.parse(item.Data);
                   });
                   return current;
-                })
-                .do(x => console.log(x))
+                }
+              )
             )
             .reduce(() => result)
         )
