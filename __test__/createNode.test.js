@@ -32,7 +32,8 @@ describe('#createNode()', () => {
           Type: type,
           Data: JSON.stringify(data),
           Target: node,
-          GSIK: utils.calculateGSIK({ node })
+          GSIK: utils.calculateGSIK({ node }),
+          MaxGSIK: 0
         }
       });
       done();
