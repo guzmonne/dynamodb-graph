@@ -12,11 +12,11 @@ var utils = require('./modules/utils.js');
  * @returns {EdgeItem} Node item object.
  */
 module.exports = function propertyItem(config) {
-  var { tenant = '', node, type, data, gsik, maxGSIK } = config;
+  var { tenant = '', node, type, data, maxGSIK } = config;
 
   if (!node) throw new Error('Node is undefined');
   if (!type) throw new Error('Type is undefined');
-  if (!data) throw new Error('Data is undefined');
+  if (data === undefined) throw new Error('Data is undefined');
 
   return {
     Node: node,
