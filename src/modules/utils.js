@@ -81,7 +81,7 @@ function randomInt(n) {
  * @param {object} config - GSIK configuration object.
  * @property {string} node - Identifier of the Node.
  * @property {string} tenant='' - Identifier of the current tenant.
- * @property {number} n - Maximum GSIK value.
+ * @property {number} maxGSIK - Maximum GSIK value.
  * @returns {number} Random number between 0 and n.
  */
 function calculateGSIK(config = {}) {
