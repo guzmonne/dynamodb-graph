@@ -22,8 +22,8 @@
  */
 
 /**
+ * NodeItem configuration object.
  * @typedef {Object} NodeItemConfig
- * @description NodeItem configuration object.
  * @property {string} tenant='' - Identifier of the current tenant.
  * @property {string} type - Node type.
  * @property {any}    data - Main data of the node. Will be encoded so it
@@ -35,8 +35,8 @@
  */
 
 /**
+ * EdgeItem configuration object.
  * @typedef {Object} EdgeItemConfig
- * @description EdgeItem configuration object.
  * @property {string} tenant='' - Identifier of the current tenant.
  * @property {string} type - Node type.
  * @property {any}    data - Main data of the node. Will be encoded so it
@@ -50,8 +50,8 @@
  */
 
 /**
+ * EdgeItem configuration object.
  * @typedef {Object} PropertyItemConfig
- * @description EdgeItem configuration object.
  * @property {string} tenant='' - Identifier of the current tenant.
  * @property {string} type - Node type.
  * @property {any}    data - Main data of the node. Will be encoded so it
@@ -63,16 +63,22 @@
  */
 
 /**
+ * Database driver and table configuration.
  * @typedef {Object} DBConfig
- * @description Database driver and table configuration.
  * @property {object} db - DynamoDB put interface compatible object.
  * @property {string} table=TABLE_NAME - Name of the DynamoDB table to use.
  */
 
 /**
+ * DynamoDB Response Object.
  * @typedef {Object} DynamoDBResponse
- * @description DynamoDB Response Object.
  * @property {number} Count - Number of items found.
  * @property {number} ScannedCount - Number of items analyzed.
  * @property {object[]} Items - Items results.
+ */
+
+/**
+ * @typedef {Array} Property
+ * @property {string} type - Type of the property.
+ * @property {any} data - Data of the property
  */

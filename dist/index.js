@@ -8,6 +8,7 @@ var getNodeTypes = require('../src/getNodeTypes.js');
 var getNodeData = require('../src/getNodeData.js');
 var deleteNode = require('../src/deleteNode.js');
 var createEdge = require('../src/createEdge.js');
+var createProperties = require('../src/createProperties.js');
 var createProperty = require('../src/createProperty.js');
 var getNodesWithTypeOnGSI = require('../src/getNodesWithTypeOnGSI.js');
 var getNodesWithType = require('../src/getNodesWithType.js');
