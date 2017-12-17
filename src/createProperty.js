@@ -15,11 +15,14 @@ var propertyItem = require('./propertyItem.js');
  */
 module.exports = function createProperty(options) {
   var { db, table = process.env.TABLE_NAME } = options;
-  return config =>
-    db
+  return config => {
+    var item = propertyItem(config);
+    return db
       .put({
         TableName: table,
-        Item: propertyItem(config)
+        Item: item
       })
-      .promise();
+      .promise()
+      .then(response => Object.assign(response, { Item: item }));
+  };
 };

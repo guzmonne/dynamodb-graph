@@ -22,12 +22,14 @@ module.exports = function createEdge(options) {
       if (response.Items.length === 0)
         throw new Error(`Empty data for Node ${node}`);
       config.data = response.Items[0].Data;
+      var item = edgeItem(config);
       return db
         .put({
           TableName: table,
-          Item: edgeItem(config)
+          Item: item
         })
-        .promise();
+        .promise()
+        .then(response => Object.assign(response, { Item: item }));
     });
   };
 };

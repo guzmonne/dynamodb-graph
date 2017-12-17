@@ -15,11 +15,14 @@ var nodeItem = require('./nodeItem.js');
  */
 module.exports = function createNode(options) {
   var { db, table = process.env.TABLE_NAME } = options;
-  return config =>
-    db
+  return config => {
+    var item = nodeItem(config);
+    return db
       .put({
         TableName: table,
         Item: nodeItem(config)
       })
-      .promise();
+      .promise()
+      .then(response => Object.assign(response, { Item: item }));
+  };
 };
