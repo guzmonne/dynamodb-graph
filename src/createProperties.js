@@ -24,8 +24,7 @@ module.exports = function createProperties(options) {
   return config => {
     var { tenant = '', node, maxGSIK, properties } = config;
 
-    if (!node) throw new Error('Node its undefined');
-    if (!maxGSIK) throw new Error('Max GSIK is undefined');
+    if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
     if (!properties || !properties.length)
       throw new Error('Properties is undefined');
 

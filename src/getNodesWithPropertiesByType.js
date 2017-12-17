@@ -26,7 +26,7 @@ module.exports = function getNodesWithPropertiesByType(options) {
   return config => {
     return new Promise((resolve, reject) => {
       var { maxGSIK, tenant, type } = config;
-      if (!maxGSIK) throw new Error('Max GSIK is undefined');
+      if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
       var getNodesWithTypeOnGSIPromise = getNodesWithTypeOnGSI(options);
       var getNodePropertiesPromise = getNodeProperties(options);
       Rx.Observable.range(0, maxGSIK)
