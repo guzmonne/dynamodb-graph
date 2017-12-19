@@ -45,9 +45,9 @@ describe('#_calculateGSIK()', () => {
     expect(typeof utils.calculateGSIK({ tenant, node })).toEqual('string');
   });
 
-  test('should end with #1 if the maxGSIK value is undefined or less than 2', () => {
-    expect(utils.calculateGSIK({ tenant, node }).indexOf('#1') > -1).toBe(true);
-    expect(utils.calculateGSIK({ tenant, node }).indexOf('#1') > -1).toBe(true);
+  test('should end with #0 if the maxGSIK value is undefined or less than 2', () => {
+    expect(utils.calculateGSIK({ tenant, node }).indexOf('#0') > -1).toBe(true);
+    expect(utils.calculateGSIK({ tenant, node }).indexOf('#0') > -1).toBe(true);
   });
 
   test('should end with a # plus a number between 0 and maxGSIK', () => {
