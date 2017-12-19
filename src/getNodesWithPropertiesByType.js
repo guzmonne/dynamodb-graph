@@ -60,6 +60,8 @@ module.exports = function getNodesWithPropertiesByType(options) {
   };
 };
 
+////parseResponseItemsData
+
 function getNodesByType__(organizationId, type, depth) {
   depth || (depth = 0);
   var response = { Items: [], Count: 0, ScannedCount: 0 };

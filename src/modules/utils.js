@@ -47,7 +47,7 @@ function parseResponseItemsData(response) {
   if (response && response.Items) {
     response = Object.assign({}, response);
     response.Items.forEach(item => {
-      if (item.Data) item.Data = JSON.parse(item.Data);
+      if (item.Data !== undefined) item.Data = JSON.parse(item.Data);
     });
   }
   return response;
@@ -87,6 +87,6 @@ function randomInt(n) {
 function calculateGSIK(config = {}) {
   var { tenant = '', node, maxGSIK = 0 } = config;
   if (!node) throw new Error('Node is undefined');
-  if (maxGSIK < 2) return node + '#' + 1;
+  if (maxGSIK < 2) return node + '#' + 0;
   return node + '#' + Math.abs(hashCode(node)) % maxGSIK;
 }
