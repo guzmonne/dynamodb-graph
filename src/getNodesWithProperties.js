@@ -21,7 +21,7 @@ var { mergeDynamoResponses } = require('./modules/utils.js');
  * @property {number} maxGSIK - GSIK number to look in.
  * @returns {promise} With the data returned from the database.
  */
-module.exports = function getNodesWithPropertiesByType(options) {
+module.exports = function getNodesWithProperties(options) {
   var { db, table = process.env.TABLE_NAME } = options;
   return config => {
     return new Promise((resolve, reject) => {

@@ -2,13 +2,13 @@
 'use strict';
 
 var cuid = require('cuid');
-var getNodesWithPropertiesByType = require('../src/getNodesWithPropertiesByType.js');
+var getNodesWithProperties = require('../src/getNodesWithProperties.js');
 var utils = require('../src/modules/utils.js');
 var dynamoResponse = require('./dynamoResponse.js');
 
 var table = 'ExampleTable';
 
-describe('#getNodesWithPropertiesByType()', () => {
+describe('#getNodesWithProperties()', () => {
   var type = 'Testing';
   var tenant = cuid();
   var maxGSIK = 3;
@@ -45,13 +45,11 @@ describe('#getNodesWithPropertiesByType()', () => {
   });
 
   test('should return a function', () => {
-    expect(typeof getNodesWithPropertiesByType({ tenant, type })).toEqual(
-      'function'
-    );
+    expect(typeof getNodesWithProperties({ tenant, type })).toEqual('function');
   });
 
   test('should return an error if maxGSIK is undefined', () => {
-    return getNodesWithPropertiesByType({ db: db(), table })({
+    return getNodesWithProperties({ db: db(), table })({
       tenant,
       type
     })
@@ -60,14 +58,14 @@ describe('#getNodesWithPropertiesByType()', () => {
   });
 
   test('should return an error if type is undefined', () => {
-    return getNodesWithPropertiesByType({ db: db(), table })({
+    return getNodesWithProperties({ db: db(), table })({
       tenant,
       maxGSIK
     }).catch(error => expect(error.message).toEqual('Type is undefined'));
   });
 
   test('should return a response object with all nodes', () => {
-    return getNodesWithPropertiesByType({ db: db(), table })({
+    return getNodesWithProperties({ db: db(), table })({
       tenant,
       type,
       maxGSIK
