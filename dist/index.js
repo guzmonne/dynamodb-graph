@@ -10,7 +10,9 @@ var getNode = require('../src/getNode.js');
 var getNodeData = require('../src/getNodeData.js');
 var getNodeEdges = require('../src/getNodeEdges.js');
 var getNodeProperties = require('../src/getNodeProperties.js');
-var getNodesWithPropertiesByType = require('../src/getNodesWithPropertiesByType.js');
+var getNodePropertiesAndEdges = require('../src/getNodePropertiesAndEdges.js');
+var getNodesWithProperties = require('../src/getNodesWithProperties.js');
+var getNodesWithPropertiesAndEdges = require('../src/getNodesWithPropertiesAndEdges.js');
 var getNodesWithType = require('../src/getNodesWithType.js');
 var getNodesWithTypeOnGSI = require('../src/getNodesWithTypeOnGSI.js');
 var getNodeTypes = require('../src/getNodeTypes.js');
@@ -29,7 +31,9 @@ var fns = {
   getNodeData,
   getNodeEdges,
   getNodeProperties,
-  getNodesWithPropertiesByType,
+  getNodePropertiesAndEdges,
+  getNodesWithProperties,
+  getNodesWithPropertiesAndEdges,
   getNodesWithType,
   getNodesWithTypeOnGSI,
   getNodeTypes
