@@ -6,6 +6,7 @@ var createNode = require('../src/createNode.js');
 var createProperties = require('../src/createProperties.js');
 var createProperty = require('../src/createProperty.js');
 var deleteNode = require('../src/deleteNode.js');
+var deletePropertyOrEdge = require('../src/deletePropertyOrEdge.js');
 var edgeItem = require('../src/edgeItem.js');
 var getNode = require('../src/getNode.js');
 var getNodeData = require('../src/getNodeData.js');
@@ -29,6 +30,7 @@ var fns = {
   createProperty,
   createProperties,
   deleteNode,
+  deletePropertyOrEdge,
   getNode,
   getNodeData,
   getNodeEdges,
