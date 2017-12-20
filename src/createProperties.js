@@ -25,16 +25,23 @@ module.exports = function createProperties(options) {
     var { tenant = '', node, maxGSIK, properties } = config;
 
     if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
+    if (node === undefined) throw new Error('Node is undefined');
     if (!properties || !properties.length)
-      throw new Error('Properties is undefined');
+      throw new Error('Properties is undefined or not a list.');
 
     var promises = chunk(properties, 25).map(propertiesChunk =>
       db
         .batchWrite({
           RequestItems: {
-            [table]: propertiesChunk.map(([type, data]) => ({
+            [table]: propertiesChunk.map(property => ({
               PutRequest: {
-                Item: propertyItem({ tenant, node, type, data, maxGSIK })
+                Item: propertyItem({
+                  tenant,
+                  node,
+                  type: property.Type,
+                  data: property.Data,
+                  maxGSIK
+                })
               }
             }))
           }

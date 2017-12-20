@@ -75,7 +75,7 @@
  */
 
 /**
- * @typedef {Array} Property
- * @property {string} type - Type of the property.
- * @property {any} data - Data of the property
+ * @typedef {Object} Property
+ * @property {string} Type - Type of the property.
+ * @property {any} Data - Data of the property
  */
