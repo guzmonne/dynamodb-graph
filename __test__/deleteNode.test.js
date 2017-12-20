@@ -7,7 +7,12 @@ var table = 'ExampleTable';
 
 describe('#deleteNode()', () => {
   var response = {
-    Items: [{ Type: 'Edge1' }, { Type: 'Edge2' }]
+    Items: [
+      { Type: 'Node' },
+      { Type: 'Prop' },
+      { Type: 'Edge1' },
+      { Type: 'Edge2' }
+    ]
   };
   var db = function() {
     return {
@@ -24,6 +29,20 @@ describe('#deleteNode()', () => {
     var node = cuid();
     deleteNode({ db: db(), table })(node).then(params => {
       expect(params).toEqual([
+        {
+          TableName: table,
+          Key: {
+            Node: node,
+            Type: 'Node'
+          }
+        },
+        {
+          TableName: table,
+          Key: {
+            Node: node,
+            Type: 'Prop'
+          }
+        },
         {
           TableName: table,
           Key: {

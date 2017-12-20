@@ -15,9 +15,8 @@ var getNodeTypes = require('./getNodeTypes.js');
  */
 module.exports = function deleteNode(options) {
   var { db, table = process.env.TABLE_NAME } = options;
-  var getNodeTypesPromise = getNodeTypes(options);
   return node =>
-    getNodeTypesPromise(node).then(response =>
+    getNodeTypes(options)(node).then(response =>
       Promise.all(
         response.Items.map(item =>
           db
