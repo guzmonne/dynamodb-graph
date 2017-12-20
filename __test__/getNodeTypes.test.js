@@ -50,12 +50,21 @@ describe('#getNodeTypes()', () => {
   test('should return the response parsed', () => {
     var database = {
       query: params => ({
-        promise: () => Promise.resolve(dynamoResponse.raw())
+        promise: () =>
+          Promise.resolve(
+            dynamoResponse.raw({
+              Items: [{ Type: 'Type 1' }, { Type: 'Type 2' }]
+            })
+          )
       })
     };
     return getNodeTypes({ db: database, table })({ type: 1, gsik: 2 }).then(
       response => {
-        expect(response).toEqual(dynamoResponse.parsed());
+        expect(response).toEqual({
+          Count: 2,
+          ScannedCount: 20,
+          Items: [{ Type: 'Type 1' }, { Type: 'Type 2' }]
+        });
       }
     );
   });

@@ -1,7 +1,7 @@
 'use strict';
 
 var Rx = require('rxjs/Rx');
-var getNodesWithTypeOnGSI = require('./getNodesWithTypeOnGSI.js');
+var getNodesByGSIK = require('./getNodesByGSIK.js');
 var { mergeDynamoResponses } = require('./modules/utils.js');
 /**
  * Factory function that returns a function that retrieves
@@ -19,16 +19,16 @@ var { mergeDynamoResponses } = require('./modules/utils.js');
  * @property {number} maxGSIK - GSIK number to look in.
  * @returns {promise} With the data returned from the database.
  */
-module.exports = function getNodesWithType(options) {
+module.exports = function getNodes(options) {
   return config => {
     return new Promise((resolve, reject) => {
       var { tenant, type, maxGSIK } = config;
       if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
-      var getNodesWithTypePromise = getNodesWithTypeOnGSI(options);
+      var getNodesPromise = getNodesByGSIK(options);
       Rx.Observable.range(0, maxGSIK)
         .map(i => tenant + '#' + i)
         .mergeMap(gsik =>
-          Rx.Observable.fromPromise(getNodesWithTypePromise({ gsik, type }))
+          Rx.Observable.fromPromise(getNodesPromise({ gsik, type }))
         )
         .reduce(mergeDynamoResponses)
         .subscribe({

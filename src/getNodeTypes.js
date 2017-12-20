@@ -31,7 +31,6 @@ module.exports = function getNodeTypes(options) {
         },
         ProjectionExpression: '#Type'
       })
-      .promise()
-      .then(parseResponseItemsData);
+      .promise();
   };
 };

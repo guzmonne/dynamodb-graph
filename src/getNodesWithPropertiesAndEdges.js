@@ -1,7 +1,7 @@
 'use strict';
 
 var Rx = require('rxjs/Rx');
-var getNodesWithTypeOnGSI = require('./getNodesWithTypeOnGSI.js');
+var getNodesByGSIK = require('./getNodesByGSIK.js');
 var getNodePropertiesAndEdges = require('./getNodePropertiesAndEdges.js');
 var { mergeDynamoResponses } = require('./modules/utils.js');
 
@@ -32,17 +32,13 @@ module.exports = function getNodesWithPropertiesAndEdges(options) {
       if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
       if (type === undefined) throw new Error('Type is undefined');
 
-      var getNodesWithTypeOnGSI$$ = getNodesWithTypeOnGSI$(
-        tenant,
-        type,
-        options
-      );
+      var getNodesByGSIK$$ = getNodesByGSIK$(tenant, type, options);
 
       var getNodePropertiesAndEdges$$ = getNodePropertiesAndEdges$(options);
 
       Rx.Observable.range(0, maxGSIK)
         .map(toGSIK(tenant))
-        .mergeMap(getNodesWithTypeOnGSI$$)
+        .mergeMap(getNodesByGSIK$$)
         .mergeMap(response =>
           Rx.Observable.from(response.Items)
             .mergeMap(item => {
@@ -64,11 +60,9 @@ module.exports = function getNodesWithPropertiesAndEdges(options) {
     });
 };
 
-function getNodesWithTypeOnGSI$(tenant, type, options) {
+function getNodesByGSIK$(tenant, type, options) {
   return gsik =>
-    Rx.Observable.fromPromise(
-      getNodesWithTypeOnGSI(options)({ gsik, tenant, type })
-    );
+    Rx.Observable.fromPromise(getNodesByGSIK(options)({ gsik, tenant, type }));
 }
 
 function getNodePropertiesAndEdges$(options) {

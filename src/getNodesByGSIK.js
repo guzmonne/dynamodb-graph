@@ -16,7 +16,7 @@ var { parseResponseItemsData } = require('./modules/utils.js');
  * @property {number} gsik - GSIK number to look in.
  * @returns {promise} With the data returned from the database.
  */
-module.exports = function getNodesWithTypeOnGSI(options) {
+module.exports = function getNodesByGSIK(options) {
   var { db, table = process.env.TABLE_NAME } = options;
   return (config = {}) => {
     var { gsik, type } = config;
