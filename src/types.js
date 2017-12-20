@@ -79,3 +79,10 @@
  * @property {string} Type - Type of the property.
  * @property {any} Data - Data of the property
  */
+
+/**
+ * @typedef {Object} Edge
+ * @property {string} Target - Target of the edge.
+ * @property {string} Type - Type of the property.
+ * @property {any} Data - Data of the property
+ */

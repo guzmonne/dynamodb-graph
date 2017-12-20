@@ -86,7 +86,7 @@ function randomInt(n) {
  */
 function calculateGSIK(config = {}) {
   var { tenant = '', node, maxGSIK = 0 } = config;
-  if (!node) throw new Error('Node is undefined');
+  if (node === undefined) throw new Error('Node is undefined');
   if (maxGSIK < 2) return node + '#' + 0;
   return node + '#' + Math.abs(hashCode(node)) % maxGSIK;
 }

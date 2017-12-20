@@ -1,6 +1,7 @@
 'use strict';
 
 var createEdge = require('../src/createEdge.js');
+var createEdges = require('../src/createEdges.js');
 var createNode = require('../src/createNode.js');
 var createProperties = require('../src/createProperties.js');
 var createProperty = require('../src/createProperty.js');
@@ -23,6 +24,7 @@ var propertyItem = require('../src/propertyItem.js');
 //=======
 var fns = {
   createEdge,
+  createEdges,
   createNode,
   createProperty,
   createProperties,

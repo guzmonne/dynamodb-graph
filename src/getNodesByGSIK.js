@@ -20,7 +20,7 @@ module.exports = function getNodesByGSIK(options) {
   var { db, table = process.env.TABLE_NAME } = options;
   return (config = {}) => {
     var { gsik, type } = config;
-    if (!type) throw new Error('Type is undefined');
+    if (type === undefined) throw new Error('Type is undefined');
     if (!gsik) throw new Error('GSIK is undefined');
     return db
       .query({

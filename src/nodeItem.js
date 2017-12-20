@@ -20,8 +20,8 @@ var utils = require('./modules/utils.js');
 module.exports = function nodeItem(config) {
   var { tenant = '', type, data, node, maxGSIK } = config;
 
-  if (!type) throw new Error('Type is undefined');
-  if (!data) throw new Error('Data is undefined');
+  if (type === undefined) throw new Error('Type is undefined');
+  if (data === undefined) throw new Error('Data is undefined');
 
   if (!node) node = tenant + '#' + cuid();
 

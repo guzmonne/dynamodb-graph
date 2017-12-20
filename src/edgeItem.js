@@ -14,10 +14,10 @@ var utils = require('./modules/utils.js');
 module.exports = function edgeItem(config) {
   var { tenant = '', node, target, type, data, maxGSIK } = config;
 
-  if (!node) throw new Error('Node is undefined');
-  if (!target) throw new Error('Target is undefined');
-  if (!type) throw new Error('Type is undefined');
-  if (!data) throw new Error('Data is undefined');
+  if (node === undefined) throw new Error('Node is undefined');
+  if (target === undefined) throw new Error('Target is undefined');
+  if (type === undefined) throw new Error('Type is undefined');
+  if (data === undefined) throw new Error('Data is undefined');
 
   return {
     Node: node,
