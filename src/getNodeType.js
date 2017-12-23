@@ -26,6 +26,11 @@ module.exports = function getNodeType(options) {
           Node: node,
           Type: type
         },
+        ExpressionAttributeNames: {
+          '#Node': 'Node',
+          '#Type': 'Type',
+          '#Data': 'Data'
+        },
         ProjectionExpression: '#Node, #Type, #Data'
       })
       .promise()
