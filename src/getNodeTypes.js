@@ -39,7 +39,8 @@ module.exports = function getNodeTypes(options) {
         ExpressionAttributeNames: {
           '#Node': 'Node',
           '#Type': 'Type',
-          '#Target': 'Target'
+          '#Target': 'Target',
+          '#Data': 'Data'
         },
         ExpressionAttributeValues: expressionAttributeValues,
         ProjectionExpression: '#Type, #Data, #Target'
