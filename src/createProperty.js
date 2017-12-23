@@ -1,6 +1,7 @@
 'use strict';
 
 var propertyItem = require('./propertyItem.js');
+var { parseResponseItemsData } = require('./modules/utils.js');
 
 /**
  * Factory function that returns a function that follows the DynamoDB put
@@ -23,6 +24,7 @@ module.exports = function createProperty(options) {
         Item: item
       })
       .promise()
-      .then(response => Object.assign(response, { Item: item }));
+      .then(response => Object.assign(response, { Item: item }))
+      .then(parseResponseItemsData);
   };
 };

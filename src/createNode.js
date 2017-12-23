@@ -2,6 +2,7 @@
 
 var cuid = require('cuid');
 var nodeItem = require('./nodeItem.js');
+var { parseResponseItemsData } = require('./modules/utils.js');
 
 /**
  * Factory function that returns a function that follow the DynamoDB put
@@ -23,6 +24,7 @@ module.exports = function createNode(options) {
         Item: nodeItem(config)
       })
       .promise()
-      .then(response => Object.assign(response, { Item: item }));
+      .then(response => Object.assign(response, { Item: item }))
+      .then(parseResponseItemsData);
   };
 };

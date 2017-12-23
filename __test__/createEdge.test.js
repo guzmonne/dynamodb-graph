@@ -53,7 +53,7 @@ describe('#createEdge()', () => {
         Item: {
           Node: node,
           Type: type,
-          Data: JSON.stringify('Test'),
+          Data: 'Test',
           Target: target,
           GSIK: utils.calculateGSIK({ node })
         }

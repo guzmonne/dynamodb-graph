@@ -30,7 +30,7 @@ describe('#createNode()', () => {
         Item: {
           Node: node,
           Type: type,
-          Data: JSON.stringify(data),
+          Data: data,
           Target: node,
           GSIK: utils.calculateGSIK({ node })
         }

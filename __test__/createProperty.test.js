@@ -28,7 +28,7 @@ describe('#createProperty()', () => {
         Item: {
           Node: node,
           Type: type,
-          Data: JSON.stringify(data),
+          Data: data,
           GSIK: utils.calculateGSIK({ node })
         }
       });
