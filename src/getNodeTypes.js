@@ -38,7 +38,8 @@ module.exports = function getNodeTypes(options) {
         KeyConditionExpression: keyConditionExpression,
         ExpressionAttributeNames: {
           '#Node': 'Node',
-          '#Type': 'Type'
+          '#Type': 'Type',
+          '#Target': 'Target'
         },
         ExpressionAttributeValues: expressionAttributeValues,
         ProjectionExpression: '#Type, #Data, #Target'
