@@ -50,6 +50,10 @@ function parseResponseItemsData(response) {
       if (item.Data !== undefined) item.Data = JSON.parse(item.Data);
     });
   }
+  if (response && response.Item) {
+    if (response.Item.Data !== undefined)
+      response.Item.Data = JSON.parse(response.Item.Data);
+  }
   return response;
 }
 /**
