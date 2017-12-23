@@ -18,6 +18,7 @@ var getNodesWithPropertiesAndEdges = require('../src/getNodesWithPropertiesAndEd
 var getNodes = require('../src/getNodes.js');
 var getNodesByGSIK = require('../src/getNodesByGSIK.js');
 var getNodeTypes = require('../src/getNodeTypes.js');
+var getProperty = require('../src/getProperty.js');
 var nodeItem = require('../src/nodeItem.js');
 var propertyItem = require('../src/propertyItem.js');
 
@@ -40,7 +41,8 @@ var fns = {
   getNodesWithPropertiesAndEdges,
   getNodes,
   getNodesByGSIK,
-  getNodeTypes
+  getNodeTypes,
+  getProperty
 };
 
 var props = {

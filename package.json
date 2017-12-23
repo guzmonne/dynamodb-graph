@@ -20,6 +20,7 @@
     "test": "jest --watch"
   },
   "devDependencies": {
-    "jest": "^21.2.1"
+    "jest": "^21.2.1",
+    "sinon": "^4.1.3"
   }
 }
