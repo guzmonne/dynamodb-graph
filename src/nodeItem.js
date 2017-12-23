@@ -30,7 +30,6 @@ module.exports = function nodeItem(config) {
     Type: type,
     Data: JSON.stringify(data),
     Target: node,
-    GSIK: utils.calculateGSIK({ node, tenant, maxGSIK }),
-    MaxGSIK: maxGSIK
+    GSIK: utils.calculateGSIK({ node, tenant, maxGSIK })
   };
 };
