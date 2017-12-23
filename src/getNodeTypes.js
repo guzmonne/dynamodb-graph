@@ -43,6 +43,7 @@ module.exports = function getNodeTypes(options) {
         ExpressionAttributeValues: expressionAttributeValues,
         ProjectionExpression: '#Type'
       })
-      .promise();
+      .promise()
+      .then(parseResponseItemsData);
   };
 };
