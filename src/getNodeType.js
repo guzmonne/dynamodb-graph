@@ -15,7 +15,7 @@ var { parseResponseItemsData } = require('./modules/utils.js');
  * @param {string} type - Property type.
  * @returns {promise} With the data returned from the database.
  */
-module.exports = function getProperty(options) {
+module.exports = function getNodeType(options) {
   var { db, table = process.env.TABLE_NAME } = options;
   return ({ node, type }) => {
     if (!node) throw new Error('Node is undefined.');

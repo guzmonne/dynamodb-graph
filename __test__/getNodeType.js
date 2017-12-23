@@ -3,13 +3,13 @@
 
 var sinon = require('sinon');
 var cuid = require('cuid');
-var getProperty = require('../src/getProperty.js');
+var getNodeType = require('../src/getNodeType.js');
 var utils = require('../src/modules/utils.js');
 var dynamoResponse = require('./dynamoResponse.js');
 
 var table = 'ExampleTable';
 
-describe('#getProperty()', () => {
+describe('#getNodeType()', () => {
   var type = 'PropTest';
   var tenant = cuid();
   var node = cuid();
@@ -39,29 +39,29 @@ describe('#getProperty()', () => {
   });
 
   test('should return a function', () => {
-    expect(typeof getProperty({ db, table })).toEqual('function');
+    expect(typeof getNodeType({ db, table })).toEqual('function');
   });
 
   test('should return an error if maxGSIK is undefined', () => {
-    return getProperty({ db, table })({ node, type }).catch(error =>
+    return getNodeType({ db, table })({ node, type }).catch(error =>
       expect(error.message).toEqual('Max GSIK is undefined')
     );
   });
 
   test('should return an error if type is undefined', () => {
-    return getProperty({ db, table, maxGSIK })({ node }).catch(error =>
+    return getNodeType({ db, table, maxGSIK })({ node }).catch(error =>
       expect(error.message).toEqual('Type is undefined')
     );
   });
 
   test('should return an error if node is undefined', () => {
-    expect(() => getProperty({ db, table, maxGSIK })({ type })).toThrow(
+    expect(() => getNodeType({ db, table, maxGSIK })({ type })).toThrow(
       'Node is undefined'
     );
   });
 
   test('should return the property', () => {
-    return getProperty({ db: db, table })({ node, type }).then(response => {
+    return getNodeType({ db: db, table })({ node, type }).then(response => {
       expect(response).toEqual({
         Item: {
           Node: node,
