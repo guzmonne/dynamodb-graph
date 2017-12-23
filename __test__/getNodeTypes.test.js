@@ -28,7 +28,7 @@ describe('#getNodeTypes()', () => {
   test('should return a valid DynamoDB query object', done => {
     var actual = getNodeTypes({ db: db(), table });
     var node = cuid();
-    actual(node).then(params => {
+    actual({ node }).then(params => {
       expect(params).toEqual({
         TableName: table,
         KeyConditionExpression: '#Node = :Node',
@@ -58,14 +58,34 @@ describe('#getNodeTypes()', () => {
           )
       })
     };
-    return getNodeTypes({ db: database, table })({ type: 1, gsik: 2 }).then(
-      response => {
-        expect(response).toEqual({
-          Count: 2,
-          ScannedCount: 20,
-          Items: [{ Type: 'Type 1' }, { Type: 'Type 2' }]
-        });
-      }
-    );
+    return getNodeTypes({ db: database, table })({ node }).then(response => {
+      expect(response).toEqual({
+        Count: 2,
+        ScannedCount: 20,
+        Items: [{ Type: 'Type 1' }, { Type: 'Type 2' }]
+      });
+    });
+  });
+
+  test('should passed the sortKeyConfition to the DynamoDB query object', () => {
+    return getNodeTypes({ db: db(), table })({
+      node,
+      sortKeyCondition: '#Type = :Value',
+      sortKeyValue: 'Something'
+    }).then(response => {
+      expect(response).toEqual({
+        TableName: table,
+        KeyConditionExpression: `#Node = :Node AND #Type = :Value`,
+        ExpressionAttributeNames: {
+          '#Node': 'Node',
+          '#Type': 'Type'
+        },
+        ExpressionAttributeValues: {
+          ':Node': node,
+          ':Value': 'Something'
+        },
+        ProjectionExpression: '#Type'
+      });
+    });
   });
 });

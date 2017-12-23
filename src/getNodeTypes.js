@@ -16,19 +16,31 @@ var { parseResponseItemsData } = require('./modules/utils.js');
  */
 module.exports = function getNodeTypes(options) {
   var { db, table = process.env.TABLE_NAME } = options;
-  return node => {
+  return (config = {}) => {
+    var { node, sortKeyCondition, sortKeyValue } = config;
+
     if (!node) throw new Error('Node is undefined.');
+
+    var keyConditionExpression = '#Node = :Node';
+
+    var expressionAttributeValues = {
+      ':Node': node
+    };
+
+    if (typeof sortKeyCondition === 'string') {
+      keyConditionExpression += ` AND ${sortKeyCondition}`;
+      expressionAttributeValues[':Value'] = sortKeyValue;
+    }
+
     return db
       .query({
         TableName: table,
-        KeyConditionExpression: '#Node = :Node',
+        KeyConditionExpression: keyConditionExpression,
         ExpressionAttributeNames: {
           '#Node': 'Node',
           '#Type': 'Type'
         },
-        ExpressionAttributeValues: {
-          ':Node': node
-        },
+        ExpressionAttributeValues: expressionAttributeValues,
         ProjectionExpression: '#Type'
       })
       .promise();
