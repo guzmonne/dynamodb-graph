@@ -22,8 +22,7 @@ describe('#nodeItem()', () => {
       Data: JSON.stringify(123),
       Type: 'Test',
       Target: node,
-      GSIK: gsik,
-      MaxGSIK: maxGSIK
+      GSIK: gsik
     });
   });
 

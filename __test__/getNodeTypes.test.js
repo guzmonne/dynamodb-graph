@@ -34,7 +34,9 @@ describe('#getNodeTypes()', () => {
         KeyConditionExpression: '#Node = :Node',
         ExpressionAttributeNames: {
           '#Node': 'Node',
-          '#Type': 'Type'
+          '#Type': 'Type',
+          '#Data': 'Data',
+          '#Target': 'Target'
         },
         ExpressionAttributeValues: {
           ':Node': node
@@ -78,7 +80,9 @@ describe('#getNodeTypes()', () => {
         KeyConditionExpression: `#Node = :Node AND #Type = :Value`,
         ExpressionAttributeNames: {
           '#Node': 'Node',
-          '#Type': 'Type'
+          '#Type': 'Type',
+          '#Data': 'Data',
+          '#Target': 'Target'
         },
         ExpressionAttributeValues: {
           ':Node': node,
