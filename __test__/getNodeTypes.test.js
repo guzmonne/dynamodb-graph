@@ -39,7 +39,7 @@ describe('#getNodeTypes()', () => {
         ExpressionAttributeValues: {
           ':Node': node
         },
-        ProjectionExpression: '#Type'
+        ProjectionExpression: '#Type, #Data, #Target'
       });
       done();
     });
@@ -84,7 +84,7 @@ describe('#getNodeTypes()', () => {
           ':Node': node,
           ':Value': 'Something'
         },
-        ProjectionExpression: '#Type'
+        ProjectionExpression: '#Type, #Data, #Target'
       });
     });
   });
