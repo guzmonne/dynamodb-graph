@@ -1,13 +1,18 @@
 'use strict';
 
-var _ = require('lodash');
+var chunk = require('lodash/chunk.js');
+var range = require('lodash/range.js');
+var get = require('lodash/get.js');
+var mergeWith = require('lodash/mergeWith.js');
+var isNumber = require('lodash/isNumber.js');
 
 module.exports = {
-  randomMac,
-  hashCode,
   calculateGSIK,
+  createCapacityAccumulator,
+  hashCode,
   parseResponseItemsData,
-  mergeDynamoResponses
+  mergeDynamoResponses,
+  randomMac
 };
 
 // ---
@@ -21,7 +26,7 @@ const HEXA = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 'a', 'b', 'c', 'd', 'e', 'f'];
  * @returns {string} New random mac.
  */
 function randomMac() {
-  return _.chunk(_.range(12).map(() => HEXA[randomInt(16)]), 2)
+  return chunk(range(12).map(() => HEXA[randomInt(16)]), 2)
     .join(':')
     .replace(/,/g, '');
 }
@@ -32,11 +37,14 @@ function randomMac() {
  */
 function mergeDynamoResponses(response1, response2) {
   if (!response1) return response2;
-  return {
+
+  var result = {
     Items: response1.Items.concat(response2.Items),
     Count: response1.Count + response2.Count,
     ScannedCount: response1.ScannedCount + response2.ScannedCount
   };
+
+  return result;
 }
 /**
  * Takes a DynamoDB response, and parses all the Data attibute of all its items.
@@ -93,4 +101,29 @@ function calculateGSIK(config = {}) {
   if (node === undefined) throw new Error('Node is undefined');
   if (maxGSIK < 2) return node + '#' + 0;
   return tenant + '#' + Math.abs(hashCode(node)) % maxGSIK;
+}
+/**
+ * Accumulates the capacity consumed by DynamoDB. You have to instantiate it,
+ * and then provide it with each DynamoDB response as they came along. Then you
+ * can get the accumulated value by calling `accumulator.dump()`.
+ * @return {function} Acumulator function.
+ * @property {function} dump - Returns the current accumulated object.
+ */
+function createCapacityAccumulator() {
+  var consumedCapacity = {};
+
+  function accumulator(response) {
+    consumedCapacity = mergeWith(
+      consumedCapacity,
+      response.ConsumedCapacity || {},
+      (objValue, srcValue) => {
+        if (isNumber(objValue) && isNumber(srcValue))
+          return objValue + srcValue;
+      }
+    );
+  }
+
+  accumulator.dump = () => Object.assign({}, consumedCapacity);
+
+  return accumulator;
 }

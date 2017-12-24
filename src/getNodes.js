@@ -35,7 +35,8 @@ module.exports = function getNodes(options) {
         .reduce(mergeDynamoResponses)
         .subscribe({
           next: resolve,
-          error: reject
+          error: reject,
+          complete: resolve
         });
     });
   };
