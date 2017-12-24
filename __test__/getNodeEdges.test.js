@@ -35,7 +35,7 @@ describe('#getNodeEdges()', () => {
           '#Type': 'Type'
         },
         ExpressionAttributeValues: { ':Node': node },
-        FilterExpression: 'attribute_exists(#Target) && #Target <> :Node',
+        FilterExpression: 'attribute_exists(#Target) AND #Target <> :Node',
         KeyConditionExpression: '#Node = :Node',
         ProjectionExpression: '#Type, #Data, #Target',
         TableName: table

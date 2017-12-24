@@ -30,7 +30,7 @@ module.exports = function getNodeData(options) {
         ExpressionAttributeValues: {
           ':Node': node
         },
-        FilterExpression: 'attribute_exists(#Target) && #Target <> :Node',
+        FilterExpression: 'attribute_exists(#Target) AND #Target <> :Node',
         ProjectionExpression: '#Type, #Data, #Target'
       })
       .promise()
