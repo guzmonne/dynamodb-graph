@@ -38,7 +38,8 @@ describe('#getNodeEdges()', () => {
         FilterExpression: 'attribute_exists(#Target) AND #Target <> :Node',
         KeyConditionExpression: '#Node = :Node',
         ProjectionExpression: '#Type, #Data, #Target',
-        TableName: table
+        TableName: table,
+        ReturnConsumedCapacity: 'NONE'
       });
       done();
     });

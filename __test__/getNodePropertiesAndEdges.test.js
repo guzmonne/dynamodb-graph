@@ -42,7 +42,8 @@ describe('#getNodePropertiesAndEdges()', () => {
           ':Node': node
         },
         FilterExpression: '#Target <> :Node OR attribute_not_exists(#Target)',
-        ProjectionExpression: '#Node, #Type, #Data, #Target'
+        ProjectionExpression: '#Node, #Type, #Data, #Target',
+        ReturnConsumedCapacity: 'NONE'
       });
       done();
     });

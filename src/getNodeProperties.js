@@ -32,7 +32,9 @@ module.exports = function getNodeProperties(options) {
           ':Node': node
         },
         FilterExpression: 'attribute_not_exists(#Target)',
-        ProjectionExpression: '#Node, #Type, #Data'
+        ProjectionExpression: '#Node, #Type, #Data',
+        ReturnConsumedCapacity:
+          process.env.debug !== undefined ? 'INDEXES' : 'NONE'
       })
       .promise()
       .then(parseResponseItemsData);

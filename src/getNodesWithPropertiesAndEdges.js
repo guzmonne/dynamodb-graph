@@ -25,16 +25,16 @@ var { mergeDynamoResponses } = require('./modules/utils.js');
 module.exports = function getNodesWithPropertiesAndEdges(options) {
   var { db, table = process.env.TABLE_NAME } = options;
 
+  var getNodePropertiesAndEdges$$ = getNodePropertiesAndEdges$(options);
+
   return config =>
     new Promise((resolve, reject) => {
       var { tenant, type, maxGSIK } = config;
 
-      if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
-      if (type === undefined) throw new Error('Type is undefined');
-
       var getNodesByGSIK$$ = getNodesByGSIK$(tenant, type, options);
 
-      var getNodePropertiesAndEdges$$ = getNodePropertiesAndEdges$(options);
+      if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
+      if (type === undefined) throw new Error('Type is undefined');
 
       Rx.Observable.range(0, maxGSIK)
         .map(toGSIK(tenant))

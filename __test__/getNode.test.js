@@ -40,7 +40,8 @@ describe('#getNode()', () => {
         FilterExpression: '#Target = :Node',
         KeyConditionExpression: '#Node = :Node',
         ProjectionExpression: '#Node, #Type, #Data, #GSIK, #MaxGSIK',
-        TableName: table
+        TableName: table,
+        ReturnConsumedCapacity: 'NONE'
       });
       done();
     });

@@ -31,7 +31,9 @@ module.exports = function getNodeType(options) {
           '#Type': 'Type',
           '#Data': 'Data'
         },
-        ProjectionExpression: '#Node, #Type, #Data'
+        ProjectionExpression: '#Node, #Type, #Data',
+        ReturnConsumedCapacity:
+          process.env.debug !== undefined ? 'INDEXES' : 'NONE'
       })
       .promise()
       .then(parseResponseItemsData);

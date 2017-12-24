@@ -42,7 +42,8 @@ describe('#getNodeProperties()', () => {
           ':Node': node
         },
         FilterExpression: 'attribute_not_exists(#Target)',
-        ProjectionExpression: '#Node, #Type, #Data'
+        ProjectionExpression: '#Node, #Type, #Data',
+        ReturnConsumedCapacity: 'NONE'
       });
       done();
     });

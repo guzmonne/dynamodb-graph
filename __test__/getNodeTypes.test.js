@@ -41,7 +41,8 @@ describe('#getNodeTypes()', () => {
         ExpressionAttributeValues: {
           ':Node': node
         },
-        ProjectionExpression: '#Type, #Data, #Target'
+        ProjectionExpression: '#Type, #Data, #Target',
+        ReturnConsumedCapacity: 'NONE'
       });
       done();
     });
@@ -88,7 +89,8 @@ describe('#getNodeTypes()', () => {
           ':Node': node,
           ':Value': 'Something'
         },
-        ProjectionExpression: '#Type, #Data, #Target'
+        ProjectionExpression: '#Type, #Data, #Target',
+        ReturnConsumedCapacity: 'NONE'
       });
     });
   });

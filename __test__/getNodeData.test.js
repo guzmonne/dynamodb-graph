@@ -37,7 +37,8 @@ describe('#getNodeData()', () => {
         FilterExpression: '#Target = :Node',
         KeyConditionExpression: '#Node = :Node',
         ProjectionExpression: '#Data',
-        TableName: table
+        TableName: table,
+        ReturnConsumedCapacity: 'NONE'
       });
       done();
     });

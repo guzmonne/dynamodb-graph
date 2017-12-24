@@ -30,7 +30,9 @@ module.exports = function getNodeData(options) {
           ':Node': node
         },
         FilterExpression: '#Target = :Node',
-        ProjectionExpression: '#Data'
+        ProjectionExpression: '#Data',
+        ReturnConsumedCapacity:
+          process.env.debug !== undefined ? 'INDEXES' : 'NONE'
       })
       .promise()
       .then(parseResponseItemsData);

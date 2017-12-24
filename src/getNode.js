@@ -33,7 +33,9 @@ module.exports = function getNode(options) {
           ':Node': node
         },
         FilterExpression: '#Target = :Node',
-        ProjectionExpression: '#Node, #Type, #Data, #GSIK, #MaxGSIK'
+        ProjectionExpression: '#Node, #Type, #Data, #GSIK, #MaxGSIK',
+        ReturnConsumedCapacity:
+          process.env.debug !== undefined ? 'INDEXES' : 'NONE'
       })
       .promise()
       .then(parseResponseItemsData);
