@@ -47,7 +47,8 @@ describe('#getNodesByGSIK()', () => {
         IndexName: 'ByType',
         KeyConditionExpression: '#GSIK = :GSIK AND #Type = :Type',
         ProjectionExpression: '#Data,#Node',
-        TableName: 'ExampleTable'
+        TableName: 'ExampleTable',
+        ReturnConsumedCapacity: 'NONE'
       })
     );
   });

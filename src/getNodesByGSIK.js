@@ -37,7 +37,9 @@ module.exports = function getNodesByGSIK(options) {
           ':GSIK': gsik,
           ':Type': type
         },
-        ProjectionExpression: '#Data,#Node'
+        ProjectionExpression: '#Data,#Node',
+        ReturnConsumedCapacity:
+          process.env.debug !== undefined ? 'INDEXES' : 'NONE'
       })
       .promise()
       .then(parseResponseItemsData);
