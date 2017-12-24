@@ -39,7 +39,7 @@ module.exports = function getNodesByGSIK(options) {
         },
         ProjectionExpression: '#Data,#Node',
         ReturnConsumedCapacity:
-          process.env.debug !== undefined ? 'INDEXES' : 'NONE'
+          process.env.DEBUG !== undefined ? 'INDEXES' : 'NONE'
       })
       .promise()
       .then(parseResponseItemsData);

@@ -33,7 +33,7 @@ module.exports = function getNodeType(options) {
         },
         ProjectionExpression: '#Node, #Type, #Data',
         ReturnConsumedCapacity:
-          process.env.debug !== undefined ? 'INDEXES' : 'NONE'
+          process.env.DEBUG !== undefined ? 'INDEXES' : 'NONE'
       })
       .promise()
       .then(parseResponseItemsData);

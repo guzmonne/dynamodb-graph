@@ -33,7 +33,7 @@ module.exports = function getNodeData(options) {
         FilterExpression: 'attribute_exists(#Target) AND #Target <> :Node',
         ProjectionExpression: '#Type, #Data, #Target',
         ReturnConsumedCapacity:
-          process.env.debug !== undefined ? 'INDEXES' : 'NONE'
+          process.env.DEBUG !== undefined ? 'INDEXES' : 'NONE'
       })
       .promise()
       .then(parseResponseItemsData);
