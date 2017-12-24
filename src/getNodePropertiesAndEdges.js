@@ -25,7 +25,8 @@ module.exports = function getNodeProperties(options) {
         ExpressionAttributeNames: {
           '#Node': 'Node',
           '#Target': 'Target',
-          '#Type': 'Type'
+          '#Type': 'Type',
+          '#Data': 'Data'
         },
         ExpressionAttributeValues: {
           ':Node': node
