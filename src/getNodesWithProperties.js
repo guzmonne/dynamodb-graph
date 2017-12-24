@@ -48,7 +48,7 @@ module.exports = function getNodesWithProperties(options) {
                 response => {
                   var current = result.Items.find(item => item.Node === node);
                   response.Items.forEach(item => {
-                    current[item.Type] = JSON.parse(item.Data);
+                    current[item.Type] = item.Data;
                   });
                   return current;
                 }
