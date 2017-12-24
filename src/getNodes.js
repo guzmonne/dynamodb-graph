@@ -20,11 +20,11 @@ var { mergeDynamoResponses } = require('./modules/utils.js');
  * @returns {promise} With the data returned from the database.
  */
 module.exports = function getNodes(options) {
+  var getNodesPromise = getNodesByGSIK(options);
   return config => {
     return new Promise((resolve, reject) => {
       var { tenant, type, maxGSIK } = config;
       if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
-      var getNodesPromise = getNodesByGSIK(options);
       Rx.Observable.range(0, maxGSIK)
         .map(i => tenant + '#' + i)
         .mergeMap(gsik =>
