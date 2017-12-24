@@ -12,9 +12,9 @@ var TABLE_NAME = 'GraphTable';
 
 /** AWS configuration */
 AWS.config.update({ region: 'us-east-1' });
-var DynamoDB = new AWS.DynamoDB({ endpoint });
+var dynamo = new AWS.DynamoDB({ endpoint });
 var documentClient = new AWS.DynamoDB.DocumentClient({
-  service: DynamoDB
+  service: dynamo
 });
 /** ***************** */
 
@@ -23,5 +23,6 @@ module.exports = {
     db: documentClient,
     table: TABLE_NAME
   }),
-  db: documentClient
+  db: documentClient,
+  dynamo
 };

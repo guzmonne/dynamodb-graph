@@ -16,7 +16,7 @@ describe('#nodeItem()', () => {
       maxGSIK
     });
     var node = actual.Node;
-    var gsik = utils.calculateGSIK({ node, maxGSIK });
+    var gsik = utils.calculateGSIK({ tenant, node, maxGSIK });
     expect(actual).toEqual({
       Node: node,
       Data: JSON.stringify(123),
