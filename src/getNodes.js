@@ -24,7 +24,9 @@ module.exports = function getNodes(options) {
   return config => {
     return new Promise((resolve, reject) => {
       var { tenant, type, maxGSIK } = config;
+
       if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
+
       Rx.Observable.range(0, maxGSIK)
         .map(i => tenant + '#' + i)
         .mergeMap(gsik =>
