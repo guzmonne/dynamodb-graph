@@ -3,10 +3,7 @@
 var Rx = require('rxjs/Rx');
 var getNodesByGSIK = require('./getNodesByGSIK.js');
 var getNodePropertiesAndEdges = require('./getNodePropertiesAndEdges.js');
-var {
-  mergeDynamoResponses,
-  createCapacityAccumulator
-} = require('./modules/utils.js');
+var { mergeDynamoResponses } = require('./modules/utils.js');
 
 /**
  * Factory function that returns a function that retrieves
@@ -39,39 +36,26 @@ module.exports = function getNodesWithPropertiesAndEdges(options) {
       if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
       if (type === undefined) throw new Error('Type is undefined');
 
-      var capacityAccumulator = createCapacityAccumulator();
-
       Rx.Observable.range(0, maxGSIK)
         .map(toGSIK(tenant))
         .mergeMap(getNodesByGSIK$$)
-        .do(capacityAccumulator)
         .mergeMap(response =>
           Rx.Observable.from(response.Items)
             .mergeMap(item => {
               item.Properties = [];
               item.Edges = [];
-              return getNodePropertiesAndEdges$$(item.Node)
-                .do(capacityAccumulator)
-                .map(response => {
-                  response.Items.forEach(subItem => {
-                    let key =
-                      subItem.Target === undefined ? 'Properties' : 'Edges';
-                    item[key].push(subItem);
-                  });
-                  return item;
+              return getNodePropertiesAndEdges$$(item.Node).map(response => {
+                response.Items.forEach(subItem => {
+                  let key =
+                    subItem.Target === undefined ? 'Properties' : 'Edges';
+                  item[key].push(subItem);
                 });
+                return item;
+              });
             })
             .reduce(() => response)
         )
         .reduce(mergeDynamoResponses)
-        .map(
-          response =>
-            process.env.DEBUG
-              ? Object.assign({}, response, {
-                  CapacityUnits: capacityAccumulator.dump()
-                })
-              : response
-        )
         .subscribe({
           next: resolve,
           error: reject,
