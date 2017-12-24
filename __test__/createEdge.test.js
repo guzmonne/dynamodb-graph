@@ -7,12 +7,14 @@ var createEdge = require('../src/createEdge.js');
 var table = 'ExampleTable';
 
 describe('#createEdge()', () => {
-  var response = () => ({
-    Items: [{ Data: JSON.stringify('Test') }]
-  });
-  var db = function(response) {
+  var db = function() {
     return {
-      query: params => ({ promise: () => Promise.resolve(response()) }),
+      query: params => ({
+        promise: () =>
+          Promise.resolve({
+            Items: [{ Data: JSON.stringify('Test') }]
+          })
+      }),
       put: params => ({ promise: () => Promise.resolve(params) })
     };
   };
@@ -25,28 +27,27 @@ describe('#createEdge()', () => {
   var target = cuid();
   var type = 'Edge';
 
-  test('should fail if the node is not defined', () => {
+  test('should fail if the target is undefined', () => {
     expect(() => {
-      createEdge({ db: db(), table })({ target, type });
-    }).toThrow('Node is undefined.');
+      createEdge({ db: db(), table })({ node, type });
+    }).toThrow('Target is undefined');
   });
 
-  test('should fail if the target is not defined', () => {
-    var fn = createEdge({ db: db(response), table });
-    return fn({ node }).catch(error => {
-      expect(error.message).toEqual('Target is undefined');
-    });
+  test('should fail if the node is undefined', () => {
+    return createEdge({ db: db(), table })({ target, type }).catch(error =>
+      expect(error.message).toEqual('Node is undefined')
+    );
   });
 
   test('should fail if the type is not defined', () => {
-    var fn = createEdge({ db: db(response), table });
+    var fn = createEdge({ db: db(), table });
     return fn({ node, target }).catch(error => {
       expect(error.message).toEqual('Type is undefined');
     });
   });
 
   test('should return a valid DynamoDB put params object', () => {
-    var fn = createEdge({ db: db(response), table });
+    var fn = createEdge({ db: db(), table });
     return fn({ node, target, type, maxGSIK: 0 }).then(result => {
       expect(result).toEqual({
         TableName: table,

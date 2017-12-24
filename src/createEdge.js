@@ -19,11 +19,18 @@ module.exports = function createEdge(options) {
   var { db, table = process.env.TABLE_NAME } = options;
   var getNodeDataPromise = getNodeData(options);
   return (config = {}) => {
-    return getNodeDataPromise(config.node).then(response => {
+    var { target } = config;
+
+    if (target === undefined) throw new Error('Target is undefined');
+
+    return getNodeDataPromise(target).then(response => {
       if (response.Items.length === 0)
-        throw new Error(`Empty data for Node ${node}`);
+        throw new Error(`Empty data for Node ${target}`);
+
       config.data = response.Items[0].Data;
+
       var item = edgeItem(config);
+
       return db
         .put({
           TableName: table,
