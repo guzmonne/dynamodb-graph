@@ -35,6 +35,7 @@ module.exports = function getNodesWithProperties(options) {
 
       Rx.Observable.range(0, maxGSIK)
         .map(i => tenant + '#' + i)
+        .do(gsik => console.log({ gsik, tenant, type }))
         .mergeMap(gsik =>
           Rx.Observable.fromPromise(
             getNodesByGSIKPromise({ gsik, tenant, type })
@@ -58,7 +59,8 @@ module.exports = function getNodesWithProperties(options) {
         )
         .subscribe({
           next: resolve,
-          error: reject
+          error: reject,
+          complete: resolve
         });
     });
   };

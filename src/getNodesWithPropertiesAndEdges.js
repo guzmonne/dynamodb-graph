@@ -56,7 +56,11 @@ module.exports = function getNodesWithPropertiesAndEdges(options) {
             .reduce(() => response)
         )
         .reduce(mergeDynamoResponses)
-        .subscribe(resolve, reject);
+        .subscribe({
+          next: resolve,
+          error: reject,
+          complete: resolve
+        });
     });
 };
 
