@@ -1,6 +1,7 @@
 'use strict';
 
 var cuid = require('cuid');
+var sinon = require('sinon');
 var getNode = require('../src/getNode.js');
 var utils = require('../src/modules/utils.js');
 var dynamoResponse = require('./dynamoResponse.js');
@@ -20,43 +21,124 @@ describe('#getNode()', () => {
 
   test('should fail if the node is undefined', () => {
     expect(() => {
-      getNode({ db: db(), table })();
+      getNode({ db: db, table })();
     }).toThrow('Node is undefined.');
   });
 
-  test('should return a valid DynamoDB params query object', done => {
+  var db = {
+    query: params => ({
+      promise: () => {
+        return Promise.resolve({
+          Items: [
+            {
+              Node: params.ExpressionAttributeValues[':Node'],
+              Data: JSON.stringify('TestData'),
+              Type: 'TestType',
+              Target: params.ExpressionAttributeValues[':Node'],
+              GSIK: '#0'
+            }
+          ]
+        });
+      }
+    }),
+    get: params => ({
+      promise: () => {
+        return Promise.resolve({
+          Item: {
+            Node: params.Key.Node,
+            Data: JSON.stringify('TestData'),
+            Type: params.Key.Type,
+            Target: params.Key.Node,
+            GSIK: '#0'
+          }
+        });
+      }
+    })
+  };
+
+  beforeEach(() => {
+    sinon.spy(db, 'query');
+    sinon.spy(db, 'get');
+  });
+
+  afterEach(() => {
+    db.query.restore();
+    db.get.restore();
+  });
+
+  var getNode$ = getNode({ db, table });
+
+  test('should produce a valid DynamoDB query params object if type is undefined', () => {
     var node = cuid();
-    getNode({ db: db(), table })(node).then(params => {
-      expect(params).toEqual({
-        ExpressionAttributeNames: {
-          '#Data': 'Data',
-          '#Node': 'Node',
-          '#Target': 'Target',
-          '#Type': 'Type',
-          '#GSIK': 'GSIK',
-          '#MaxGSIK': 'MaxGSIK'
-        },
-        ExpressionAttributeValues: { ':Node': node },
-        FilterExpression: '#Target = :Node',
-        KeyConditionExpression: '#Node = :Node',
-        ProjectionExpression: '#Node, #Type, #Data, #GSIK, #MaxGSIK',
-        TableName: table,
-        ReturnConsumedCapacity: 'NONE'
+
+    return getNode$(node).then(response => {
+      expect(
+        db.query.calledWith({
+          ExpressionAttributeNames: {
+            '#Data': 'Data',
+            '#Node': 'Node',
+            '#Target': 'Target',
+            '#Type': 'Type',
+            '#GSIK': 'GSIK'
+          },
+          ExpressionAttributeValues: { ':Node': node },
+          FilterExpression: '#Target = :Node',
+          KeyConditionExpression: '#Node = :Node',
+          ProjectionExpression: '#Node, #Type, #Data, #GSIK',
+          TableName: table,
+          ReturnConsumedCapacity: 'NONE'
+        })
+      ).toBe(true);
+      expect(response).toEqual({
+        Item: {
+          Node: node,
+          Data: 'TestData',
+          Type: 'TestType',
+          Target: node,
+          GSIK: '#0'
+        }
       });
-      done();
+    });
+  });
+
+  test('should produce a valid DynamoDB get params object if type is defined', () => {
+    var node = cuid();
+    var type = 'SomeType';
+
+    return getNode$(node, type).then(response => {
+      expect(
+        db.get.calledWith({
+          TableName: table,
+          Key: {
+            Node: node,
+            Type: type
+          }
+        })
+      ).toBe(true);
+      expect(response).toEqual({
+        Item: {
+          Node: node,
+          Data: 'TestData',
+          Type: type,
+          Target: node,
+          GSIK: '#0'
+        }
+      });
     });
   });
 
   test('should return the response parsed', () => {
-    var database = {
-      query: params => ({
-        promise: () => Promise.resolve(dynamoResponse.raw())
-      })
-    };
-    return getNode({ db: database, table })({ type: 1, gsik: 2 }).then(
-      response => {
-        expect(response).toEqual(dynamoResponse.parsed());
-      }
-    );
+    var node = cuid();
+    return getNode$(node).then(response => {
+      expect(response).toEqual({
+        Item: {
+          Node: node,
+          Data: 'TestData',
+          Type: 'TestType',
+          Target: node,
+          GSIK: '#0'
+        }
+      });
+    });
   });
 });
