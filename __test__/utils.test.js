@@ -3,14 +3,21 @@
 var cuid = require('cuid');
 var utils = require('../src/modules/utils.js');
 
-describe('#utils.randomMac', () => {
-  test('should return a string', () => {
-    expect(typeof utils.randomMac()).toEqual('string');
+describe('#checkConfiguration', () => {
+  var maxGSIK = 10;
+
+  test('should be a function', () => {
+    expect(typeof utils.checkConfiguration).toEqual('function');
   });
 
-  test('should return a valid MAC address', () => {
-    var regex = /^([0-9a-f]{2}:|-){5}([0-9a-f]{2})$/;
-    expect(regex.test(utils.randomMac())).toBe(true);
+  test('should throw an error if `maxGSIK` is undefined', () => {
+    expect(() => utils.checkConfiguration()).toThrow('Max GSIK is undefined');
+  });
+
+  test('should throw an error if `documentClient` is undefined', () => {
+    expect(() => utils.checkConfiguration({ maxGSIK })).toThrow(
+      'DocumentClient is undefined'
+    );
   });
 });
 
@@ -33,7 +40,7 @@ describe('#_hashCode()', () => {
   });
 });
 
-describe('#_calculateGSIK()', () => {
+describe('#calculateGSIK()', () => {
   var tenant = cuid();
   var node = cuid();
 
@@ -57,7 +64,7 @@ describe('#_calculateGSIK()', () => {
   });
 });
 
-describe('#_parseResponseItemsData', () => {
+describe('#parseResponseItemsData', () => {
   var response = {
     Items: [
       { Data: JSON.stringify(true) },

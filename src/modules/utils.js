@@ -13,24 +13,10 @@ module.exports = {
   hashCode,
   parseResponseItemsData,
   mergeDynamoResponses,
-  randomMac
+  checkConfiguration
 };
 
 // ---
-/**
- * List of valid hexadecimal values.
- * @type {array}
- */
-const HEXA = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 'a', 'b', 'c', 'd', 'e', 'f'];
-/**
- * Returns a random MAC number.
- * @returns {string} New random mac.
- */
-function randomMac() {
-  return chunk(range(12).map(() => HEXA[randomInt(16)]), 2)
-    .join(':')
-    .replace(/,/g, '');
-}
 /**
  * Merges two DynamoDB Response objects.
  * @param {DynamoDBResponse} response1
@@ -144,4 +130,12 @@ function createCapacityAccumulator() {
   accumulator.dump = () => Object.assign({}, consumedCapacity);
 
   return accumulator;
+}
+
+function checkConfiguration(options = {}) {
+  var { maxGSIK, documentClient } = options;
+
+  if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
+  if (documentClient === undefined)
+    throw new Error('DocumentClient is undefined');
 }
