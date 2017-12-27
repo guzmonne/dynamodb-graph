@@ -1,6 +1,6 @@
 {
   "name": "dynamodb-graph",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "main": "dist/index.js",
   "repository": {
     "github": "git@github.com:guzmonne/dynamodb-graph.git"
