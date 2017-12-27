@@ -24,7 +24,8 @@ describe('#createNode()', () => {
       type = 'Node',
       tenant = cuid(),
       data = 'test';
-    actual({ node, type, data, tenant, maxGSIK: 0 }).then(params => {
+    var config = { node, type, data, tenant, maxGSIK: 0 };
+    actual(config).then(params => {
       expect(params).toEqual({
         TableName: table,
         Item: {
@@ -32,8 +33,8 @@ describe('#createNode()', () => {
           Type: type,
           Data: data,
           Target: node,
-          GSIK: utils.calculateGSIK({ node }),
-          TGSIK: utils.calculateGSIK({ node, type })
+          GSIK: utils.calculateGSIK(config),
+          TGSIK: utils.calculateTGSIK(config)
         }
       });
       done();

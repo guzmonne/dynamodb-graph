@@ -50,4 +50,17 @@ describe('#edgeItem()', () => {
       GSIK: utils.calculateGSIK(params)
     });
   });
+
+  test('should use a custom type value for TGSIK if tgsik is a string', () => {
+    var params = { node, target, type, data, tgsik: 'salmon' };
+
+    expect(edgeItem(params)).toEqual({
+      Node: node,
+      Type: type,
+      Data: JSON.stringify(data),
+      Target: target,
+      GSIK: utils.calculateGSIK(params),
+      TGSIK: utils.calculateTGSIK(Object.assign({}, params, { type: 'salmon' }))
+    });
+  });
 });

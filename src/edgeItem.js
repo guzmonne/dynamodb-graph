@@ -27,7 +27,13 @@ module.exports = function edgeItem(config) {
     GSIK: utils.calculateGSIK(config)
   };
 
-  if (tgsik === true) params.TGSIK = utils.calculateTGSIK(config);
+  if (!!tgsik) {
+    params.TGSIK = utils.calculateTGSIK(
+      typeof tgsik === 'string'
+        ? Object.assign({}, config, { type: tgsik })
+        : config
+    );
+  }
 
   return params;
 };

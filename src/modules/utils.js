@@ -99,9 +99,10 @@ function randomInt(n) {
  */
 function calculateGSIK(config = {}) {
   var { tenant = '', node, maxGSIK = 0 } = config;
+  var gsik = tenant !== undefined && tenant !== '' ? tenant + '#' : '';
   if (node === undefined) throw new Error('Node is undefined');
-  if (maxGSIK < 2) return node + '#' + 0;
-  return tenant + '#' + Math.abs(hashCode(node)) % maxGSIK;
+  if (maxGSIK < 2) return (gsik += 0);
+  return (gsik += Math.abs(hashCode(node)) % maxGSIK);
 }
 /**
  * Returns a random GSIK based on the tenant and a random number.
@@ -113,10 +114,11 @@ function calculateGSIK(config = {}) {
  * @returns {number} Random number between 0 and n.
  */
 function calculateTGSIK(config = {}) {
-  var { tenant = '', node, type, maxGSIK = 0 } = config;
+  var { tenant, node, type, maxGSIK = 0 } = config;
+  var tgsik = tenant !== undefined && tenant !== '' ? tenant + '#' : '';
   if (node === undefined) throw new Error('Node is undefined');
-  if (maxGSIK < 2) return node + '#' + 0;
-  return tenant + '#' + type + '#' + Math.abs(hashCode(node)) % maxGSIK;
+  if (maxGSIK < 2) return (tgsik += type + '#' + 0);
+  return (tgsik += type + '#' + Math.abs(hashCode(node)) % maxGSIK);
 }
 /**
  * Accumulates the capacity consumed by DynamoDB. You have to instantiate it,

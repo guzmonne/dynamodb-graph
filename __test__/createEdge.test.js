@@ -48,7 +48,8 @@ describe('#createEdge()', () => {
 
   test('should return a valid DynamoDB put params object', () => {
     var fn = createEdge({ db: db(), table });
-    return fn({ node, target, type, maxGSIK: 0 }).then(result => {
+    var params = { node, target, type, maxGSIK: 0 };
+    return fn(params).then(result => {
       expect(result).toEqual({
         TableName: table,
         Item: {
@@ -56,8 +57,8 @@ describe('#createEdge()', () => {
           Type: type,
           Data: 'Test',
           Target: target,
-          GSIK: utils.calculateGSIK({ node }),
-          TGSIK: utils.calculateGSIK({ node, type })
+          GSIK: utils.calculateGSIK(params),
+          TGSIK: utils.calculateTGSIK(params)
         }
       });
     });
