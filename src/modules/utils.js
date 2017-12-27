@@ -8,6 +8,7 @@ var isNumber = require('lodash/isNumber.js');
 
 module.exports = {
   calculateGSIK,
+  calculateTGSIK,
   createCapacityAccumulator,
   hashCode,
   parseResponseItemsData,
@@ -92,8 +93,8 @@ function randomInt(n) {
  * Returns a random GSIK based on the tenant and a random number.
  * @param {object} config - GSIK configuration object.
  * @property {string} node - Identifier of the Node.
- * @property {string} tenant='' - Identifier of the current tenant.
  * @property {number} maxGSIK - Maximum GSIK value.
+ * @property {string} tenant='' - Identifier of the current tenant.
  * @returns {number} Random number between 0 and n.
  */
 function calculateGSIK(config = {}) {
@@ -101,6 +102,21 @@ function calculateGSIK(config = {}) {
   if (node === undefined) throw new Error('Node is undefined');
   if (maxGSIK < 2) return node + '#' + 0;
   return tenant + '#' + Math.abs(hashCode(node)) % maxGSIK;
+}
+/**
+ * Returns a random GSIK based on the tenant and a random number.
+ * @param {object} config - GSIK configuration object.
+ * @property {string} node - Identifier of the Node.
+ * @property {number} maxGSIK - Maximum GSIK value.
+ * @property {string} tenant='' - Identifier of the current tenant.
+ * @property {string} type - Node type.
+ * @returns {number} Random number between 0 and n.
+ */
+function calculateTGSIK(config = {}) {
+  var { tenant = '', node, type, maxGSIK = 0 } = config;
+  if (node === undefined) throw new Error('Node is undefined');
+  if (maxGSIK < 2) return node + '#' + 0;
+  return tenant + '#' + type + '#' + Math.abs(hashCode(node)) % maxGSIK;
 }
 /**
  * Accumulates the capacity consumed by DynamoDB. You have to instantiate it,

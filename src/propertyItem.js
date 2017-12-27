@@ -22,6 +22,7 @@ module.exports = function propertyItem(config) {
     Node: node,
     Type: type,
     Data: JSON.stringify(data),
-    GSIK: utils.calculateGSIK({ tenant, node, maxGSIK })
+    GSIK: utils.calculateGSIK({ tenant, node, maxGSIK }),
+    TGSIK: utils.calculateTGSIK({ node, tenant, maxGSIK, type })
   };
 };

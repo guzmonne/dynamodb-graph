@@ -12,18 +12,22 @@ var utils = require('./modules/utils.js');
  * @returns {EdgeItem} Node item object.
  */
 module.exports = function edgeItem(config) {
-  var { tenant = '', node, target, type, data, maxGSIK } = config;
+  var { tenant = '', node, target, type, data, maxGSIK, tgsik = true } = config;
 
   if (node === undefined) throw new Error('Node is undefined');
   if (target === undefined) throw new Error('Target is undefined');
   if (type === undefined) throw new Error('Type is undefined');
   if (data === undefined) throw new Error('Data is undefined');
 
-  return {
+  var params = {
     Node: node,
     Type: type,
     Data: JSON.stringify(data),
     Target: target,
-    GSIK: utils.calculateGSIK({ tenant, node, maxGSIK })
+    GSIK: utils.calculateGSIK(config)
   };
+
+  if (tgsik === true) params.TGSIK = utils.calculateTGSIK(config);
+
+  return params;
 };

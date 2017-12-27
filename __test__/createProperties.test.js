@@ -17,7 +17,6 @@ describe('#createProperties()', () => {
   var tenant = cuid();
   var node = tenant + '#' + cuid();
   var maxGSIK = 4;
-  var gsik = utils.calculateGSIK({ node, tenant, maxGSIK });
 
   test('should return a function', () => {
     expect(typeof _createProperties).toEqual('function');
@@ -60,7 +59,8 @@ describe('#createProperties()', () => {
             PutRequest: {
               Item: {
                 Node: node,
-                GSIK: gsik,
+                GSIK: utils.calculateGSIK({ node, tenant, maxGSIK }),
+                TGSIK: utils.calculateTGSIK({ node, tenant, maxGSIK, type: i }),
                 Data: JSON.stringify(i),
                 Type: i.toString()
               }
@@ -74,7 +74,8 @@ describe('#createProperties()', () => {
             PutRequest: {
               Item: {
                 Node: node,
-                GSIK: gsik,
+                GSIK: utils.calculateGSIK({ node, tenant, maxGSIK }),
+                TGSIK: utils.calculateTGSIK({ node, tenant, maxGSIK, type: i }),
                 Data: JSON.stringify(i),
                 Type: i.toString()
               }

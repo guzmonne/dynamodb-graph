@@ -9,20 +9,21 @@ describe('#nodeItem()', () => {
 
   test('should return a correctly build NodeItem', () => {
     var maxGSIK = 10;
+    var type = 'Test';
     var actual = nodeItem({
       tenant,
-      type: 'Test',
+      type,
       data: 123,
       maxGSIK
     });
     var node = actual.Node;
-    var gsik = utils.calculateGSIK({ tenant, node, maxGSIK });
     expect(actual).toEqual({
       Node: node,
       Data: JSON.stringify(123),
-      Type: 'Test',
+      Type: type,
       Target: node,
-      GSIK: gsik
+      GSIK: utils.calculateGSIK({ tenant, node, maxGSIK }),
+      TGSIK: utils.calculateTGSIK({ tenant, node, maxGSIK, type })
     });
   });
 

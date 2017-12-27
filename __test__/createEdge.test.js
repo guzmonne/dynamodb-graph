@@ -56,7 +56,8 @@ describe('#createEdge()', () => {
           Type: type,
           Data: 'Test',
           Target: target,
-          GSIK: utils.calculateGSIK({ node })
+          GSIK: utils.calculateGSIK({ node }),
+          TGSIK: utils.calculateGSIK({ node, type })
         }
       });
     });

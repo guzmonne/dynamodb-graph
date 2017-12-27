@@ -65,7 +65,8 @@ describe('#createEdges()', () => {
             PutRequest: {
               Item: {
                 Node: node,
-                GSIK: gsik,
+                TGSIK: utils.calculateTGSIK({ node, tenant, maxGSIK, type: i }),
+                GSIK: utils.calculateGSIK({ node, tenant, maxGSIK }),
                 Data: JSON.stringify(i),
                 Type: i.toString(),
                 Target: targets[i]
@@ -80,7 +81,8 @@ describe('#createEdges()', () => {
             PutRequest: {
               Item: {
                 Node: node,
-                GSIK: gsik,
+                TGSIK: utils.calculateTGSIK({ node, tenant, maxGSIK, type: i }),
+                GSIK: utils.calculateGSIK({ node, tenant, maxGSIK }),
                 Data: JSON.stringify(i),
                 Type: i.toString(),
                 Target: targets[i]

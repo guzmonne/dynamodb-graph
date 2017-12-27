@@ -2,6 +2,7 @@
 
 var cuid = require('cuid');
 var edgeItem = require('../src/edgeItem.js');
+var utils = require('../src/modules/utils.js');
 
 describe('#edgeItem()', () => {
   test('should return an EdgeItem', () => {
@@ -37,5 +38,16 @@ describe('#edgeItem()', () => {
 
   test('should throw an error if the target is not defined', () => {
     expect(() => edgeItem({ node, type, data })).toThrow('Target is undefined');
+  });
+
+  test('should not have TGSIK defined if tgsik === false', () => {
+    var params = { node, target, type, data, tgsik: false };
+    expect(edgeItem(params)).toEqual({
+      Node: node,
+      Type: type,
+      Data: JSON.stringify(data),
+      Target: target,
+      GSIK: utils.calculateGSIK(params)
+    });
   });
 });

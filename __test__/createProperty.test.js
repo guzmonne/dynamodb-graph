@@ -29,7 +29,8 @@ describe('#createProperty()', () => {
           Node: node,
           Type: type,
           Data: data,
-          GSIK: utils.calculateGSIK({ node })
+          GSIK: utils.calculateGSIK({ node }),
+          TGSIK: utils.calculateTGSIK({ node, type })
         }
       });
       done();
