@@ -12,6 +12,12 @@ module.exports = function destroyFactory(config = {}) {
 
   utils.checkConfiguration(config);
 
+  /**
+   * Function that attempts to delete a Node.
+   * @param {object} options - Node create options.
+   * @property {string} node - Node unique identifier.
+   * @property {string} type - Node type.
+   */
   return function destroy(options = {}) {
     var { node, type } = options;
 

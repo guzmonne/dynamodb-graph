@@ -20,6 +20,8 @@ module.exports = function createFactory(config = {}) {
    * Function that attempts to create a new Node.
    * @param {object} options - Node create options.
    * @property {string} [node] - Node unique identifier.
+   * @property {string} type - Node type.
+   * @property {string|number} data - Node main data.
    */
   return function create(options = {}) {
     var { node = cuid(), type, data } = options;
