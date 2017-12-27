@@ -3,7 +3,7 @@
 var sinon = require('sinon');
 var cuid = require('cuid');
 var utils = require('../../src/modules/utils.js');
-var destroyFactory = require('../../src/node/destroy.js');
+var destroyFactory = require('../../src/general/destroy.js');
 
 describe('destroyFactory()', () => {
   var maxGSIK = 10;

@@ -14,6 +14,8 @@ module.exports = function nodeFactory(config) {
   utils.checkConfiguration(config);
 
   return {
-    item: require('./item.js')(config)
+    item: require('./item.js')(config),
+    create: require('./item.js')(config),
+    destroy: require('../general/destroy.js')(config)
   };
 };

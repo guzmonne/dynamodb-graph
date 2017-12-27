@@ -26,7 +26,7 @@ describe('nodeFactory', () => {
 
   test('should call the utils.checkConfiguration function', () => {
     nodeFactory(config);
-    expect(utils.checkConfiguration.callCount).toBe(2);
+    expect(utils.checkConfiguration.callCount).toBe(4);
   });
 
   test('should return an object', () => {
@@ -34,11 +34,22 @@ describe('nodeFactory', () => {
     expect(typeof actual).toEqual('object');
   });
 
+  var node = nodeFactory(config);
   describe('node.item()', () => {
     test('should be a function', () => {
-      var node = nodeFactory(config);
-
       expect(typeof node.item).toEqual('function');
+    });
+  });
+
+  describe('node.create()', () => {
+    test('should be a function', () => {
+      expect(typeof node.create).toEqual('function');
+    });
+  });
+
+  describe('node.destroy()', () => {
+    test('should be a function', () => {
+      expect(typeof node.destroy).toEqual('function');
     });
   });
 });
