@@ -132,10 +132,24 @@ function createCapacityAccumulator() {
   return accumulator;
 }
 
-function checkConfiguration(options = {}) {
-  var { maxGSIK, documentClient } = options;
+/**
+ * @typedef {Object} ConfigObject
+ * @property {object} documentClient - DynamoDB Document Client driver.
+ * @property {number} maxGSIK - Maximum GSIK value. Should be a multiple of 10.
+ * @property {string} [tenant=''] - Tenant unique identifier.
+ * @property {string} [table=TABLE_NAME] - Table name. Can be defined in env
+ *                                         variable called TABLE_NAME.
+ */
+
+/**
+ * Utility function that validates if an object is a valid ConfigObject.
+ * @param {ConfigObject} config - Main configuration object
+ */
+function checkConfiguration(config = {}) {
+  var { maxGSIK, documentClient, table = process.env.TABLE_NAME } = config;
 
   if (maxGSIK === undefined) throw new Error('Max GSIK is undefined');
   if (documentClient === undefined)
     throw new Error('DocumentClient is undefined');
+  if (table === undefined) throw new Error('Table is undefined');
 }

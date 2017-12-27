@@ -4,9 +4,7 @@ var utils = require('../modules/utils.js');
 
 /**
  * Factory function that returns a function able to create valid Node items.
- * @param {Object} config - Configuration object.
- * @property {number} maxGSIK - Maximum GSIK value. Should be a multiple of 10.
- * @property {string} [tenant=''] - Tenant unique identifier.
+ * @param {ConfigObject} config={} - Main configuration object.
  * @return {function} Configured item function.
  */
 module.exports = function itemFactory(config = {}) {

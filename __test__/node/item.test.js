@@ -5,21 +5,26 @@ var utils = require('../../src/modules/utils.js');
 var itemFactory = require('../../src/node/item.js');
 
 describe('itemFactory()', () => {
+  var table = 'TableExample';
+  var documentClient = {};
   var tenant = cuid();
   var maxGSIK = 10;
   var node = cuid();
   var type = 'NodeTestType';
   var data = 'Something';
+  var config = { table, documentClient, tenant, maxGSIK };
 
   test('should be a function', () => {
     expect(typeof itemFactory).toEqual('function');
   });
 
   test('should return a function', () => {
-    expect(typeof itemFactory({ maxGSIK })).toEqual('function');
+    expect(typeof itemFactory({ table, maxGSIK, documentClient })).toEqual(
+      'function'
+    );
   });
 
-  var item = itemFactory({ maxGSIK, tenant });
+  var item = itemFactory({ documentClient, table, maxGSIK, tenant });
 
   describe('#item', () => {
     test('should throw an error if Node is undefined', () => {
@@ -45,7 +50,7 @@ describe('itemFactory()', () => {
     });
 
     test('should apply an empty value to tenant if it is undefined', () => {
-      var item = itemFactory({ maxGSIK });
+      var item = itemFactory(Object.assign({}, config, { tenant: undefined }));
 
       expect(item({ node, data, type }).Node).toEqual(node);
     });

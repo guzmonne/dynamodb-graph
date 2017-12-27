@@ -14,27 +14,29 @@ describe('nodeFactory', () => {
     utils.checkConfiguration.restore();
   });
 
+  var table = 'ExampleTable';
   var maxGSIK = 10;
   var tenant = cuid();
   var documentClient = {};
+  var config = { table, documentClient, maxGSIK, tenant };
 
   test('should be a function', () => {
     expect(typeof nodeFactory).toEqual('function');
   });
 
   test('should call the utils.checkConfiguration function', () => {
-    nodeFactory({ documentClient, maxGSIK, tenant });
+    nodeFactory(config);
     expect(utils.checkConfiguration.callCount).toBe(2);
   });
 
   test('should return an object', () => {
-    var actual = nodeFactory({ documentClient, maxGSIK, tenant });
+    var actual = nodeFactory(config);
     expect(typeof actual).toEqual('object');
   });
 
   describe('node.item()', () => {
     test('should be a function', () => {
-      var node = nodeFactory({ documentClient, maxGSIK, tenant });
+      var node = nodeFactory(config);
 
       expect(typeof node.item).toEqual('function');
     });
