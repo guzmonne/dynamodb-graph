@@ -4,7 +4,7 @@ var cuid = require('cuid');
 var utils = require('../modules/utils.js');
 
 /**
- * Factory that returns a function that attempts to create new Nodes.
+ * Factory that returns a function that attempts to get a Node.
  * @param {function} item - Item creator function.
  * @param {ConfigObject} config - Main configuration object.
  * @return {function} Function that attempts to create a new node.
@@ -15,11 +15,10 @@ module.exports = function getFactory(config = {}) {
   utils.checkConfiguration(config);
 
   /**
-   * Function that attempts to create a new Node.
+   * Function that attempts to get a Node.
    * @param {object} options - Node create options.
-   * @property {string} [node] - Node unique identifier.
+   * @property {string} node - Node unique identifier.
    * @property {string} type - Node type.
-   * @property {string|number} data - Node main data.
    */
   return function get(options = {}) {
     var { node, type } = options;
