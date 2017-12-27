@@ -9,7 +9,7 @@ var utils = require('../modules/utils.js');
  * @param {ConfigObject} config - Main configuration object.
  * @return {function} Function that attempts to create a new node.
  */
-module.exports = function getFactory(config = {}) {
+module.exports = function getByNodeFactory(config = {}) {
   var { documentClient, table } = config;
 
   utils.checkConfiguration(config);
@@ -21,16 +21,18 @@ module.exports = function getFactory(config = {}) {
    * @property {string} type - Node type.
    */
   return function get(options = {}) {
-    var { node, type } = options;
+    var { node } = options;
 
     if (node === undefined) throw new Error('Node is undefined');
-    if (type === undefined) throw new Error('Type is undefined');
 
     var params = {
       TableName: table,
-      Key: {
-        Node: node,
-        Type: type
+      KeyConditionExpression: '#Node = :Node',
+      ExpressionAttributeNames: {
+        '#Node': 'Node'
+      },
+      ExpressionAttributeValues: {
+        ':Node': node
       }
     };
 
@@ -39,6 +41,6 @@ module.exports = function getFactory(config = {}) {
       params.ReturnItemCollectionMetrics = 'SIZE';
     }
 
-    return documentClient.get(params).promise();
+    return documentClient.query(params).promise();
   };
 };

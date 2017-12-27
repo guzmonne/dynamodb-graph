@@ -2,7 +2,7 @@
 
 var sinon = require('sinon');
 var cuid = require('cuid');
-var getItemFactory = require('../../src/general/getItem.js');
+var getItemFactory = require('../../src/query/getItem.js');
 var utils = require('../../src/modules/utils.js');
 
 describe('getItemFactory()', () => {
