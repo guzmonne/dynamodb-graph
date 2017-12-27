@@ -54,14 +54,7 @@ describe('createFactory', () => {
     });
 
     test('should return a Promise', () => {
-      expect(create({ data, type }) instanceof Promise).toBe(true);
-    });
-
-    test('should create a new cuid if `node` is undefined', () => {
-      return create({ data, type }).then(result => {
-        expect(!!result.Item.Node).toBe(true);
-        expect(result.Item.Node.indexOf(tenant)).toBe(0);
-      });
+      expect(create({ node, data, type }) instanceof Promise).toBe(true);
     });
 
     test('should use the provided `node` if defined', () => {

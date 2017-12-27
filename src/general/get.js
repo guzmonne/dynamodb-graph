@@ -1,5 +1,6 @@
 'use strict';
 
+var cuid = require('cuid');
 var utils = require('../modules/utils.js');
 
 /**
@@ -8,8 +9,8 @@ var utils = require('../modules/utils.js');
  * @param {ConfigObject} config - Main configuration object.
  * @return {function} Function that attempts to create a new node.
  */
-module.exports = function createFactory(item, config = {}) {
-  var { tenant = '', documentClient, table } = config;
+module.exports = function getFactory(config = {}) {
+  var { documentClient, table } = config;
 
   utils.checkConfiguration(config);
 
@@ -20,15 +21,18 @@ module.exports = function createFactory(item, config = {}) {
    * @property {string} type - Node type.
    * @property {string|number} data - Node main data.
    */
-  return function create(options = {}) {
-    var { node, type, data, target } = options;
+  return function get(options = {}) {
+    var { node, type } = options;
 
+    if (node === undefined) throw new Error('Node is undefined');
     if (type === undefined) throw new Error('Type is undefined');
-    if (data === undefined) throw new Error('Data is undefined');
 
     var params = {
       TableName: table,
-      Item: item({ node, type, data, target })
+      Key: {
+        Node: node,
+        Type: type
+      }
     };
 
     if (process.env.DEBUG) {
@@ -36,6 +40,6 @@ module.exports = function createFactory(item, config = {}) {
       params.ReturnItemCollectionMetrics = 'SIZE';
     }
 
-    return documentClient.put(params).promise();
+    return documentClient.get(params).promise();
   };
 };
