@@ -96,8 +96,28 @@ describe('createFactory', () => {
       sinon.stub(documentClient, 'put').callsFake(() => ({
         promise: () => Promise.reject(new Error('TestError'))
       }));
-      return create({ node, data, type }).catch(error =>
-        expect(error.message).toEqual('TestError')
+      return create({ node, data, type }).catch(error => {
+        expect(error.message).toEqual('TestError');
+        documentClient.put.restore();
+      });
+    });
+
+    test('should store the data in the `Number` key if the data is a number', () => {
+      var node = cuid();
+      sinon.spy(documentClient, 'put');
+      var params = { maxGSIK, tenant, node, data: 4, type };
+      return create(params).then(() =>
+        expect(documentClient.put.args[0][0]).toEqual({
+          TableName: table,
+          Item: {
+            Node: tenant + '#' + node,
+            Type: type,
+            Number: 4,
+            Target: tenant + '#' + node,
+            GSIK: utils.calculateGSIK(params),
+            TGSIK: utils.calculateTGSIK(params)
+          }
+        })
       );
     });
   });
