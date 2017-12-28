@@ -20,20 +20,41 @@ module.exports = function getByNodeFactory(config = {}) {
    * @property {string} node - Node unique identifier.
    * @property {string} type - Node type.
    */
-  return function get(options = {}) {
-    var { node } = options;
+  return function getByNode(options = {}) {
+    var { node, value, expression } = options;
 
     if (node === undefined) throw new Error('Node is undefined');
+    if (expression !== undefined) {
+      if (typeof expression !== 'string')
+        throw new Error('Expression is not a string');
+      if (value === undefined) throw new Error('Value is undefined');
+    }
+
+    var names = {
+      '#Node': 'Node'
+    };
+
+    var values = {
+      ':Node': node
+    };
+
+    if (expression) {
+      names['#Type'] = 'Type';
+      if (Array.isArray(value) === true) {
+        values[':a'] = value[0];
+        values[':b'] = value[1];
+      } else {
+        values[':Type'] = value;
+      }
+    }
 
     var params = {
       TableName: table,
-      KeyConditionExpression: '#Node = :Node',
-      ExpressionAttributeNames: {
-        '#Node': 'Node'
-      },
-      ExpressionAttributeValues: {
-        ':Node': node
-      }
+      KeyConditionExpression: `#Node = :Node${
+        expression ? ' AND' + expression : ''
+      }`,
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values
     };
 
     if (process.env.DEBUG) {

@@ -50,21 +50,37 @@ describe('getByNodeFactory()', () => {
   });
 
   describe('#getByNode()', () => {
+    var value = cuid();
+    var expression = '#Type = :Type';
     var getByNode = getByNodeFactory(config);
 
     test('should throw if `node` is undefined', () => {
       expect(() => getByNode()).toThrow('Node is undefined');
     });
 
+    test('should throw if `expression` is not a string', () => {
+      expect(() => getByNode({ node, expression: false })).toThrow(
+        'Expression is not a string'
+      );
+    });
+
+    test('should throw if `expression` is defined but `value` is not', () => {
+      expect(() => getByNode({ node, expression })).toThrow(
+        'Value is undefined'
+      );
+    });
+
     test('should return a promise', () => {
-      expect(getByNode({ node }) instanceof Promise).toBe(true);
+      expect(getByNode({ node, expression, value }) instanceof Promise).toBe(
+        true
+      );
     });
 
     test('should call the `documentClient.query function`', () => {
       sinon.stub(documentClient, 'query').callsFake(() => ({
         promise: () => Promise.resolve()
       }));
-      return getByNode({ node, type }).then(() => {
+      return getByNode({ node }).then(() => {
         expect(documentClient.query.calledOnce).toBe(true);
         documentClient.query.restore();
       });
@@ -72,7 +88,7 @@ describe('getByNodeFactory()', () => {
 
     test('should call the `documentClient.query function` with a valid params object', () => {
       sinon.spy(documentClient, 'query');
-      return getByNode({ node, type }).then(() => {
+      return getByNode({ node }).then(() => {
         expect(documentClient.query.args[0][0]).toEqual({
           TableName: table,
           KeyConditionExpression: '#Node = :Node',
@@ -85,6 +101,48 @@ describe('getByNodeFactory()', () => {
         });
         documentClient.query.restore();
       });
+    });
+
+    test('should call the `documentClient.query function` with a valid params object when `expression` and `value` is defined', () => {
+      sinon.spy(documentClient, 'query');
+      var symbols = ['=', '<', '>', '<=', '>='];
+      var value = cuid();
+      var random = Math.floor(Math.random() * symbols.length);
+      var expression = ['#Type', symbols[random], ':Type'].join(' ');
+      var expression2 = '#Type BETWEEN :a AND :b';
+      var values = [Math.random(), Math.random()];
+      return getByNode({ node, expression, value })
+        .then(() => {
+          expect(documentClient.query.args[0][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: '#Node = :Node' + ' AND' + expression,
+            ExpressionAttributeNames: {
+              '#Node': 'Node',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':Node': node,
+              ':Type': value
+            }
+          });
+          return getByNode({ node, expression: expression2, value: values });
+        })
+        .then(() => {
+          expect(documentClient.query.args[1][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: '#Node = :Node' + ' AND' + expression2,
+            ExpressionAttributeNames: {
+              '#Node': 'Node',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':Node': node,
+              ':a': values[0],
+              ':b': values[1]
+            }
+          });
+          documentClient.query.restore();
+        });
     });
   });
 });
