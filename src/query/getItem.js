@@ -39,6 +39,13 @@ module.exports = function getItemFactory(config = {}) {
       params.ReturnItemCollectionMetrics = 'SIZE';
     }
 
-    return documentClient.get(params).promise();
+    return documentClient
+      .get(params)
+      .promise()
+      .then((response = {}) => {
+        response.Items = [utils.parseItem(response.Item)];
+        delete response.Item;
+        return response;
+      });
   };
 };

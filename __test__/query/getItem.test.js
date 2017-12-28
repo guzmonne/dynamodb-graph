@@ -9,17 +9,36 @@ describe('getItemFactory()', () => {
   var node = cuid();
   var type = cuid();
   var data = cuid();
+  var number = Math.random();
   var target = cuid();
   var maxGSIK = 10;
   var table = 'TestTable';
   var documentClient = {
     get: params => ({
-      promise: () =>
-        Promise.resolve({
+      promise: () => {
+        if (params.Key.Node === node)
+          return Promise.resolve({
+            Item: {
+              Node: params.Key.Node,
+              Type: params.Key.Type,
+              String: data,
+              Target: target,
+              GSIK: utils.calculateGSIK({
+                node: params.Key.Node,
+                maxGSIK
+              }),
+              TGSIK: utils.calculateTGSIK({
+                node: params.Key.Node,
+                type: params.Key.Type,
+                maxGSIK
+              })
+            }
+          });
+        return Promise.resolve({
           Item: {
             Node: params.Key.Node,
             Type: params.Key.Type,
-            String: data,
+            Number: number,
             Target: target,
             GSIK: utils.calculateGSIK({
               node: params.Key.Node,
@@ -31,7 +50,8 @@ describe('getItemFactory()', () => {
               maxGSIK
             })
           }
-        })
+        });
+      }
     })
   };
   var config = { table, maxGSIK, documentClient };
@@ -64,7 +84,7 @@ describe('getItemFactory()', () => {
 
     test('should call the `documentClient.get function`', () => {
       sinon.stub(documentClient, 'get').callsFake(() => ({
-        promise: () => Promise.resolve()
+        promise: () => Promise.resolve({})
       }));
       return getItem({ node, type }).then(() => {
         expect(documentClient.get.calledOnce).toBe(true);
@@ -83,6 +103,30 @@ describe('getItemFactory()', () => {
           }
         });
         documentClient.get.restore();
+      });
+    });
+
+    test('should renamed the `String` or `Number` key to `Data`', () => {
+      return getItem({ node, type }).then(result => {
+        expect(result).toEqual({
+          Items: [
+            {
+              Node: node,
+              Type: type,
+              Data: data,
+              Target: target,
+              GSIK: utils.calculateGSIK({
+                node,
+                maxGSIK
+              }),
+              TGSIK: utils.calculateTGSIK({
+                node: node,
+                type: type,
+                maxGSIK
+              })
+            }
+          ]
+        });
       });
     });
   });
