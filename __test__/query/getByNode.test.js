@@ -105,8 +105,8 @@ describe('getByNodeFactory()', () => {
 
     test('should call the `documentClient.query function` with a valid params object when `expression` and `value` is defined', () => {
       sinon.spy(documentClient, 'query');
-      var symbols = ['=', '<', '>', '<=', '>='];
       var value = cuid();
+      var symbols = ['=', '<', '>', '<=', '>='];
       var random = Math.floor(Math.random() * symbols.length);
       var expression = ['#Type', symbols[random], ':Type'].join(' ');
       var expression2 = '#Type BETWEEN :a AND :b';
