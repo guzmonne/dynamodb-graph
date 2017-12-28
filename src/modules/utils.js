@@ -13,7 +13,8 @@ module.exports = {
   hashCode,
   parseResponseItemsData,
   mergeDynamoResponses,
-  checkConfiguration
+  checkConfiguration,
+  parseItem
 };
 
 // ---
@@ -152,4 +153,15 @@ function checkConfiguration(config = {}) {
   if (documentClient === undefined)
     throw new Error('DocumentClient is undefined');
   if (table === undefined) throw new Error('Table is undefined');
+}
+
+function parseItem(item) {
+  item = Object.assign({}, item);
+
+  item.Data = item.String || item.Number;
+
+  delete item.String;
+  delete item.Number;
+
+  return item;
 }

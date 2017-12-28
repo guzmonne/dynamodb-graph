@@ -1,7 +1,7 @@
 'use strict';
 
 var cuid = require('cuid');
-var utils = require('../src/modules/utils.js');
+var utils = require('../../src/modules/utils.js');
 
 describe('#checkConfiguration', () => {
   var maxGSIK = 10;
@@ -93,5 +93,22 @@ describe('#parseResponseItemsData', () => {
       ]
     };
     expect(actual).toEqual(expected);
+  });
+});
+
+describe('#parseItem()', () => {
+  test('should be a function', () => {
+    expect(typeof utils.parseItem).toBe('function');
+  });
+
+  test('should return a new object', () => {
+    expect(utils.parseItem()).toEqual({});
+  });
+
+  test('should transform a `String` or `Number` property into a `Data` property', () => {
+    var string = cuid();
+    var number = Math.random();
+    expect(utils.parseItem({ String: string })).toEqual({ Data: string });
+    expect(utils.parseItem({ Number: number })).toEqual({ Data: number });
   });
 });
