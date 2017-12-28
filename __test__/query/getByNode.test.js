@@ -115,7 +115,7 @@ describe('getByNodeFactory()', () => {
         .then(() => {
           expect(documentClient.query.args[0][0]).toEqual({
             TableName: table,
-            KeyConditionExpression: '#Node = :Node' + ' AND' + expression,
+            KeyConditionExpression: '#Node = :Node' + ' AND ' + expression,
             ExpressionAttributeNames: {
               '#Node': 'Node',
               '#Type': 'Type'
@@ -130,7 +130,7 @@ describe('getByNodeFactory()', () => {
         .then(() => {
           expect(documentClient.query.args[1][0]).toEqual({
             TableName: table,
-            KeyConditionExpression: '#Node = :Node' + ' AND' + expression2,
+            KeyConditionExpression: '#Node = :Node' + ' AND ' + expression2,
             ExpressionAttributeNames: {
               '#Node': 'Node',
               '#Type': 'Type'

@@ -51,7 +51,7 @@ module.exports = function getByNodeFactory(config = {}) {
     var params = {
       TableName: table,
       KeyConditionExpression: `#Node = :Node${
-        expression ? ' AND' + expression : ''
+        expression ? ' AND ' + expression : ''
       }`,
       ExpressionAttributeNames: names,
       ExpressionAttributeValues: values
