@@ -1,6 +1,5 @@
 'use strict';
 
-var cuid = require('cuid');
 var utils = require('../modules/utils.js');
 
 /**
