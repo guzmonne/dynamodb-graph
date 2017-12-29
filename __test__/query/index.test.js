@@ -417,7 +417,7 @@ describe('queryFactory()', () => {
       }).then(result => {
         expect(documentClient.query.args[0][0]).toEqual({
           TableName: table,
-          IndexName: 'ByData',
+          IndexName: 'ByNumber',
           KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
           ExpressionAttributeNames: {
             '#GSIK': 'GSIK',
@@ -428,7 +428,7 @@ describe('queryFactory()', () => {
         });
         expect(documentClient.query.args[9][0]).toEqual({
           TableName: table,
-          IndexName: 'ByData',
+          IndexName: 'ByNumber',
           KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
           ExpressionAttributeNames: {
             '#GSIK': 'GSIK',
@@ -450,22 +450,22 @@ describe('queryFactory()', () => {
       }).then(result => {
         expect(documentClient.query.args[0][0]).toEqual({
           TableName: table,
-          IndexName: 'ByData',
+          IndexName: 'ByString',
           KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
           ExpressionAttributeNames: {
             '#GSIK': 'GSIK',
-            '#Number': 'Number'
+            '#String': 'String'
           },
           Limit: 10,
           ExpressionAttributeValues: values(0, value, attribute)
         });
         expect(documentClient.query.args[9][0]).toEqual({
           TableName: table,
-          IndexName: 'ByData',
+          IndexName: 'ByString',
           KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
           ExpressionAttributeNames: {
             '#GSIK': 'GSIK',
-            '#Number': 'Number'
+            '#String': 'String'
           },
           Limit: 10,
           ExpressionAttributeValues: values(9, value, attribute)
@@ -482,7 +482,7 @@ function getRandomExpressionAttributes(attribute) {
   var expression =
     operator === 'BETWEEN'
       ? `#${attribute} BETWEEN :a AND :b`
-      : `#${attribute} ${operator} :Type`;
+      : `#${attribute} ${operator} :${attribute}`;
   return { operator, value, expression };
 }
 

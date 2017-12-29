@@ -163,7 +163,7 @@ describe('getByDataFactory()', () => {
         listGSIK.forEach((i, j) => {
           expect(documentClient.query.args[j][0]).toEqual({
             TableName: table,
-            IndexName: 'ByData',
+            IndexName: 'ByNumber',
             KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -192,7 +192,7 @@ describe('getByDataFactory()', () => {
         listGSIK.forEach((i, j) => {
           expect(documentClient.query.args[j][0]).toEqual({
             TableName: table,
-            IndexName: 'ByData',
+            IndexName: 'ByString',
             KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -221,7 +221,7 @@ describe('getByDataFactory()', () => {
         listGSIK.forEach((i, j) => {
           expect(documentClient.query.args[j][0]).toEqual({
             TableName: table,
-            IndexName: 'ByData',
+            IndexName: 'ByNumber',
             KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',

@@ -8,7 +8,7 @@ var DEFAULT_GSIK_LIST_SIZE = 10;
 var LIMIT = 10;
 /**
  * Factory that returns a function that attempts query the table indexed by
- * GSIK, through the `ByType` or `ByData` GSI, sorted by type.
+ * GSIK, through the `ByType` or `ByData` GSI, sorted by type or data.
  * @param {"Type", "Data"} index - Valid GSIK index.
  * @param {ConfigObject} config - Main configuration object.
  * @return {function} Function that attempts to create a new node.
@@ -66,7 +66,7 @@ module.exports = function getByFactory(index, config = {}) {
 
     return {
       TableName: table,
-      IndexName: `By${index}`,
+      IndexName: `By${attribute}`,
       KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
       ExpressionAttributeNames: {
         '#GSIK': 'GSIK',
