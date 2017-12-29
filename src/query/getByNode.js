@@ -62,6 +62,13 @@ module.exports = function getByNodeFactory(config = {}) {
       params.ReturnItemCollectionMetrics = 'SIZE';
     }
 
-    return documentClient.query(params).promise();
+    return documentClient
+      .query(params)
+      .promise()
+      .then((response = {}) => {
+        var { Items = [] } = response;
+        response.Items = Items.map(utils.parseItem);
+        return response;
+      });
   };
 };

@@ -9,6 +9,7 @@ describe('getByNodeFactory()', () => {
   var node = cuid();
   var type = cuid();
   var data = cuid();
+  var number = Math.random();
   var target = cuid();
   var maxGSIK = 10;
   var table = 'TestTable';
@@ -21,6 +22,21 @@ describe('getByNodeFactory()', () => {
               Node: params.ExpressionAttributeValues[':Node'],
               Type: type,
               String: data,
+              Target: target,
+              GSIK: utils.calculateGSIK({
+                node: params.ExpressionAttributeValues[':Node'],
+                maxGSIK
+              }),
+              TGSIK: utils.calculateTGSIK({
+                node: params.ExpressionAttributeValues[':Node'],
+                type: type,
+                maxGSIK
+              })
+            },
+            {
+              Node: params.ExpressionAttributeValues[':Node'],
+              Type: type,
+              Number: number,
               Target: target,
               GSIK: utils.calculateGSIK({
                 node: params.ExpressionAttributeValues[':Node'],
@@ -100,6 +116,13 @@ describe('getByNodeFactory()', () => {
           }
         });
         documentClient.query.restore();
+      });
+    });
+
+    test('should rename the query Items `String` and `Number` property to `Data`', () => {
+      var node = cuid();
+      return getByNode({ node }).then(result => {
+        expect(result.Items.map(item => item.Data)).toEqual([data, number]);
       });
     });
 
