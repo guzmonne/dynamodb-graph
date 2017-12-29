@@ -134,10 +134,10 @@ describe('#parseWhere', () => {
     );
   });
 
-  test('should return the attribute, the expression, and the value', () => {
+  test('should return the attribute, the expression, and the value, if the attribute is `type`', () => {
     var operator =
       utils._operators[Math.floor(Math.random() * utils._operators.length)];
-    var attribute = Math.random() > 0.5 ? 'type' : 'data';
+    var attribute = 'type';
     var value =
       operator === 'BETWEEN' ? [Math.random(), Math.random()] : cuid();
 
@@ -148,6 +148,41 @@ describe('#parseWhere', () => {
       expression: Array.isArray(value)
         ? '#Type BETWEEN :a AND :b'
         : `#Type ${operator} :Type`,
+      value
+    });
+  });
+
+  test('should return the attribute, the expression, and the value, if the attribute is `data` and value is a string', () => {
+    var operator =
+      utils._operators[Math.floor(Math.random() * utils._operators.length)];
+    var attribute = 'data';
+    var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
+
+    var actual = utils.parseWhere({ [attribute]: { [operator]: value } });
+
+    expect(actual).toEqual({
+      attribute,
+      expression: Array.isArray(value)
+        ? '#String BETWEEN :a AND :b'
+        : `#String ${operator} :String`,
+      value
+    });
+  });
+
+  test('should return the attribute, the expression, and the value, if the attribute is `data` and value is a number', () => {
+    var operator =
+      utils._operators[Math.floor(Math.random() * utils._operators.length)];
+    var attribute = 'data';
+    var value =
+      operator === 'BETWEEN' ? [Math.random(), Math.random()] : Math.random();
+
+    var actual = utils.parseWhere({ [attribute]: { [operator]: value } });
+
+    expect(actual).toEqual({
+      attribute,
+      expression: Array.isArray(value)
+        ? '#Number BETWEEN :a AND :b'
+        : `#Number ${operator} :Number`,
       value
     });
   });

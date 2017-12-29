@@ -198,23 +198,31 @@ var operators = ['=', '<', '>', '<=', '>=', 'BETWEEN'];
  * @property {string|bool|number|array} value - Consition value.
  */
 function parseWhere(where = {}) {
-  var attribute = where.data || where.type;
+  var attributes = where.data || where.type;
+  var attribute = Object.keys(where)[0];
 
-  if (attribute === undefined) throw new Error('Invalid attribute');
+  if (attributes === undefined) throw new Error('Invalid attributes');
 
-  var operator = Object.keys(attribute)[0];
+  var operator = Object.keys(attributes)[0];
 
   if (operators.indexOf(operator) === -1) throw new Error('Invalid operator');
 
-  var value = attribute[operator];
+  var value = attributes[operator];
 
   if (value === undefined) throw new Error('Value is undefined');
 
-  var expression = `#Type ${operator} ${
-    Array.isArray(value) ? ':a AND :b' : ':Type'
+  var variable =
+    attribute === 'type'
+      ? 'Type'
+      : typeof (Array.isArray(value) ? value[0] : value) === 'number'
+        ? 'Number'
+        : 'String';
+
+  var expression = `#${variable} ${operator} ${
+    Array.isArray(value) ? ':a AND :b' : `:${variable}`
   }`;
 
-  return { attribute: Object.keys(where)[0], expression, value };
+  return { attribute, expression, value };
 }
 /**
  * Applies the `parseItem` function to each Item of the response.
