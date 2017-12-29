@@ -4,8 +4,8 @@ var cuid = require('cuid');
 var utils = require('../modules/utils.js');
 
 /**
- * Factory that returns a function that attempts to get a Node.
- * @param {function} item - Item creator function.
+ * Factory that returns a function that attempts query the table indexed by
+ * node, and sorted by type.
  * @param {ConfigObject} config - Main configuration object.
  * @return {function} Function that attempts to create a new node.
  */
@@ -18,7 +18,8 @@ module.exports = function getByNodeFactory(config = {}) {
    * Function that attempts to get a Node.
    * @param {object} options - Node create options.
    * @property {string} node - Node unique identifier.
-   * @property {string} type - Node type.
+   * @property {string} expression - Query condition expression.
+   * @property {string|number} [value] - Expression value.
    */
   return function getByNode(options = {}) {
     var { node, value, expression } = options;
