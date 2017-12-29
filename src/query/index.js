@@ -53,35 +53,35 @@ module.exports = function createFactory(config = {}) {
       return getByNode({ node });
     }
 
-    if (where !== undefined) {
-      var { gsik = {} } = options;
-      var { start, end, limit, list } = gsik;
+    if (where === undefined) throw new Error('Where is undefined');
 
-      var { attribute, expression, value } = utils.parseWhere(where);
+    var { gsik = {} } = options;
+    var { start, end, limit, list } = gsik;
 
-      if (and !== undefined) {
-        var { expression, value: data } = utils.parseWhere(and);
+    var { attribute, expression, value } = utils.parseWhere(where);
 
-        return getByTypeAndData({
-          expression,
-          value: data,
-          type: value,
-          startTGSIK: start,
-          endTGSIK: end,
-          listTGSIK: list,
-          limit
-        });
-      }
+    if (and !== undefined) {
+      var { expression, value: data } = utils.parseWhere(and);
 
-      var get = attribute === 'type' ? getByType : getByData;
-      return get({
+      return getByTypeAndData({
         expression,
-        value,
-        startGSIK: start,
-        endGSIK: end,
-        listGSIK: list,
+        value: data,
+        type: value,
+        startTGSIK: start,
+        endTGSIK: end,
+        listTGSIK: list,
         limit
       });
     }
+
+    var get = attribute === 'type' ? getByType : getByData;
+    return get({
+      expression,
+      value,
+      startGSIK: start,
+      endGSIK: end,
+      listGSIK: list,
+      limit
+    });
   };
 };

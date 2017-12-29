@@ -513,9 +513,9 @@ describe('queryFactory()', () => {
     test('should call the `getByTypeAndData` function, when the node is undefined and the `where` and `and` options are defined for number values', () => {
       var attribute = 'Number';
       var type = cuid();
-      var { value, expression, operator } = getRandomExpressionAttributes(
-        attribute
-      );
+      var operator = 'BETWEEN';
+      var value = [Math.random(), Math.random()];
+      var expression = '#Number BETWEEN :a AND :b';
       return query({
         where: { type: { '=': type } },
         and: { data: { [operator]: value } }
@@ -548,9 +548,9 @@ describe('queryFactory()', () => {
     test('should call the `getByTypeAndData` function, when the node is undefined and the `where` and `and` options are defined for number values', () => {
       var attribute = 'String';
       var type = cuid();
-      var { value, expression, operator } = getRandomExpressionAttributes(
-        attribute
-      );
+      var operator = 'BETWEEN';
+      var value = [cuid(), cuid()];
+      var expression = '#String BETWEEN :a AND :b';
       return query({
         where: { type: { '=': type } },
         and: { data: { [operator]: value } }
