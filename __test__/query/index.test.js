@@ -94,6 +94,10 @@ describe('queryFactory()', () => {
       documentClient.query.restore();
     });
 
+    test('should throw an error if node and where is undefined', () => {
+      expect(() => query({})).toThrow('Where is undefined');
+    });
+
     test('should return a promise', () => {
       expect(query() instanceof Promise).toBe(true);
     });
