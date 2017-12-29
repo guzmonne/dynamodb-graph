@@ -5,6 +5,7 @@ var getItemFactory = require('./getItem.js');
 var getByNodeFactory = require('./getByNode.js');
 var getByTypeFactory = require('./getByType.js');
 var getByDataFactory = require('./getByData.js');
+var getByTypeAndDataFactory = require('./getByTypeAndData.js');
 
 /**
  * Factory function that returns a function that can run queries against the
@@ -21,6 +22,7 @@ module.exports = function createFactory(config = {}) {
   var getByNode = getByNodeFactory(config);
   var getByType = getByTypeFactory(config);
   var getByData = getByDataFactory(config);
+  var getByTypeAndData = getByTypeAndDataFactory(config);
 
   /**
    * Function that queries the table for items.
@@ -35,7 +37,7 @@ module.exports = function createFactory(config = {}) {
     if (options === undefined || typeof options !== 'object')
       return Promise.resolve({});
 
-    var { node, where } = options;
+    var { node, where, and } = options;
 
     if (node !== undefined) {
       var { type } = options;
@@ -53,21 +55,33 @@ module.exports = function createFactory(config = {}) {
 
     if (where !== undefined) {
       var { gsik = {} } = options;
-      var { start: startGSIK, end: endGSIK, limit, list: listGSIK } = gsik;
+      var { start, end, limit, list } = gsik;
 
       var { attribute, expression, value } = utils.parseWhere(where);
+
+      if (and !== undefined) {
+        var { expression, value: data } = utils.parseWhere(and);
+
+        return getByTypeAndData({
+          expression,
+          value: data,
+          type: value,
+          startTGSIK: start,
+          endTGSIK: end,
+          listTGSIK: list,
+          limit
+        });
+      }
 
       var get = attribute === 'type' ? getByType : getByData;
       return get({
         expression,
         value,
-        startGSIK,
-        endGSIK,
-        listGSIK,
+        startGSIK: start,
+        endGSIK: end,
+        listGSIK: list,
         limit
       });
     }
-
-    return Promise.resolve();
   };
 };

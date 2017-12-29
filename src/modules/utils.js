@@ -196,6 +196,7 @@ var operators = ['=', '<', '>', '<=', '>=', 'BETWEEN'];
  * @property {string} attribute="data"|"type" - Condition attribute.
  * @property {string} expression - Condition expression.
  * @property {string|bool|number|array} value - Consition value.
+ * @property {QueryOperators} operator - Query operator value.
  */
 function parseWhere(where = {}) {
   var attributes = where.data || where.type;
@@ -222,7 +223,7 @@ function parseWhere(where = {}) {
     Array.isArray(value) ? ':a AND :b' : `:${variable}`
   }`;
 
-  return { attribute, expression, value };
+  return { attribute, expression, value, operator };
 }
 /**
  * Applies the `parseItem` function to each Item of the response.

@@ -126,8 +126,8 @@ describe('getByTypeFactory()', () => {
     });
 
     test('should allow to set the `startGSIK` and the `endGSIK`', () => {
-      var startGSIK = Math.floor(Math.random() * 10 + 5);
-      var endGSIK = startGSIK + Math.floor(Math.random() * 10);
+      var startGSIK = Math.floor(Math.random() * 10) + 5;
+      var endGSIK = startGSIK + Math.floor(Math.random() * 10) + 5;
       var difference = endGSIK - startGSIK;
       return getByType({ expression, value, startGSIK, endGSIK }).then(() => {
         expect(documentClient.query.callCount).toBe(difference);

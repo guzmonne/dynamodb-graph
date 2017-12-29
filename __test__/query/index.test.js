@@ -69,7 +69,7 @@ describe('queryFactory()', () => {
   test('should call the `utils.checkConfiguration()` method', () => {
     sinon.spy(utils, 'checkConfiguration');
     queryFactory(config);
-    expect(utils.checkConfiguration.callCount).toBe(5);
+    expect(utils.checkConfiguration.callCount).toBe(6);
     utils.checkConfiguration.restore();
   });
 
@@ -184,10 +184,11 @@ describe('queryFactory()', () => {
       });
     });
 
-    var values = (i = 0, value, attribute = 'Type') =>
+    var values = (i = 0, value, attribute = 'Type', type) =>
       Object.assign(
         {
-          ':GSIK': tenant + '#' + i
+          [`:${!!type ? 'T' : ''}GSIK`]:
+            tenant + `${!!type ? '#' + type + '#' : '#'}` + i
         },
         Array.isArray(value)
           ? { ':a': value[0], ':b': value[1] }
@@ -469,6 +470,157 @@ describe('queryFactory()', () => {
           },
           Limit: 10,
           ExpressionAttributeValues: values(9, value, attribute)
+        });
+      });
+    });
+
+    test('should call the `getByTypeAndData` function, when the node is undefined and the `where` and `and` options are defined for string values', () => {
+      var attribute = 'String';
+      var data = cuid();
+      var type = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        attribute
+      );
+      return query({
+        where: { type: { '=': type } },
+        and: { data: { [operator]: data } }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByTypeAndString',
+          KeyConditionExpression: `#TGSIK = :TGSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#TGSIK': 'TGSIK',
+            '#String': 'String'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(0, data, attribute, type)
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByTypeAndString',
+          KeyConditionExpression: `#TGSIK = :TGSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#TGSIK': 'TGSIK',
+            '#String': 'String'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(9, data, attribute, type)
+        });
+      });
+    });
+
+    test('should call the `getByTypeAndData` function, when the node is undefined and the `where` and `and` options are defined for number values', () => {
+      var attribute = 'Number';
+      var type = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        attribute
+      );
+      return query({
+        where: { type: { '=': type } },
+        and: { data: { [operator]: value } }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByTypeAndNumber',
+          KeyConditionExpression: `#TGSIK = :TGSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#TGSIK': 'TGSIK',
+            '#Number': 'Number'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(0, value, attribute, type)
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByTypeAndNumber',
+          KeyConditionExpression: `#TGSIK = :TGSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#TGSIK': 'TGSIK',
+            '#Number': 'Number'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(9, value, attribute, type)
+        });
+      });
+    });
+
+    test('should call the `getByTypeAndData` function, when the node is undefined and the `where` and `and` options are defined for number values', () => {
+      var attribute = 'String';
+      var type = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        attribute
+      );
+      return query({
+        where: { type: { '=': type } },
+        and: { data: { [operator]: value } }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByTypeAndString',
+          KeyConditionExpression: `#TGSIK = :TGSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#TGSIK': 'TGSIK',
+            '#String': 'String'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(0, value, attribute, type)
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByTypeAndString',
+          KeyConditionExpression: `#TGSIK = :TGSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#TGSIK': 'TGSIK',
+            '#String': 'String'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(9, value, attribute, type)
+        });
+      });
+    });
+
+    test('should call the `getByTypeAndData` function and use the `gsik` options, when the node is undefined and the `where` and `and` options are defined for number values', () => {
+      var attribute = 'String';
+      var type = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        attribute
+      );
+      var start = random(10) + 10;
+      var end = start + random(10) + 10;
+      var limit = random(100);
+      return query({
+        where: { type: { '=': type } },
+        and: { data: { [operator]: value } },
+        gsik: { start, end, limit }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByTypeAndString',
+          KeyConditionExpression: `#TGSIK = :TGSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#TGSIK': 'TGSIK',
+            '#String': 'String'
+          },
+          Limit: limit,
+          ExpressionAttributeValues: {
+            ':TGSIK': tenant + '#' + type + '#' + start,
+            ':String': value
+          }
+        });
+        expect(documentClient.query.args[end - start - 1][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByTypeAndString',
+          KeyConditionExpression: `#TGSIK = :TGSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#TGSIK': 'TGSIK',
+            '#String': 'String'
+          },
+          Limit: limit,
+          ExpressionAttributeValues: {
+            ':TGSIK': tenant + '#' + type + '#' + (end - 1),
+            ':String': value
+          }
         });
       });
     });
