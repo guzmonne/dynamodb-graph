@@ -52,18 +52,27 @@ module.exports = function getByTypeFactory(config = {}) {
     return {
       TableName: table,
       IndexName: 'ByType',
-      KeyConditionExpression: `#Node = :Node AND ${expression}`,
+      KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
       ExpressionAttributeNames: {
         '#GSIK': 'GSIK',
         '#Type': 'Type'
       },
-      ExpressionAttributeValues: values(gsik, value)
+      ExpressionAttributeValues: values(gsik, value),
+      Limit: limit
     };
   }
 
   /**
    * Function that attempts to get a Node.
    * @param {object} options - Query options.
+   * @property {number} [startGSIK=0] - Start GSIK value.
+   * @property {number} [startGSIK=startGSIK + 10] - End GSIK value.
+   * @property {number[]} [listGSIK] - List of GSIK values.
+   * @property {number} [limit=10] - Number of items to query per GSIK.
+   * @property {string} expression - Query expression.
+   * @property {string|number|number[]} valye - Query expression value.
+   * @return {Promise} A promise that resolves all the queries to all the
+   *                   GSIKs.
    */
   return function getByType(options = {}) {
     var {

@@ -11,6 +11,7 @@ var OPERATORS = utils._operators;
 
 describe('getByTypeFactory()', () => {
   var table = 'TestTable';
+  var tenant = cuid();
   var maxGSIK = 100;
   var node = cuid();
   var type = cuid();
@@ -28,15 +29,15 @@ describe('getByTypeFactory()', () => {
               }
             ],
             LastEvaluatedKey: {
-              Node: node + params.ExpressionAttributeValues[':GSIK'],
-              Type: type + params.ExpressionAttributeValues[':GSIK']
+              Node: tenant + node,
+              Type: type
             }
           });
         }
       };
     }
   };
-  var config = { table, maxGSIK, documentClient };
+  var config = { tenant, table, maxGSIK, documentClient };
 
   test('should be a function', () => {
     expect(typeof getByTypeFactory).toEqual('function');
@@ -114,13 +115,13 @@ describe('getByTypeFactory()', () => {
             documentClient,
             `query.args[0][0].ExpressionAttributeValues.:GSIK`
           )
-        ).toEqual(`#${startGSIK}`);
+        ).toEqual(`${tenant}#${startGSIK}`);
         expect(
           get(
             documentClient,
             `query.args[9][0].ExpressionAttributeValues.:GSIK`
           )
-        ).toEqual(`#${startGSIK + 10 - 1}`);
+        ).toEqual(`${tenant}#${startGSIK + 10 - 1}`);
       });
     });
 
@@ -135,13 +136,13 @@ describe('getByTypeFactory()', () => {
             documentClient,
             `query.args[0][0].ExpressionAttributeValues.:GSIK`
           )
-        ).toEqual(`#${startGSIK}`);
+        ).toEqual(`${tenant}#${startGSIK}`);
         expect(
           get(
             documentClient,
             `query.args[${difference - 1}][0].ExpressionAttributeValues.:GSIK`
           )
-        ).toEqual(`#${endGSIK - 1}`);
+        ).toEqual(`${tenant}#${endGSIK - 1}`);
       });
     });
 
@@ -154,6 +155,63 @@ describe('getByTypeFactory()', () => {
       });
     });
 
+    test('should return valid DynamoDB query params objects', () => {
+      var listGSIK = range(0, Math.floor(Math.random() * 10) + 3).map(
+        Math.random
+      );
+      return getByType({ expression, value, listGSIK }).then(result => {
+        listGSIK.forEach((i, j) => {
+          expect(documentClient.query.args[j][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByType',
+            KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            Limit: 10,
+            ExpressionAttributeValues: Object.assign(
+              {
+                ':GSIK': tenant + '#' + i
+              },
+              Array.isArray(value)
+                ? { ':a': value[0], ':b': value[1] }
+                : { ':Type': value }
+            )
+          });
+        });
+      });
+    });
+
+    test('should allow to set a custom limit value', () => {
+      var listGSIK = range(0, Math.floor(Math.random() * 10) + 3).map(
+        Math.random
+      );
+      var limit = Math.floor(Math.random() * 10);
+      return getByType({ expression, value, listGSIK, limit }).then(result => {
+        listGSIK.forEach((i, j) => {
+          expect(documentClient.query.args[j][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByType',
+            KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            Limit: limit,
+            ExpressionAttributeValues: Object.assign(
+              {
+                ':GSIK': tenant + '#' + i
+              },
+              Array.isArray(value)
+                ? { ':a': value[0], ':b': value[1] }
+                : { ':Type': value }
+            )
+          });
+        });
+      });
+    });
+
     test('should return the parsed and accumulated items', () => {
       var listGSIK = range(0, Math.floor(Math.random() * 100)).map(Math.random);
       return getByType({ expression, value, listGSIK }).then(result => {
@@ -161,14 +219,14 @@ describe('getByTypeFactory()', () => {
           Count: listGSIK.length,
           ScannedCount: listGSIK.length,
           Items: range(0, listGSIK.length).map(i => ({
-            Data: '#' + listGSIK[i]
+            Data: tenant + '#' + listGSIK[i]
           })),
           LastEvaluatedKeys: listGSIK.reduce(
             (acc, i) =>
               Object.assign(acc, {
                 [i]: {
-                  Node: node + '#' + i,
-                  Type: type + '#' + i
+                  Node: tenant + node,
+                  Type: type
                 }
               }),
             {}
