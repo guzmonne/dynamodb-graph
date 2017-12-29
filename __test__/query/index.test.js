@@ -69,7 +69,7 @@ describe('queryFactory()', () => {
   test('should call the `utils.checkConfiguration()` method', () => {
     sinon.spy(utils, 'checkConfiguration');
     queryFactory(config);
-    expect(utils.checkConfiguration.callCount).toBe(4);
+    expect(utils.checkConfiguration.callCount).toBe(5);
     utils.checkConfiguration.restore();
   });
 
@@ -184,7 +184,7 @@ describe('queryFactory()', () => {
       });
     });
 
-    var values = (i = 0, value) =>
+    var values = (i = 0, value, attribute = 'Type') =>
       Object.assign(
         {
           ':GSIK': tenant + '#' + i
@@ -192,7 +192,7 @@ describe('queryFactory()', () => {
         Array.isArray(value)
           ? { ':a': value[0], ':b': value[1] }
           : {
-              ':Type': value
+              [`:${attribute}`]: value
             }
       );
 
@@ -406,12 +406,79 @@ describe('queryFactory()', () => {
         });
       });
     });
+
+    test('should call the `getByData` function, when the node is undefined and the `where` data expression attributes are defined with number values', () => {
+      var attribute = 'Number';
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        attribute
+      );
+      return query({
+        where: { data: { [operator]: value } }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByData',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Number': 'Number'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(0, value, attribute)
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByData',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Number': 'Number'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(9, value, attribute)
+        });
+      });
+    });
+
+    test('should call the `getByData` function, when the node is undefined and the `where` data expression attributes are defined with string values', () => {
+      var attribute = 'String';
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        attribute
+      );
+      return query({
+        where: { data: { [operator]: value } }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByData',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Number': 'Number'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(0, value, attribute)
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByData',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Number': 'Number'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(9, value, attribute)
+        });
+      });
+    });
   });
 });
 
 function getRandomExpressionAttributes(attribute) {
+  var fn = attribute === 'Number' ? Math.random : cuid;
   var operator = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
-  var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
+  var value = operator === 'BETWEEN' ? [fn(), fn()] : fn();
   var expression =
     operator === 'BETWEEN'
       ? `#${attribute} BETWEEN :a AND :b`

@@ -4,6 +4,7 @@ var utils = require('../modules/utils.js');
 var getItemFactory = require('./getItem.js');
 var getByNodeFactory = require('./getByNode.js');
 var getByTypeFactory = require('./getByType.js');
+var getByDataFactory = require('./getByData.js');
 
 /**
  * Factory function that returns a function that can run queries against the
@@ -19,6 +20,7 @@ module.exports = function createFactory(config = {}) {
   var getItem = getItemFactory(config);
   var getByNode = getByNodeFactory(config);
   var getByType = getByTypeFactory(config);
+  var getByData = getByDataFactory(config);
 
   /**
    * Function that queries the table for items.
@@ -55,16 +57,15 @@ module.exports = function createFactory(config = {}) {
 
       var { attribute, expression, value } = utils.parseWhere(where);
 
-      if (attribute === 'type') {
-        return getByType({
-          expression,
-          value,
-          startGSIK,
-          endGSIK,
-          listGSIK,
-          limit
-        });
-      }
+      var get = attribute === 'type' ? getByType : getByData;
+      return get({
+        expression,
+        value,
+        startGSIK,
+        endGSIK,
+        listGSIK,
+        limit
+      });
     }
 
     return Promise.resolve();
