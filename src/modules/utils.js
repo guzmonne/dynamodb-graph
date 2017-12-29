@@ -14,7 +14,11 @@ module.exports = {
   parseResponseItemsData,
   mergeDynamoResponses,
   checkConfiguration,
-  parseItem
+  parseItem,
+  parseWhere,
+  get _operators() {
+    return operators.slice();
+  }
 };
 
 // ---
@@ -154,14 +158,60 @@ function checkConfiguration(config = {}) {
     throw new Error('DocumentClient is undefined');
   if (table === undefined) throw new Error('Table is undefined');
 }
-
+/**
+ * Modifies an item to have its data on a `Data` property, instead of on its
+ * `String` or `Number` property.
+ * @param {object} item - Item object to parse.
+ * @property {string} [String] - Item string data.
+ * @property {number} [Number] - Item number data.
+ * @return {object} Parsed object.
+ * @property {string|number} Data='' - Parsed item data.
+ */
 function parseItem(item) {
   item = Object.assign({}, item);
 
-  item.Data = item.String || item.Number;
+  item.Data = item.String || item.Number || '';
 
   delete item.String;
   delete item.Number;
 
   return item;
+}
+/**
+ * List of valid query operators.
+ * @typedef {QueryOperators} QueryOperators.
+ */
+var operators = ['=', '<', '>', '<=', '>=', 'BETWEEN'];
+/**
+ * @typedef {Object} QueryCondition
+ * @property {any} [QueryOperators] - Query operator value.
+ */
+/**
+ *
+ * @param {object} where - Object to parse;
+ * @property {QueryCondition} [data] - Data query condition.
+ * @property {QueryCondition} [type] - Type query condition.
+ * @return {object} Object with the query attribute, expression, and value.
+ * @property {string} attribute="data"|"type" - Condition attribute.
+ * @property {string} expression - Condition expression.
+ * @property {string|bool|number|array} value - Consition value.
+ */
+function parseWhere(where = {}) {
+  var attribute = where.data || where.type;
+
+  if (attribute === undefined) throw new Error('Invalid attribute');
+
+  var operator = Object.keys(attribute)[0];
+
+  if (operators.indexOf(operator) === -1) throw new Error('Invalid operator');
+
+  var value = attribute[operator];
+
+  if (value === undefined) throw new Error('Value is undefined');
+
+  var expression = `#Type ${operator} ${
+    Array.isArray(value) ? ':a AND :b' : ':Type'
+  }`;
+
+  return { attribute: Object.keys(where)[0], expression, value };
 }

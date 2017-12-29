@@ -101,8 +101,8 @@ describe('#parseItem()', () => {
     expect(typeof utils.parseItem).toBe('function');
   });
 
-  test('should return a new object', () => {
-    expect(utils.parseItem()).toEqual({});
+  test('should return a new object with default Data property', () => {
+    expect(utils.parseItem()).toEqual({ Data: '' });
   });
 
   test('should transform a `String` or `Number` property into a `Data` property', () => {
@@ -110,5 +110,45 @@ describe('#parseItem()', () => {
     var number = Math.random();
     expect(utils.parseItem({ String: string })).toEqual({ Data: string });
     expect(utils.parseItem({ Number: number })).toEqual({ Data: number });
+  });
+});
+
+describe('#parseWhere', () => {
+  test('should be a function', () => {
+    expect(typeof utils.parseWhere).toEqual('function');
+  });
+
+  test('should fail if `data` and `type` is undefined', () => {
+    expect(() => utils.parseWhere()).toThrow('Invalid attribute');
+  });
+
+  test('should fail if the attribute operator is invalid', () => {
+    expect(() => utils.parseWhere({ data: { o: true } })).toThrow(
+      'Invalid operator'
+    );
+  });
+
+  test('should fail if the attribute operator value is undefined', () => {
+    expect(() => utils.parseWhere({ data: { '=': undefined } })).toThrow(
+      'Value is undefined'
+    );
+  });
+
+  test('should return the attribute, the expression, and the value', () => {
+    var operator =
+      utils._operators[Math.floor(Math.random() * utils._operators.length)];
+    var attribute = Math.random() > 0.5 ? 'type' : 'data';
+    var value =
+      operator === 'BETWEEN' ? [Math.random(), Math.random()] : cuid();
+
+    var actual = utils.parseWhere({ [attribute]: { [operator]: value } });
+
+    expect(actual).toEqual({
+      attribute,
+      expression: Array.isArray(value)
+        ? '#Type BETWEEN :a AND :b'
+        : `#Type ${operator} :Type`,
+      value
+    });
   });
 });
