@@ -305,7 +305,7 @@ describe('queryFactory()', () => {
         'Type'
       );
       var start = 10 + random(10);
-      var end = start + random(10);
+      var end = 10 + start + random(10);
       return query({
         where: { type: { [operator]: value } },
         gsik: { start, end }
@@ -340,7 +340,7 @@ describe('queryFactory()', () => {
       var { value, expression, operator } = getRandomExpressionAttributes(
         'Type'
       );
-      var list = range(0, random(20)).map(() => random(100));
+      var list = range(0, random(20) + 10).map(() => random(100));
       return query({
         where: { type: { [operator]: value } },
         gsik: { list }
