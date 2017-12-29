@@ -15,7 +15,7 @@ module.exports = function getByNodeFactory(config = {}) {
 
   /**
    * Function that attempts to get a Node.
-   * @param {object} options - Node create options.
+   * @param {object} options - Query options.
    * @property {string} node - Node unique identifier.
    * @property {string} expression - Query condition expression.
    * @property {string|number} [value] - Expression value.
