@@ -16,6 +16,7 @@ module.exports = {
   checkConfiguration,
   parseItem,
   parseWhere,
+  parseResponse,
   get _operators() {
     return operators.slice();
   }
@@ -214,4 +215,14 @@ function parseWhere(where = {}) {
   }`;
 
   return { attribute: Object.keys(where)[0], expression, value };
+}
+/**
+ * Applies the `parseItem` function to each Item of the response.
+ * @param {object} response - Response object.
+ * @property {array} Items - List of items.
+ */
+function parseResponse(response = {}) {
+  var { Items = [] } = response;
+  response.Items = Items.map(parseItem);
+  return response;
 }
