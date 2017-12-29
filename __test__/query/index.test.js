@@ -2,8 +2,11 @@
 
 var sinon = require('sinon');
 var cuid = require('cuid');
+var range = require('lodash/range');
 var queryFactory = require('../../src/query/');
 var utils = require('../../src/modules/utils.js');
+
+var OPERATORS = utils._operators;
 
 describe('queryFactory()', () => {
   var maxGSIK = 10;
@@ -66,7 +69,7 @@ describe('queryFactory()', () => {
   test('should call the `utils.checkConfiguration()` method', () => {
     sinon.spy(utils, 'checkConfiguration');
     queryFactory(config);
-    expect(utils.checkConfiguration.callCount).toBe(3);
+    expect(utils.checkConfiguration.callCount).toBe(4);
     utils.checkConfiguration.restore();
   });
 
@@ -76,6 +79,20 @@ describe('queryFactory()', () => {
 
   describe('#query()', () => {
     var query = queryFactory(config);
+
+    beforeEach(() => {
+      sinon.stub(documentClient, 'query').callsFake(() => ({
+        promise: () => {
+          return Promise.resolve({
+            Items: [{}]
+          });
+        }
+      }));
+    });
+
+    afterEach(() => {
+      documentClient.query.restore();
+    });
 
     test('should return a promise', () => {
       expect(query() instanceof Promise).toBe(true);
@@ -117,13 +134,6 @@ describe('queryFactory()', () => {
       var where = {
         type: { [rSymbol]: value }
       };
-      sinon.stub(documentClient, 'query').callsFake(() => ({
-        promise: () => {
-          return Promise.resolve({
-            Items: [{}]
-          });
-        }
-      }));
       return query({ node, where }).then(result => {
         expect(documentClient.query.args[0][0]).toEqual({
           TableName: table,
@@ -152,7 +162,6 @@ describe('queryFactory()', () => {
                 ':b': 2
               }
             });
-            documentClient.query.restore();
           }
         );
       });
@@ -160,13 +169,7 @@ describe('queryFactory()', () => {
 
     test('should call the `getByNode` function just with the node, if that is the only defined property', () => {
       var node = cuid();
-      sinon.stub(documentClient, 'query').callsFake(() => ({
-        promise: () => {
-          return Promise.resolve({
-            Items: [{}]
-          });
-        }
-      }));
+
       return query({ node }).then(result => {
         expect(documentClient.query.args[0][0]).toEqual({
           TableName: table,
@@ -178,8 +181,244 @@ describe('queryFactory()', () => {
             ':Node': node
           }
         });
-        documentClient.query.restore();
+      });
+    });
+
+    var values = (i = 0, value) =>
+      Object.assign(
+        {
+          ':GSIK': tenant + '#' + i
+        },
+        Array.isArray(value)
+          ? { ':a': value[0], ':b': value[1] }
+          : {
+              ':Type': value
+            }
+      );
+
+    test('should call the `getByType` function, when the node is undefined and the `where` type expression attributes are defined', () => {
+      var value = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        'Type'
+      );
+      return query({
+        where: { type: { [operator]: value } }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(0, value)
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(9, value)
+        });
+      });
+    });
+
+    test('should call the `getByType` function, when the node is undefined and the `where` type expression attributes and the gsik `limit` option is defined', () => {
+      var value = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        'Type'
+      );
+      var limit = random(10);
+      return query({
+        where: { type: { [operator]: value } },
+        gsik: { limit }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: limit,
+          ExpressionAttributeValues: values(0, value)
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: limit,
+          ExpressionAttributeValues: values(9, value)
+        });
+      });
+    });
+
+    test('should call the `getByType` function, when the node is undefined and the `where` type expression attributes and the gsik `start` option is defined', () => {
+      var value = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        'Type'
+      );
+      var start = random(10);
+      return query({
+        where: { type: { [operator]: value } },
+        gsik: { start }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(start, value)
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(start + 9, value)
+        });
+      });
+    });
+
+    test('should call the `getByType` function, when the node is undefined and the `where` type expression attributes and the gsik `start` and `end` option are defined', () => {
+      var value = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        'Type'
+      );
+      var start = 10 + random(10);
+      var end = start + random(10);
+      return query({
+        where: { type: { [operator]: value } },
+        gsik: { start, end }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(start, value)
+        });
+        expect(documentClient.query.args[end - start - 1][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(end - 1, value)
+        });
+      });
+    });
+
+    test('should call the `getByType` function, when the node is undefined and the `where` type expression attributes and the gsik `list` option is defined', () => {
+      var value = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        'Type'
+      );
+      var list = range(0, random(20)).map(() => random(100));
+      return query({
+        where: { type: { [operator]: value } },
+        gsik: { list }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(list[0], value)
+        });
+        expect(documentClient.query.args[list.length - 1][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: 10,
+          ExpressionAttributeValues: values(list[list.length - 1], value)
+        });
+      });
+    });
+
+    test('should call the `getByType` function, when the node is undefined and the `where` type expression attributes and gsik options are defined', () => {
+      var value = cuid();
+      var { value, expression, operator } = getRandomExpressionAttributes(
+        'Type'
+      );
+      var start = random(10);
+      var end = start + random(100);
+      var limit = random(10);
+      return query({
+        where: { type: { [operator]: value } },
+        gsik: { start, end, limit }
+      }).then(result => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: limit,
+          ExpressionAttributeValues: values(start, value)
+        });
+        expect(documentClient.query.args[end - start - 1][0]).toEqual({
+          TableName: table,
+          IndexName: 'ByType',
+          KeyConditionExpression: `#GSIK = :GSIK AND ${expression}`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          Limit: limit,
+          ExpressionAttributeValues: values(end - 1, value)
+        });
       });
     });
   });
 });
+
+function getRandomExpressionAttributes(attribute) {
+  var operator = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
+  var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
+  var expression =
+    operator === 'BETWEEN'
+      ? `#${attribute} BETWEEN :a AND :b`
+      : `#${attribute} ${operator} :Type`;
+  return { operator, value, expression };
+}
+
+function random(i) {
+  return Math.floor(Math.random() * i);
+}

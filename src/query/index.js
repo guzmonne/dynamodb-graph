@@ -3,6 +3,7 @@
 var utils = require('../modules/utils.js');
 var getItemFactory = require('./getItem.js');
 var getByNodeFactory = require('./getByNode.js');
+var getByTypeFactory = require('./getByType.js');
 
 /**
  * Factory function that returns a function that can run queries against the
@@ -17,6 +18,7 @@ module.exports = function createFactory(config = {}) {
 
   var getItem = getItemFactory(config);
   var getByNode = getByNodeFactory(config);
+  var getByType = getByTypeFactory(config);
 
   /**
    * Function that queries the table for items.
@@ -31,9 +33,11 @@ module.exports = function createFactory(config = {}) {
     if (options === undefined || typeof options !== 'object')
       return Promise.resolve({});
 
-    var { node, type, where } = options;
+    var { node, where } = options;
 
     if (node !== undefined) {
+      var { type } = options;
+
       if (type !== undefined) return getItem({ node, type });
 
       if (where !== undefined) {
@@ -43,6 +47,24 @@ module.exports = function createFactory(config = {}) {
       }
 
       return getByNode({ node });
+    }
+
+    if (where !== undefined) {
+      var { gsik = {} } = options;
+      var { start: startGSIK, end: endGSIK, limit, list: listGSIK } = gsik;
+
+      var { attribute, expression, value } = utils.parseWhere(where);
+
+      if (attribute === 'type') {
+        return getByType({
+          expression,
+          value,
+          startGSIK,
+          endGSIK,
+          listGSIK,
+          limit
+        });
+      }
     }
 
     return Promise.resolve();
