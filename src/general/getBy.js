@@ -19,6 +19,17 @@ module.exports = function getByFactory(index, config = {}) {
   utils.checkConfiguration(config);
 
   /**
+   * Gets the correct attribute given the index and value data.
+   * @param {number|string|number[]|string[]} value - Query expression value.
+   * @return {string} Name of the attribute.
+   */
+  function getAttribute(value) {
+    var data = Array.isArray(value) ? value[0] : value;
+    return index === 'Type'
+      ? 'Type'
+      : typeof data === 'number' ? 'Number' : 'String';
+  }
+  /**
    * Constructs the ExpressionAttributeValues object.
    * @param {string} gsik - GSIK value.
    * @param {string|number|array} value - Expression value
@@ -29,6 +40,7 @@ module.exports = function getByFactory(index, config = {}) {
    * @property {string|number} [:b] - 'b' value.
    */
   function values(gsik, value) {
+    var attribute = getAttribute(value);
     var attributes = {
       ':GSIK': gsik
     };
@@ -37,7 +49,7 @@ module.exports = function getByFactory(index, config = {}) {
       attributes[':a'] = value[0];
       attributes[':b'] = value[1];
     } else {
-      attributes[':Type'] = value;
+      attributes[`:${attribute}`] = value;
     }
 
     return attributes;
@@ -50,9 +62,7 @@ module.exports = function getByFactory(index, config = {}) {
    * @param {number|string|array} value - Type condition value.
    */
   function params(gsik, limit, expression, value) {
-    var data = Array.isArray(value) ? value[0] : value;
-    var attribute =
-      index === 'Type' ? 'Type' : typeof data === number ? 'Number' : 'String';
+    var attribute = getAttribute(value);
 
     return {
       TableName: table,
