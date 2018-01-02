@@ -88,19 +88,11 @@ module.exports = function getNodeTypesFactory(config) {
         return batchGetNodePromise(node, chunk);
       })
     ).then(results => {
-      return results.reduce(
-        (acc, result) => {
-          acc.Items = acc.Items.concat(result.Items);
-          acc.Count += result.Count || 0;
-          acc.ScannedCount += result.ScannedCount || 0;
-          return acc;
-        },
-        {
-          Count: 0,
-          ScannedCount: 0,
-          Items: []
-        }
-      );
+      return results.reduce(utils.mergeDynamoResponses, {
+        Count: 0,
+        ScannedCount: 0,
+        Items: []
+      });
     });
   };
 };

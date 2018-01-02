@@ -480,14 +480,14 @@ describe('queryFactory()', () => {
 
     test('should call the `getByTypeAndData` function, when the node is undefined and the `where` and `and` options are defined for string values', () => {
       var attribute = 'String';
-      var data = cuid();
       var type = cuid();
       var { value, expression, operator } = getRandomExpressionAttributes(
-        attribute
+        attribute,
+        cuid
       );
       return query({
         where: { type: { '=': type } },
-        and: { data: { [operator]: data } }
+        and: { data: { [operator]: value } }
       }).then(result => {
         expect(documentClient.query.args[0][0]).toEqual({
           TableName: table,
@@ -498,7 +498,7 @@ describe('queryFactory()', () => {
             '#String': 'String'
           },
           Limit: 10,
-          ExpressionAttributeValues: values(0, data, attribute, type)
+          ExpressionAttributeValues: values(0, value, attribute, type)
         });
         expect(documentClient.query.args[9][0]).toEqual({
           TableName: table,
@@ -509,7 +509,7 @@ describe('queryFactory()', () => {
             '#String': 'String'
           },
           Limit: 10,
-          ExpressionAttributeValues: values(9, data, attribute, type)
+          ExpressionAttributeValues: values(9, value, attribute, type)
         });
       });
     });
@@ -607,10 +607,15 @@ describe('queryFactory()', () => {
             '#String': 'String'
           },
           Limit: limit,
-          ExpressionAttributeValues: {
-            ':TGSIK': tenant + '#' + type + '#' + start,
-            ':String': value
-          }
+          ExpressionAttributeValues: Object.assign(
+            {},
+            {
+              ':TGSIK': tenant + '#' + type + '#' + start
+            },
+            Array.isArray(value)
+              ? { ':a': value[0], ':b': value[1] }
+              : { ':String': value }
+          )
         });
         expect(documentClient.query.args[end - start - 1][0]).toEqual({
           TableName: table,
@@ -621,18 +626,23 @@ describe('queryFactory()', () => {
             '#String': 'String'
           },
           Limit: limit,
-          ExpressionAttributeValues: {
-            ':TGSIK': tenant + '#' + type + '#' + (end - 1),
-            ':String': value
-          }
+          ExpressionAttributeValues: Object.assign(
+            {},
+            {
+              ':TGSIK': tenant + '#' + type + '#' + (end - 1)
+            },
+            Array.isArray(value)
+              ? { ':a': value[0], ':b': value[1] }
+              : { ':String': value }
+          )
         });
       });
     });
   });
 });
 
-function getRandomExpressionAttributes(attribute) {
-  var fn = attribute === 'Number' ? Math.random : cuid;
+function getRandomExpressionAttributes(attribute, fn) {
+  fn || (fn = attribute === 'Number' ? Math.random : cuid);
   var operator = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
   var value = operator === 'BETWEEN' ? [fn(), fn()] : fn();
   var expression =

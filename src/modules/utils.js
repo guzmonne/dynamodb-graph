@@ -28,14 +28,29 @@ module.exports = {
  * @param {DynamoDBResponse} response1
  * @param {DynamoDBResponse} response2
  */
-function mergeDynamoResponses(response1, response2) {
-  if (!response1) return response2;
+function mergeDynamoResponses(res1, res2) {
+  if (!res1) return res2;
 
-  var result = {
-    Items: response1.Items.concat(response2.Items),
-    Count: response1.Count + response2.Count,
-    ScannedCount: response1.ScannedCount + response2.ScannedCount
-  };
+  var result = Object.assign(
+    {},
+    {
+      Items: res1.Items.concat(res2.Items),
+      Count: (res1.Count || 0) + (res2.Count || 0),
+      ScannedCount: (res1.ScannedCount || 0) + (res2.ScannedCount || 0)
+    },
+    process.env.DEBUG !== undefined
+      ? {
+          ConsumedCapacity: {
+            TableName:
+              get(res1, 'ConsumedCapacity.TableName', '') ||
+              get(res2, 'ConsumedCapacity.TableName', ''),
+            CapacityUnits:
+              get(res1, 'ConsumedCapacity.CapacityUnits', 0) +
+              get(res2, 'ConsumedCapacity.CapacityUnits', 0)
+          }
+        }
+      : {}
+  );
 
   return result;
 }

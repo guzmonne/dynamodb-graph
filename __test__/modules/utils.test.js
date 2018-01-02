@@ -148,7 +148,8 @@ describe('#parseWhere', () => {
       expression: Array.isArray(value)
         ? '#Type BETWEEN :a AND :b'
         : `#Type ${operator} :Type`,
-      value
+      value,
+      operator
     });
   });
 
@@ -165,7 +166,8 @@ describe('#parseWhere', () => {
       expression: Array.isArray(value)
         ? '#String BETWEEN :a AND :b'
         : `#String ${operator} :String`,
-      value
+      value,
+      operator
     });
   });
 
@@ -183,7 +185,8 @@ describe('#parseWhere', () => {
       expression: Array.isArray(value)
         ? '#Number BETWEEN :a AND :b'
         : `#Number ${operator} :Number`,
-      value
+      value,
+      operator
     });
   });
 });
