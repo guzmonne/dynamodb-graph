@@ -148,8 +148,8 @@ describe('getByTypeAndDataFactory()', () => {
     });
 
     test('should allow to set the `startTGSIK` and the `endTGSIK`', () => {
-      var startTGSIK = Math.floor(Math.random() * 10 + 5);
-      var endTGSIK = startTGSIK + Math.floor(Math.random() * 10);
+      var startTGSIK = Math.floor(Math.random() * 10) + 5;
+      var endTGSIK = startTGSIK + Math.floor(Math.random() * 10) + 5;
       var difference = endTGSIK - startTGSIK;
       return getByTypeAndData({
         type,

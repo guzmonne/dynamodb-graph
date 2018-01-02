@@ -34,9 +34,9 @@ function mergeDynamoResponses(res1, res2) {
   var result = Object.assign(
     {},
     {
-      Items: res1.Items.concat(res2.Items),
-      Count: (res1.Count || 0) + (res2.Count || 0),
-      ScannedCount: (res1.ScannedCount || 0) + (res2.ScannedCount || 0)
+      Items: get(res1, 'Items', []).concat(get(res2, 'Items', [])),
+      Count: get(res1, 'Count', 0) + get(res2, 'Count', 0),
+      ScannedCount: get(res1, 'ScannedCount', 0) + get(res2, 'ScannedCount', 0)
     },
     process.env.DEBUG !== undefined
       ? {

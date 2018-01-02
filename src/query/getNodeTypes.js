@@ -4,6 +4,9 @@ var chunk = require('lodash/chunk.js');
 var get = require('lodash/get.js');
 var utils = require('../modules/utils.js');
 
+var TIMEOUT = process.env.TIMEOUT || 2; // ms
+var MAX_RETRIES = process.env.MAX_RETRIES || 10;
+
 /**
  * Factory that returns a function that attempts to get a bunch of Node items
  * by type.
@@ -14,64 +17,81 @@ var utils = require('../modules/utils.js');
 module.exports = function getNodeTypesFactory(config) {
   var { tenant = '', documentClient, table } = config;
 
-  function batchGetNodePromise(node, types, previousResponse) {
-    var params = {
-      RequestItems: {
-        [table]: {
-          Keys: types.map(type => ({
-            Node: node,
-            Type: type
-          }))
-        }
-      }
-    };
-
-    if (process.env.DEBUG) {
-      params.ReturnConsumedCapacity = 'INDEXES';
-      params.ReturnItemCollectionMetrics = 'SIZE';
-    }
-
-    return new Promise((resolve, reject) => {
-      return documentClient
-        .batchGet(params)
-        .promise()
-        .then(response => {
-          if (typeof previousResponse === 'object') {
-            var accumulatedResponses = {
-              Count:
-                get(previousResponse, 'Count', 0) + get(response, 'Count', 0),
-              ScannedCount:
-                get(previousResponse, 'ScannedCount', 0) +
-                get(response, 'ScannedCount', 0),
-              Items: get(previousResponse, 'Items', []).concat(
-                get(response, 'Items', [])
-              )
-            };
-
-            if (response.UnprocessedKeys)
-              accumulatedResponses.UnprocessedKeys = response.UnprocessedKeys;
-
-            return accumulatedResponses;
-          }
-          return response;
-        })
-        .then(response => {
-          if (Array.isArray(response.UnprocessedKeys) === true)
-            return batchGetNodePromise(
-              node,
-              response.UnprocessedKeys,
-              response
-            );
-          return response;
-        })
-        .then(utils.parseResponse)
-        .then(resolve)
-        .catch(reject);
-    });
-  }
-
   utils.checkConfiguration(config);
 
+  /**
+   * Function that queries the DynamoDB table recursively. If one of the
+   * queries returns with an UnprocessedKeys list of items, it runs the
+   * query again, asking for the remaining types. The process continues until
+   * more than 10 retries are attempted, or all the items have been found.
+   * @param {string[]} types - List of types to get
+   * @return {Promise} Resolves to a DynamoDB response with all the types.
+   */
+  function batchGetHandler(node, types) {
+    var retries = 0;
+    var accumulatedResponses = {};
+
+    // First recursive iteration.
+    return recursive(types);
+    /**
+     * Recursive Function that queries the DynamoDB table, to get the types.
+     * If one of the queries returns with an UnprocessedKeys list of items, it
+     * runs the query again, asking for the remaining types. The process
+     * continues until more than 10 retries are attempted, or all the items
+     * have been found.
+     * @param {string[]} types - List of types to get
+     * @return {Promise} Resolves to a DynamoDB response with all the types.
+     */
+    function recursive(types) {
+      var params = {
+        RequestItems: {
+          [table]: {
+            Keys: types.map(type => ({
+              Node: node,
+              Type: type
+            }))
+          }
+        }
+      };
+
+      if (process.env.DEBUG) {
+        params.ReturnConsumedCapacity = 'INDEXES';
+        params.ReturnItemCollectionMetrics = 'SIZE';
+      }
+
+      return new Promise((resolve, reject) => {
+        return Promise.resolve()
+          .then(() => documentClient.batchGet(params).promise())
+          .then(response => {
+            // Accumulate results.
+            accumulatedResponses = utils.mergeDynamoResponses(
+              accumulatedResponses,
+              response
+            );
+            // Check if some keys were left unprocessed.
+            if (
+              Array.isArray(response.UnprocessedKeys) === true &&
+              response.UnprocessedKeys.length > 0
+            ) {
+              // Throw if this is the MAX_RETRIES attempt.
+              if (retries === MAX_RETRIES)
+                throw new Error('More than 10 retries while running the query');
+              retries += 1;
+              // Exponential backoff timeout.
+              return new Promise(res =>
+                setTimeout(() => res(), TIMEOUT * Math.pow(2, retries))
+              ).then(() =>
+                recursive(response.UnprocessedKeys.map(key => key.Type))
+              );
+            }
+            return accumulatedResponses;
+          })
+          .then(utils.parseResponse)
+          .then(resolve)
+          .catch(reject);
+      });
+    }
+  }
   /**
    * Functions that attempts to get various types of items from the table.
    * @return {Promise} BatchGet DynamoDB request promise.
@@ -85,7 +105,7 @@ module.exports = function getNodeTypesFactory(config) {
     return Promise.all(
       chunk(types, 100).map(chunk => {
         var results = [];
-        return batchGetNodePromise(node, chunk);
+        return batchGetHandler(node, chunk);
       })
     ).then(results => {
       return results.reduce(utils.mergeDynamoResponses, {
