@@ -18,11 +18,35 @@ describe('#getNodes()', () => {
       promise: () => {
         var gsik = params.ExpressionAttributeValues[':GSIK'];
         if (gsik === tenant + '#' + 0)
-          return Promise.resolve(dynamoResponse.raw({ Items: [{ Data: 1 }] }));
+          return Promise.resolve(
+            dynamoResponse.raw({
+              Items: [{ Data: 1 }],
+              ConsumedCapacity: {
+                Table: table,
+                CapacityUnits: 1
+              }
+            })
+          );
         if (gsik === tenant + '#' + 1)
-          return Promise.resolve(dynamoResponse.raw({ Items: [{ Data: 2 }] }));
+          return Promise.resolve(
+            dynamoResponse.raw({
+              Items: [{ Data: 2 }],
+              ConsumedCapacity: {
+                Table: table,
+                CapacityUnits: 1
+              }
+            })
+          );
         if (gsik === tenant + '#' + 2)
-          return Promise.resolve(dynamoResponse.raw({ Items: [{ Data: 3 }] }));
+          return Promise.resolve(
+            dynamoResponse.raw({
+              Items: [{ Data: 3 }],
+              ConsumedCapacity: {
+                Table: table,
+                CapacityUnits: 1
+              }
+            })
+          );
         return Promise.resolve();
       }
     })
@@ -45,14 +69,14 @@ describe('#getNodes()', () => {
   });
 
   test('should return a response object with all nodes', () => {
-    return getNodes({ db: db(), table })({ tenant, type, maxGSIK })
-      .then(response => {
+    return getNodes({ db: db(), table })({ tenant, type, maxGSIK }).then(
+      response => {
         expect(response).toEqual({
           Count: 3,
           Items: [{ Data: 1 }, { Data: 2 }, { Data: 3 }],
           ScannedCount: 30
         });
-      })
-      .catch(error => expect(error).toEqual(null));
+      }
+    );
   });
 });
