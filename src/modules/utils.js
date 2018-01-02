@@ -197,7 +197,7 @@ function parseItem(item) {
  * List of valid query operators.
  * @typedef {QueryOperators} QueryOperators.
  */
-var operators = ['=', '<', '>', '<=', '>=', 'BETWEEN'];
+var operators = ['=', '<', '>', '<=', '>=', 'BETWEEN', 'BEGINS_WITH'];
 /**
  * @typedef {Object} QueryCondition
  * @property {any} [QueryOperators] - Query operator value.
@@ -226,6 +226,8 @@ function parseWhere(where = {}) {
   var value = attributes[operator];
 
   if (value === undefined) throw new Error('Value is undefined');
+  if (operator === 'BEGINS_WITH' && Array.isArray(value))
+    throw new Error('Invalid value for operator');
 
   var variable =
     attribute === 'type'
@@ -234,9 +236,12 @@ function parseWhere(where = {}) {
         ? 'Number'
         : 'String';
 
-  var expression = `#${variable} ${operator} ${
-    Array.isArray(value) ? ':a AND :b' : `:${variable}`
-  }`;
+  var expression =
+    operator === 'BEGINS_WITH'
+      ? `BEGINS_WITH(#${variable}, :${variable})`
+      : `#${variable} ${operator} ${
+          Array.isArray(value) ? ':a AND :b' : `:${variable}`
+        }`;
 
   return { attribute, expression, value, operator };
 }

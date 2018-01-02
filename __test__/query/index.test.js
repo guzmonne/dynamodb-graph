@@ -380,8 +380,8 @@ describe('queryFactory()', () => {
       var { value, expression, operator } = getRandomExpressionAttributes(
         'Type'
       );
-      var start = random(10);
-      var end = start + random(100);
+      var start = random(10) + 5;
+      var end = start + random(100) + 5;
       var limit = random(10);
       return query({
         where: { type: { [operator]: value } },
@@ -646,9 +646,11 @@ function getRandomExpressionAttributes(attribute, fn) {
   var operator = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
   var value = operator === 'BETWEEN' ? [fn(), fn()] : fn();
   var expression =
-    operator === 'BETWEEN'
-      ? `#${attribute} BETWEEN :a AND :b`
-      : `#${attribute} ${operator} :${attribute}`;
+    operator === 'BEGINS_WITH'
+      ? `BEGINS_WITH(#${attribute}, :${attribute})`
+      : operator === 'BETWEEN'
+        ? `#${attribute} BETWEEN :a AND :b`
+        : `#${attribute} ${operator} :${attribute}`;
   return { operator, value, expression };
 }
 
