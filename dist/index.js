@@ -1,70 +1,47 @@
 'use strict';
 
-var createEdge = require('../src/createEdge.js');
-var createEdges = require('../src/createEdges.js');
-var createNode = require('../src/createNode.js');
-var createProperties = require('../src/createProperties.js');
-var createProperty = require('../src/createProperty.js');
-var deleteNode = require('../src/deleteNode.js');
-var deletePropertyOrEdge = require('../src/deletePropertyOrEdge.js');
-var edgeItem = require('../src/edgeItem.js');
-var getNode = require('../src/getNode.js');
-var getNodeData = require('../src/getNodeData.js');
-var getNodeEdges = require('../src/getNodeEdges.js');
-var getNodeProperties = require('../src/getNodeProperties.js');
-var getNodePropertiesAndEdges = require('../src/getNodePropertiesAndEdges.js');
-var getNodesWithProperties = require('../src/getNodesWithProperties.js');
-var getNodesWithPropertiesAndEdges = require('../src/getNodesWithPropertiesAndEdges.js');
-var getNodes = require('../src/getNodes.js');
-var getNodesByGSIK = require('../src/getNodesByGSIK.js');
-var getNodeType = require('../src/getNodeType.js');
-var getNodeTypes = require('../src/getNodeTypes.js');
-var nodeItem = require('../src/nodeItem.js');
-var propertyItem = require('../src/propertyItem.js');
+var utils = require('../src/modules/utils.js');
+var create = (module.exports = function(config) {
+  utils.checkConfiguration(config);
 
-//EXPORTS
-//=======
-var fns = {
-  createEdge,
-  createEdges,
-  createNode,
-  createProperty,
-  createProperties,
-  deleteNode,
-  deletePropertyOrEdge,
-  getNode,
-  getNodeData,
-  getNodeEdges,
-  getNodeProperties,
-  getNodePropertiesAndEdges,
-  getNodesWithProperties,
-  getNodesWithPropertiesAndEdges,
-  getNodes,
-  getNodesByGSIK,
-  getNodeType,
-  getNodeTypes
-};
+  var inter = {
+    node: {
+      create: require('../src/node/create.js')(config),
+      item: require('../src/node/item.js')(config)
+    },
+    edge: {
+      create: require('../src/edge/create.js')(config),
+      item: require('../src/edge/item.js')(config)
+    },
+    property: {
+      create: require('../src/property/create.js')(config),
+      item: require('../src/property/item.js')(config)
+    },
+    get: require('../src/query/getItem.js')(config),
+    query: require('../src/query/')(config)
+  };
 
-var props = {
-  edgeItem,
-  nodeItem,
-  propertyItem
-};
-
-module.exports = function dynamodbGraoh(options = {}) {
-  options.table || (options.table = process.env.TABLE_NAME);
-
-  if (!options.db) throw new Error('DB is undefined');
-  if (!options.table) throw new Error('Table is undefined');
-
-  return Object.assign(
-    Object.keys(fns).reduce(
-      (acc, key) =>
-        Object.assign(acc, {
-          [key]: fns[key](options)
-        }),
-      {}
-    ),
-    props
+  inter.get.properties = getFactory(
+    require('../src/query/getNodeProperties.js')(config)
   );
-};
+
+  inter.get.edges = getFactory(require('../src/query/getNodeEdges.js')(config));
+
+  return inter;
+
+  // ---
+  /**
+   * Calls the query function after passing the `where` option.
+   * @param {function} fn - Query function to use.
+   */
+  function getFactory(fn) {
+    return function(options) {
+      var { where } = options;
+
+      if (where !== undefined)
+        options = Object.assign({}, options, utils.parseWhere(where));
+
+      return fn(options);
+    };
+  }
+});
