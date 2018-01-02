@@ -39,10 +39,16 @@ Resources:
           AttributeName: "Type"
           AttributeType: "S"
         -
-          AttributeName: "Data"
+          AttributeName: "String"
           AttributeType: "S"
         -
+          AttributeName: "Number"
+          AttributeType: "N"
+        -
           AttributeName: "GSIK"
+          AttributeType: "S"
+        -
+          AttributeName: "TGSIK"
           AttributeType: "S"
       KeySchema:
         -
@@ -66,29 +72,63 @@ Resources:
               AttributeName: "Type"
               KeyType: "RANGE"
           Projection:
-            NonKeyAttributes:
-              - "Data"
-              - "Target"
-              - "MetaData"
-            ProjectionType: "INCLUDE"
+            ProjectionType: "ALL"
           ProvisionedThroughput:
             ReadCapacityUnits: "2"
             WriteCapacityUnits: "2"
         -
-          IndexName: "ByData"
+          IndexName: "ByNumber"
           KeySchema:
             -
               AttributeName: "GSIK"
               KeyType: "HASH"
             -
-              AttributeName: "Data"
+              AttributeName: "Number"
               KeyType: "RANGE"
           Projection:
-            NonKeyAttributes:
-              - "Type"
-              - "Target"
-              - "MetaData"
-            ProjectionType: "INCLUDE"
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "2"
+            WriteCapacityUnits: "2"
+        -
+          IndexName: "ByString"
+          KeySchema:
+            -
+              AttributeName: "GSIK"
+              KeyType: "HASH"
+            -
+              AttributeName: "String"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "2"
+            WriteCapacityUnits: "2"
+        -
+          IndexName: "ByTypeAndNumber"
+          KeySchema:
+            -
+              AttributeName: "TGSIK"
+              KeyType: "HASH"
+            -
+              AttributeName: "Number"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
+          ProvisionedThroughput:
+            ReadCapacityUnits: "2"
+            WriteCapacityUnits: "2"
+        -
+          IndexName: "ByTypeAndString"
+          KeySchema:
+            -
+              AttributeName: "TGSIK"
+              KeyType: "HASH"
+            -
+              AttributeName: "String"
+              KeyType: "RANGE"
+          Projection:
+            ProjectionType: "ALL"
           ProvisionedThroughput:
             ReadCapacityUnits: "2"
             WriteCapacityUnits: "2"
@@ -120,10 +160,11 @@ called `TABLE_NAME`.
 var AWS = require('aws-sdk');
 var dynamoGraph = require('dynamodb-graph');
 
-var db = new AWS.DynamoDB.DocumentClient();
+var maxGSIK = 10;
+var documentClient = new AWS.DynamoDB.DocumentClient();
 var table = process.env.TABLE_NAME;
 
-var dg = dynamoGraph({ db, table });
+var g = dynamoGraph({ documentClient, table, maxGSIK });
 ```
 
 Each function returns a promise.
