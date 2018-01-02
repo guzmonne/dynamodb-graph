@@ -36,8 +36,6 @@ module.exports = function itemFactory(config = {}) {
     if (dataType !== 'string' && dataType !== 'number')
       throw new Error('Data type must be a string or a number');
 
-    node = [tenant, node].filter(v => v !== '').join('#');
-
     var Data = dataType === 'string' ? 'String' : 'Number';
 
     return {

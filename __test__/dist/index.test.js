@@ -103,7 +103,7 @@ describe('dynamodb-graph', () => {
 
       test('should return a valid node item', () => {
         var expected = {
-          Node: tenant + '#' + node,
+          Node: node,
           Number: data,
           Type: type,
           Target: target,
@@ -147,7 +147,7 @@ describe('dynamodb-graph', () => {
 
       test('should return a valid node item', () => {
         var expected = {
-          Node: tenant + '#' + node,
+          Node: node,
           Number: data,
           Type: type,
           GSIK: utils.calculateGSIK({ node, maxGSIK, tenant }),

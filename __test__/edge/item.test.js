@@ -56,10 +56,9 @@ describe('itemFactory()', () => {
       expect(item({ node, data, type }).Node).toEqual(node);
     });
 
-    test('should apply the tenant value to the Node, GSIK, and TGSIK', () => {
+    test('should apply the tenant value to the GSIK, and TGSIK', () => {
       var options = { node, data, type, target };
       var actual = item(options);
-      expect(actual.Node.indexOf(tenant) === 0).toBe(true);
       expect(actual.GSIK.indexOf(tenant) === 0).toBe(true);
       expect(actual.TGSIK.indexOf(tenant) === 0).toBe(true);
     });
@@ -68,7 +67,7 @@ describe('itemFactory()', () => {
       var options = { node, data, type, target };
       var config = Object.assign({}, options, { maxGSIK, tenant });
       expect(item(options)).toEqual({
-        Node: tenant + '#' + node,
+        Node: node,
         Type: type,
         String: data,
         Target: target,
@@ -82,7 +81,7 @@ describe('itemFactory()', () => {
       var options = { node, data, type, target };
       var config = Object.assign({}, options, { maxGSIK, tenant });
       expect(item(options)).toEqual({
-        Node: tenant + '#' + node,
+        Node: node,
         Type: type,
         Number: data,
         Target: target,

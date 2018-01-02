@@ -76,7 +76,7 @@ describe('createFactory', () => {
           expect(documentClient.put.args[0][0]).toEqual({
             TableName: table,
             Item: {
-              Node: tenant + '#' + node,
+              Node: node,
               Type: type,
               String: data,
               Target: target,
@@ -107,7 +107,7 @@ describe('createFactory', () => {
         expect(documentClient.put.args[0][0]).toEqual({
           TableName: table,
           Item: {
-            Node: tenant + '#' + node,
+            Node: node,
             Type: type,
             Number: 4,
             Target: target,
