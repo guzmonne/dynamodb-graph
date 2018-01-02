@@ -27,10 +27,6 @@ describe('itemFactory()', () => {
   var item = itemFactory({ documentClient, table, maxGSIK, tenant });
 
   describe('#item', () => {
-    test('should throw an error if Node is undefined', () => {
-      expect(() => item()).toThrow('Node is undefined');
-    });
-
     test('should throw an error if Type is undefined', () => {
       expect(() => item({ node })).toThrow('Type is undefined');
     });
@@ -49,6 +45,12 @@ describe('itemFactory()', () => {
       expect(typeof item({ node, data, type })).toBe('object');
     });
 
+    test('should assign a random node id using the tenant id if none is provided', () => {
+      var actual = item({ data: 1, type: 'Number' });
+      expect(!!actual.Node).toBe(true);
+      expect(actual.Node.indexOf(tenant) > -1).toBe(true);
+    });
+
     test('should apply an empty value to tenant if it is undefined', () => {
       var item = itemFactory(Object.assign({}, config, { tenant: undefined }));
 
@@ -56,7 +58,7 @@ describe('itemFactory()', () => {
     });
 
     test('should apply the tenant value to the Node, GSIK, and TGSIK', () => {
-      var options = { node, data, type };
+      var options = { data, type };
       var actual = item(options);
       expect(actual.Node.indexOf(tenant) === 0).toBe(true);
       expect(actual.GSIK.indexOf(tenant) === 0).toBe(true);
@@ -73,9 +75,9 @@ describe('itemFactory()', () => {
       var options = { node, data, type };
       var config = Object.assign({}, options, { maxGSIK, tenant });
       expect(item(options)).toEqual({
-        Node: tenant + '#' + node,
+        Node: node,
         Type: type,
-        Target: tenant + '#' + node,
+        Target: node,
         String: data,
         GSIK: utils.calculateGSIK(config),
         TGSIK: utils.calculateTGSIK(config)
@@ -87,9 +89,9 @@ describe('itemFactory()', () => {
       var options = { node, data, type };
       var config = Object.assign({}, options, { maxGSIK, tenant });
       expect(item(options)).toEqual({
-        Node: tenant + '#' + node,
+        Node: node,
         Type: type,
-        Target: tenant + '#' + node,
+        Target: node,
         Number: data,
         GSIK: utils.calculateGSIK(config),
         TGSIK: utils.calculateTGSIK(config)

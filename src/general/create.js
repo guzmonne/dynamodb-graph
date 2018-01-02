@@ -26,16 +26,21 @@ module.exports = function createFactory(item, config = {}) {
     if (type === undefined) throw new Error('Type is undefined');
     if (data === undefined) throw new Error('Data is undefined');
 
+    var Item = item({ node, type, data, target });
+
     var params = {
       TableName: table,
-      Item: item({ node, type, data, target })
+      Item
     };
 
-    if (process.env.DEBUG) {
-      params.ReturnConsumedCapacity = 'INDEXES';
+    if (process.env.DEBUG !== undefined) {
+      params.ReturnConsumedCapacity = 'TOTAL';
       params.ReturnItemCollectionMetrics = 'SIZE';
     }
 
-    return documentClient.put(params).promise();
+    return documentClient
+      .put(params)
+      .promise()
+      .then(() => ({ Item: utils.parseItem(Item) }));
   };
 };

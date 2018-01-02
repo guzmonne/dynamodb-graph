@@ -1,5 +1,6 @@
 'use strict';
 
+var cuid = require('cuid');
 var utils = require('../modules/utils.js');
 
 /**
@@ -25,7 +26,6 @@ module.exports = function itemFactory(config = {}) {
 
     var { data, node, type } = options;
 
-    if (node === undefined) throw new Error('Node is undefined');
     if (type === undefined) throw new Error('Type is undefined');
     if (data === undefined) throw new Error('Data is undefined');
 
@@ -34,15 +34,16 @@ module.exports = function itemFactory(config = {}) {
     if (dataType !== 'string' && dataType !== 'number')
       throw new Error('Data type must be a string or a number');
 
-    node = [tenant, node].filter(v => v !== '').join('#');
+    if (options.node === undefined)
+      options.node = [tenant, cuid()].filter(v => v !== '').join('#');
 
     var Data = dataType === 'string' ? 'String' : 'Number';
 
     return {
-      Node: node,
+      Node: options.node,
       GSIK: utils.calculateGSIK(options),
       TGSIK: utils.calculateTGSIK(options),
-      Target: node,
+      Target: options.node,
       Type: type,
       [Data]: data
     };

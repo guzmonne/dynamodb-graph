@@ -59,10 +59,10 @@ describe('dynamodb-graph', () => {
 
       test('should return a valid node item', () => {
         var expected = {
-          Node: tenant + '#' + node,
+          Node: node,
           Number: data,
           Type: type,
-          Target: tenant + '#' + node,
+          Target: node,
           GSIK: utils.calculateGSIK({ node, maxGSIK, tenant }),
           TGSIK: utils.calculateTGSIK({ node, maxGSIK, tenant, type })
         };

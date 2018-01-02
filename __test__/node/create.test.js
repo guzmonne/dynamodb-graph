@@ -67,7 +67,7 @@ describe('createFactory', () => {
     test('should use the provided `node` if defined', () => {
       var node = cuid();
       return create({ node, data, type }).then(result => {
-        expect(result.Item.Node).toEqual(tenant + '#' + node);
+        expect(result.Item.Node).toEqual(node);
       });
     });
 
@@ -79,10 +79,10 @@ describe('createFactory', () => {
           expect(documentClient.put.args[0][0]).toEqual({
             TableName: table,
             Item: {
-              Node: tenant + '#' + node,
+              Node: node,
               Type: type,
               String: data,
-              Target: tenant + '#' + node,
+              Target: node,
               GSIK: utils.calculateGSIK({ node, maxGSIK, tenant }),
               TGSIK: utils.calculateTGSIK({ node, maxGSIK, tenant, type })
             }
@@ -110,10 +110,10 @@ describe('createFactory', () => {
         expect(documentClient.put.args[0][0]).toEqual({
           TableName: table,
           Item: {
-            Node: tenant + '#' + node,
+            Node: node,
             Type: type,
             Number: 4,
-            Target: tenant + '#' + node,
+            Target: node,
             GSIK: utils.calculateGSIK(params),
             TGSIK: utils.calculateTGSIK(params)
           }
