@@ -166,9 +166,12 @@ describe('#parseWhere', () => {
 
     expect(actual).toEqual({
       attribute,
-      expression: Array.isArray(value)
-        ? '#String BETWEEN :a AND :b'
-        : `#String ${operator} :String`,
+      expression:
+        operator === 'BEGINS_WITH'
+          ? `BEGINS_WITH(#String, :String)`
+          : Array.isArray(value)
+            ? '#String BETWEEN :a AND :b'
+            : `#String ${operator} :String`,
       value,
       operator
     });
@@ -185,9 +188,12 @@ describe('#parseWhere', () => {
 
     expect(actual).toEqual({
       attribute,
-      expression: Array.isArray(value)
-        ? '#Number BETWEEN :a AND :b'
-        : `#Number ${operator} :Number`,
+      expression:
+        operator === 'BEGINS_WITH'
+          ? `BEGINS_WITH(#Number, :Number)`
+          : Array.isArray(value)
+            ? '#Number BETWEEN :a AND :b'
+            : `#Number ${operator} :Number`,
       value,
       operator
     });
