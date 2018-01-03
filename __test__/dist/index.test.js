@@ -195,12 +195,12 @@ describe('dynamodb-graph', () => {
       test('should call the `documentClient.query` method, passing the correct expression and value if the `where` option is defined', () => {
         sinon.spy(documentClient, 'query');
         g.get
-          .properties({ node, where: { type: { BEGINS_WITH: type } } })
+          .properties({ node, where: { type: { begins_with: type } } })
           .then(() => {
             expect(documentClient.query.args[0][0]).toEqual({
               TableName: table,
               KeyConditionExpression:
-                '#Node = :Node AND BEGINS_WITH(#Type, :Type)',
+                '#Node = :Node AND begins_with(#Type, :Type)',
               ExpressionAttributeNames: {
                 '#Node': 'Node',
                 '#Type': 'Type',

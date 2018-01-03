@@ -18,11 +18,13 @@ describe('getNodeTypesFactory()', () => {
         var attribute = Math.random() * 10 > 5 ? 'String' : 'Number';
         var data = type => (attribute === 'String' ? type : type.length);
         return Promise.resolve({
-          Items: params.RequestItems[table].Keys.map(key =>
-            Object.assign({}, key, {
-              [attribute]: data(key.Type)
-            })
-          )
+          Responses: {
+            [table]: params.RequestItems[table].Keys.map(key =>
+              Object.assign({}, key, {
+                [attribute]: data(key.Type)
+              })
+            )
+          }
         });
       }
     })
@@ -131,9 +133,7 @@ describe('getNodeTypesFactory()', () => {
     });
 
     test('should continue trying to read from the table if `UnprocessedKeys` is returned', () => {
-      var types = range(0, Math.floor(1000 + Math.random() * 1000) * 2).map(
-        cuid
-      );
+      var types = range(0, Math.floor(1000 + Math.random() * 10) * 2).map(cuid);
       documentClient.batchGet.restore();
       sinon.stub(documentClient, 'batchGet').callsFake(params => ({
         promise: () => {
@@ -143,20 +143,24 @@ describe('getNodeTypesFactory()', () => {
           var keys = params.RequestItems[table].Keys;
           if (Math.round(Math.random()) < 0.999) {
             result = {
-              Items: keys.slice(0, keys.length / 2).map(key =>
-                Object.assign({}, key, {
-                  [attribute]: data(key.Type)
-                })
-              ),
+              Responses: {
+                [table]: keys.slice(0, keys.length / 2).map(key =>
+                  Object.assign({}, key, {
+                    [attribute]: data(key.Type)
+                  })
+                )
+              },
               UnprocessedKeys: keys.slice(keys.length / 2, keys.length)
             };
           } else {
             result = {
-              Items: keys.map(key =>
-                Object.assign({}, key, {
-                  [attribute]: data(key.Type)
-                })
-              )
+              Responses: {
+                [table]: keys.map(key =>
+                  Object.assign({}, key, {
+                    [attribute]: data(key.Type)
+                  })
+                )
+              }
             };
           }
           return Promise.resolve(result);

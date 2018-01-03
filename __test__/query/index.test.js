@@ -20,7 +20,12 @@ describe('queryFactory()', () => {
   var type2 = cuid();
   var documentClient = {
     batchGet: params => ({
-      promise: () => Promise.resolve({})
+      promise: () =>
+        Promise.resolve({
+          Responses: {
+            [table]: []
+          }
+        })
     }),
     query: params => {
       promise: () => {

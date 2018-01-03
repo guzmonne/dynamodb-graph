@@ -15,7 +15,7 @@ var MAX_RETRIES = process.env.MAX_RETRIES || 10;
  * @return {function} Function that attempts to create a new node.
  */
 module.exports = function getNodeTypesFactory(config) {
-  var { tenant = '', documentClient, table } = config;
+  var { documentClient, table } = config;
 
   utils.checkConfiguration(config);
 
@@ -29,7 +29,7 @@ module.exports = function getNodeTypesFactory(config) {
    */
   function batchGetHandler(node, types) {
     var retries = 0;
-    var accumulatedResponses = {};
+    var accumulatedResponses = [];
 
     // First recursive iteration.
     return recursive(types);
@@ -62,11 +62,10 @@ module.exports = function getNodeTypesFactory(config) {
       return new Promise((resolve, reject) => {
         return Promise.resolve()
           .then(() => documentClient.batchGet(params).promise())
-          .then(response => {
+          .then((response = {}) => {
             // Accumulate results.
-            accumulatedResponses = utils.mergeDynamoResponses(
-              accumulatedResponses,
-              response
+            accumulatedResponses = accumulatedResponses.concat(
+              response.Responses[table]
             );
             // Check if some keys were left unprocessed.
             if (
@@ -84,8 +83,8 @@ module.exports = function getNodeTypesFactory(config) {
                 recursive(response.UnprocessedKeys.map(key => key.Type))
               );
             }
-            return accumulatedResponses;
           })
+          .then(() => ({ Items: accumulatedResponses }))
           .then(utils.parseResponse)
           .then(resolve)
           .catch(reject);
