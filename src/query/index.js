@@ -42,7 +42,12 @@ module.exports = function createFactory(config = {}) {
     if (node !== undefined) {
       var { type } = options;
 
-      if (type !== undefined) return getItem({ node, type });
+      if (type !== undefined)
+        return getItem({ node, type }).then((response = {}) => {
+          response.Items = [Object.assign({}, response.Item)];
+          delete response.Item;
+          return response;
+        });
 
       if (where !== undefined) {
         var { expression, value } = utils.parseWhere(where);

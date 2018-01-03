@@ -43,8 +43,7 @@ module.exports = function getItemFactory(config = {}) {
       .get(params)
       .promise()
       .then((response = {}) => {
-        response.Items = [utils.parseItem(response.Item)];
-        delete response.Item;
+        response.Item = utils.parseItem(response.Item);
         return response;
       });
   };

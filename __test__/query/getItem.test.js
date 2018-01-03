@@ -109,23 +109,21 @@ describe('getItemFactory()', () => {
     test('should renamed the `String` or `Number` key to `Data`', () => {
       return getItem({ node, type }).then(result => {
         expect(result).toEqual({
-          Items: [
-            {
-              Node: node,
-              Type: type,
-              Data: data,
-              Target: target,
-              GSIK: utils.calculateGSIK({
-                node,
-                maxGSIK
-              }),
-              TGSIK: utils.calculateTGSIK({
-                node: node,
-                type: type,
-                maxGSIK
-              })
-            }
-          ]
+          Item: {
+            Node: node,
+            Type: type,
+            Data: data,
+            Target: target,
+            GSIK: utils.calculateGSIK({
+              node,
+              maxGSIK
+            }),
+            TGSIK: utils.calculateTGSIK({
+              node: node,
+              type: type,
+              maxGSIK
+            })
+          }
         });
       });
     });
