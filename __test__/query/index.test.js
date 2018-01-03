@@ -19,6 +19,9 @@ describe('queryFactory()', () => {
   var type1 = cuid();
   var type2 = cuid();
   var documentClient = {
+    batchGet: params => ({
+      promise: () => Promise.resolve({})
+    }),
     query: params => {
       promise: () => {
         return Promise.resolve({
@@ -81,6 +84,7 @@ describe('queryFactory()', () => {
     var query = queryFactory(config);
 
     beforeEach(() => {
+      sinon.spy(documentClient, 'batchGet');
       sinon.stub(documentClient, 'query').callsFake(() => ({
         promise: () => {
           return Promise.resolve({
@@ -92,6 +96,7 @@ describe('queryFactory()', () => {
 
     afterEach(() => {
       documentClient.query.restore();
+      documentClient.batchGet.restore();
     });
 
     test('should throw an error if node and where is undefined', () => {
@@ -168,6 +173,23 @@ describe('queryFactory()', () => {
             });
           }
         );
+      });
+    });
+
+    test('should call the `getNodeTypes` function, with all the provided `types` at the specified `node`', () => {
+      var node = cuid();
+      var types = range(0, Math.random() * 10 + 10).map(cuid);
+      return query({ node, types }).then(result => {
+        expect(documentClient.batchGet.args[0][0]).toEqual({
+          RequestItems: {
+            [table]: {
+              Keys: types.map(type => ({
+                Node: node,
+                Type: type
+              }))
+            }
+          }
+        });
       });
     });
 
@@ -646,8 +668,8 @@ function getRandomExpressionAttributes(attribute, fn) {
   var operator = OPERATORS[Math.floor(Math.random() * OPERATORS.length)];
   var value = operator === 'BETWEEN' ? [fn(), fn()] : fn();
   var expression =
-    operator === 'BEGINS_WITH'
-      ? `BEGINS_WITH(#${attribute}, :${attribute})`
+    operator === 'begins_with'
+      ? `begins_with(#${attribute}, :${attribute})`
       : operator === 'BETWEEN'
         ? `#${attribute} BETWEEN :a AND :b`
         : `#${attribute} ${operator} :${attribute}`;

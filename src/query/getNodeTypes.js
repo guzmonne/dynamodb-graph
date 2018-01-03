@@ -94,6 +94,9 @@ module.exports = function getNodeTypesFactory(config) {
   }
   /**
    * Functions that attempts to get various types of items from the table.
+   * @param {object} options - Options configuration object.
+   * @property {string} node - Node identifier.
+   * @property {string[]} types - List of node types to get.
    * @return {Promise} BatchGet DynamoDB request promise.
    */
   return function getNodeTypes(options = {}) {

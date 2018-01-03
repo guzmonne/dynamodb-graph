@@ -2,6 +2,7 @@
 
 var utils = require('../modules/utils.js');
 var getItemFactory = require('./getItem.js');
+var getNodeTypesFactory = require('./getNodeTypes.js');
 var getByNodeFactory = require('./getByNode.js');
 var getByTypeFactory = require('./getByType.js');
 var getByDataFactory = require('./getByData.js');
@@ -14,11 +15,8 @@ var getByTypeAndDataFactory = require('./getByTypeAndData.js');
  * @return {function} Function that attempts to create a new node.
  */
 module.exports = function createFactory(config = {}) {
-  var { tenant = '', documentClient, table } = config;
-
-  utils.checkConfiguration(config);
-
   var getItem = getItemFactory(config);
+  var getNodeTypes = getNodeTypesFactory(config);
   var getByNode = getByNodeFactory(config);
   var getByType = getByTypeFactory(config);
   var getByData = getByDataFactory(config);
@@ -40,7 +38,7 @@ module.exports = function createFactory(config = {}) {
     var { node, where, and } = options;
 
     if (node !== undefined) {
-      var { type } = options;
+      var { types, type } = options;
 
       if (type !== undefined)
         return getItem({ node, type }).then((response = {}) => {
@@ -48,6 +46,10 @@ module.exports = function createFactory(config = {}) {
           delete response.Item;
           return response;
         });
+
+      if (types !== undefined) {
+        return getNodeTypes({ node, types });
+      }
 
       if (where !== undefined) {
         var { expression, value } = utils.parseWhere(where);
