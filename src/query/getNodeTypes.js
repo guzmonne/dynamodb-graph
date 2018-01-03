@@ -109,12 +109,16 @@ module.exports = function getNodeTypesFactory(config) {
         var results = [];
         return batchGetHandler(node, chunk);
       })
-    ).then(results => {
-      return results.reduce(utils.mergeDynamoResponses, {
-        Count: 0,
-        ScannedCount: 0,
-        Items: []
-      });
+    ).then(responses => {
+      var items = responses.reduce(
+        (acc, { Items = [] }) => acc.concat(Items),
+        []
+      );
+      return {
+        Items: items,
+        Count: items.length,
+        ScannedCount: items.length
+      };
     });
   };
 };
