@@ -1,5 +1,7 @@
 # DynamoDB-Graph
 
+## Introduction
+
 This is a library aimed to work with DynamoDB as if it was a Graph. The idea came from the "Advanced Design Patterns for Amazon DynamoDB (DAT403-R)" talk from Rick Houlihan on 2017 AWS re:Invent conference. Close to the end, he describes a way to use a DynamoDB table to represent a directed graph. I found that notion very interesting, so I wanted to create a library that would abstract the details of the graph representation, on top of the AWS SDK.
 
 As a perk, I added three notions of my own:
@@ -20,7 +22,7 @@ The downside of this approach is that this table implementation uses all 5 possi
 
 **Important Note:** This library was built on top of Node 6.10.3, because I wanted to use it on AWS Lambda, and at the moment is the highest version supported. It should work on higher versions, but I haven't tried it.
 
-## DynamoDB table.
+##DynamoDB table.
 
 The schema for the DynamoDB table, written as a CloudFormation template is the following:
 
@@ -133,15 +135,23 @@ Resources:
             WriteCapacityUnits: "2"
 ```
 
-On the `scripts` folder you'll find scripts to implement this table on your AWS account.
+On the `scripts` folder you'll find scripts to implement this table on your AWS account. You can call them directly or using `yarn` or `npm` tasks:
+
+```
+yarn validate:stack // Validates the template.
+yarn delete:stack   // Deletes the current stack.
+yarn describe:stack // Describes the current stack status and info.
+yarn deploy:stack   // Deploys the stack to your configured AWS account.
+```
 
 ## Getting Started
 
-Install the library on your project using `npm` or `yarn`.
+Install the library on your project using npm or yarn.
 
 ```
+// NPM
 npm install --save dynamodb-graph
-
+// YARN
 yarn install dynamodb-graph
 ```
 
@@ -161,6 +171,27 @@ var g = dynamodbGraph({ documentClient, maxGSIK, table, tenant });
 
 Each function returns a promise, exept the ones who create items.
 
+## Playground
+
+To be able to test the library I have provided some scripts that work on existing data. More specifically, ["The Simpsons" by the data](https://www.kaggle.com/wcukierski/the-simpsons-by-the-data). You can go to the link, and download it from [Kaggle](https://www.kaggle.com). Then `unzip` the file inside the `scripts` folder, and run the `seed_local_table.js` script. Then go take a cup of coffee, a sandwich, and catch up on your current series, cause it's gonna take a long time to load. I did my best to show the progress of the upload so you know that something is going on.
+
+After all the data is up, you can run the script `playground.js` and see the library in action with some examples I come up with. More examples are welcomed.
+
+Lastly, I left another script called `repl.js`, which contains the library, an instantiated `documentClient` driver, and some other useful functions to use on the node `repl`. Just open up a `node` console and run:
+
+```
+var {g, documentClient, dynamo, log, scan} = require('./scripts/repl.js')
+```
+
+Or something like that.
+
+**Important note**: both scripts can be used against DynamoDB itself, though I wouldn't suggest to do so. I won't take responsability for any charges generated on your account while using this library. Instead, you should run a local instance of DynamoDB. To my knowledge, there are two alternatives:
+
+1. [Dynalite](https://github.com/mhart/dynalite), from [Michael Hart](https://github.com/mhart).
+2. [Official DynamoDB local version](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html).
+
+Any one of those will work fine, just be sure to run it on `port` **8989** or to set the `ENDPOINT` environment variable pointed to your local process, when running all scripts.
+
 ## Documentation
 
 **TODO**
@@ -173,7 +204,9 @@ I am using `jest` to test the library, and Node **6.10.3**. So, just clone the r
 
 ```
 git clone git@github.com:guzmonne/dynamodb-graph.git
+
 yarn install
+
 yarn test
 ```
 
