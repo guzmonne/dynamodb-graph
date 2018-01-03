@@ -126,9 +126,11 @@ module.exports = function getByFactory(index, config = {}) {
 
     listGSIK.forEach(i => {
       var gsik = tenant + '#' + i;
+      var parameters = params(gsik, limit, expression, value);
+
       promises.push(
         documentClient
-          .query(params(gsik, limit, expression, value))
+          .query(parameters)
           .promise()
           .then(utils.parseResponse)
       );

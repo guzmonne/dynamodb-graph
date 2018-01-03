@@ -127,9 +127,11 @@ module.exports = function getByTypeAndDataFactory(config = {}) {
 
     listTGSIK.forEach(i => {
       var tgsik = tenant + '#' + type + '#' + i;
+      var parameters = params(tgsik, limit, expression, value);
+
       promises.push(
         documentClient
-          .query(params(tgsik, limit, expression, value))
+          .query(parameters)
           .promise()
           .then(utils.parseResponse)
       );

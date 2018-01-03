@@ -197,7 +197,7 @@ function parseItem(item) {
  * List of valid query operators.
  * @typedef {QueryOperators} QueryOperators.
  */
-var operators = ['=', '<', '>', '<=', '>=', 'BETWEEN', 'BEGINS_WITH'];
+var operators = ['=', '<', '>', '<=', '>=', 'BETWEEN', 'begins_with'];
 /**
  * @typedef {Object} QueryCondition
  * @property {any} [QueryOperators] - Query operator value.
@@ -237,8 +237,8 @@ function parseWhere(where = {}) {
         : 'String';
 
   var expression =
-    operator === 'BEGINS_WITH'
-      ? `BEGINS_WITH(#${variable}, :${variable})`
+    operator === 'begins_with'
+      ? `begins_with(#${variable}, :${variable})`
       : `#${variable} ${operator} ${
           Array.isArray(value) ? ':a AND :b' : `:${variable}`
         }`;

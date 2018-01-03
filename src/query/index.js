@@ -80,6 +80,7 @@ module.exports = function createFactory(config = {}) {
     }
 
     var get = attribute === 'type' ? getByType : getByData;
+
     return get({
       expression,
       value,
