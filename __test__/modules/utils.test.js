@@ -145,9 +145,12 @@ describe('#parseWhere', () => {
 
     expect(actual).toEqual({
       attribute,
-      expression: Array.isArray(value)
-        ? '#Type BETWEEN :a AND :b'
-        : `#Type ${operator} :Type`,
+      expression:
+        operator === 'BEGINS_WITH'
+          ? `BEGINS_WITH(#Type, :Type)`
+          : Array.isArray(value)
+            ? '#Type BETWEEN :a AND :b'
+            : `#Type ${operator} :Type`,
       value,
       operator
     });
