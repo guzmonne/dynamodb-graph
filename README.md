@@ -316,14 +316,15 @@ g
 
 #### Get a list of node items by type
 
-If we pass in a list of `types` to the `get()` function, it will return all the items with those types on that `node`.
+If we pass in a list of `types` to the `get()` function, it will return all the items with those types on that `node`. If you set the `type` when calling the `node` function, it will be added to the list of item types to get.
 
 ```javascript
 var id = 'Character#2';
+var type = 'Character';
 
 g
-  .node({ id })
-  .get(['StarredIn', 'Character', 'Gender'])
+  .node({ id, type })
+  .get(['StarredIn', 'Gender'])
   .then(result => {
     console.log(result.Items);
     /**
