@@ -239,7 +239,7 @@ Here we are connecting a character Node to an episode Node. To do that, we selec
 
 ```javascript
 var id = 'Character#2';
-var type = 'StarredIn';
+var type = 'StarredIn#Episode#1';
 var target = 'Episode#1';
 var data = 'Bart the Genius';
 
@@ -251,7 +251,7 @@ g
     /**
      * {
      *    Node: 'Character#2',
-     *    Type: 'StarredIn',
+     *    Type: 'StarredIn#Episode#1',
      *    Data: 'Bart the Genius',
      *    GSIK: '9',
      *    Target: 'Episode#1'
@@ -324,7 +324,7 @@ var type = 'Character';
 
 g
   .node({ id, type })
-  .get(['StarredIn', 'Gender'])
+  .get(['StarredIn#Episode#1', 'Gender'])
   .then(result => {
     console.log(result.Items);
     /**
@@ -336,7 +336,7 @@ g
      *    Target: 'Character#2'
      * }, {
      *    Node: 'Character#2',
-     *    Type: 'StarredIn',
+     *    Type: 'StarredIn#Episode#1',
      *    Data: 'Bart the Genius',
      *    GSIK: '9',
      *    Target: 'Episode#1'
@@ -366,7 +366,7 @@ g
     /**
      * [{
      *    Node: 'Character#2',
-     *    Type: 'StarredIn',
+     *    Type: 'StarredIn#Episode#1',
      *    Data: 'Bart the Genius',
      *    GSIK: '9',
      *    Target: 'Episode#1'
@@ -402,7 +402,7 @@ g
      *    GSIK: '9',
      * }, {
      *    Node: 'Character#2',
-     *    Type: 'StarredIn',
+     *    Type: 'StarredIn#Episode#1',
      *    Data: 'Bart the Genius',
      *    GSIK: '9',
      *    Target: 'Episode#1'
@@ -426,7 +426,7 @@ g
     /**
      * [{
      *    Node: 'Character#2',
-     *    Type: 'StarredIn',
+     *    Type: 'StarredIn#Episode#1',
      *    Data: 'Bart the Genius',
      *    GSIK: '9',
      *    Target: 'Episode#1'
