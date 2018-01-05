@@ -41,4 +41,16 @@ describe('dynamodbGraph', () => {
     dynamodbGraph({ documentClient, table });
     expect(dynamodbGraph._table).toEqual(table);
   });
+
+  test('should be an object', () => {
+    expect(typeof dynamodbGraph({ documentClient, table })).toEqual('object');
+  });
+
+  describe('#g.node', () => {
+    var g = dynamodbGraph({ documentClient, table });
+
+    test('should be a function', () => {
+      expect(typeof g.node).toEqual('function');
+    });
+  });
 });
