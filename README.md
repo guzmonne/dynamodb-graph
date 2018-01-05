@@ -314,17 +314,51 @@ g
   });
 ```
 
-#### Get all the node edges or props.
+#### Get a list of node items by type
+
+If we pass in a list of `types` to the `get()` function, it will return all the items with those types on that `node`.
+
+```javascript
+var id = 'Character#2';
+
+g
+  .node({ id })
+  .get(['StarredIn', 'Character', 'Gender'])
+  .then(result => {
+    console.log(result.Items);
+    /**
+     * [{
+     *    Node: 'Character#2',
+     *    Type: 'StarredIn',
+     *    Data: 'Bart the Genius',
+     *    GSIK: '9',
+     *    Target: 'Episode#1'
+     * }, {
+     *    Node: 'Character#2',
+     *    Type: 'Character',
+     *    Data: 'Homer Simpson',
+     *    GSIK: '9',
+     *    Target: 'Character#2'
+     * }, {
+     *    Node: 'Character#2',
+     *    Type: 'Gender',
+     *    Data: 'm',
+     *    GSIK: '9',
+     * }]
+     */
+  });
+```
+
+#### Get all the node edges, props, or all types.
 
 To get all the Node edges or props, we use the `edges()` or `props()` method respectively, after providing the node `id`, to the `node` function.
 
 ```javascript
 var id = 'Character#2';
-var type = 'Character';
 
 // -- Edges --
 g
-  .node({ id, type })
+  .node({ id })
   .edges()
   .then(result => {
     console.log(result.Items);
@@ -340,7 +374,7 @@ g
   });
 // -- Props --
 g
-  .node({ id, type })
+  .node({ id })
   .props()
   .then(result => {
     console.log(result.Items);
@@ -353,6 +387,27 @@ g
      * }]
      */
   });
+// -- All --
+g
+  .node({ id })
+  .all()
+  .then(result => {
+    console.log(result.Items);
+    /**
+     * [{
+     *    Node: 'Character#2',
+     *    Type: 'Gender',
+     *    Data: 'm',
+     *    GSIK: '9',
+     * }, {
+     *    Node: 'Character#2',
+     *    Type: 'StarredIn',
+     *    Data: 'Bart the Genius',
+     *    GSIK: '9',
+     *    Target: 'Episode#1'
+     * }]
+     */
+  });
 ```
 
 Take into account that the `type` value declared on the node is not necessary and won't be taken into consideration when this function is called.
@@ -361,11 +416,10 @@ Both functions allow to set a limit on how much items you want. Just set the `li
 
 ```javascript
 var id = 'Character#2';
-var type = 'Character';
 
 g
-  .node({ id, type })
-  .edges({ limit: 1 })
+  .node({ id })
+  .edges({ limit: 1 }) // Also applies to `prop()` and `all()`
   .then(result => {
     console.log(result.Items);
     /**
@@ -392,8 +446,8 @@ var type = 'Character';
 var offset = 'Q2hhcmFjdGVy';
 
 g
-  .node({ id, type })
-  .edges({ offset })
+  .node({ id })
+  .edges({ offset }) // Also applies to `prop()` and `all()`
   .then(result => {
     console.log(result.Items);
     /**
@@ -408,55 +462,6 @@ g
     console.log(result.LastEvaluatedKey);
     /**
      * Q2hhcmFjdGVyIzJ8Q2hhcmFjdGVy
-     */
-  });
-```
-
-#### Get a list of props or edges.
-
-Both the `get.edges` and `get.props` methods accept an options object to modify their behaviour. If we pass in a list of `types`, it will return all the items with those types on the `node`.
-
-```javascript
-var id = 'Character#2';
-
-// -- Edges --
-g
-  .node({ id })
-  .edges({ types: ['StarredIn'] })
-  .then(result => {
-    console.log(result.Items);
-    /**
-     * [{
-     *    Node: 'Character#2',
-     *    Type: 'StarredIn',
-     *    Data: 'Bart the Genius',
-     *    GSIK: '9',
-     *    Target: 'Episode#1'
-     * }]
-     */
-  });
-// -- Props --
-var type = 'Character';
-
-g
-  .node({ id, type })
-  .props({ types: ['Gender'] })
-  .then(result => {
-    console.log(result);
-    /**
-     * Note that now `result` is a **list**.
-     * [{
-     *    Node: 'Character#2',
-     *    Type: 'Character',
-     *    Data: 'Homer Simpson',
-     *    GSIK: '9',
-     *    Target: 'Character#2'
-     * }, {
-     *    Node: 'Character#2',
-     *    Type: 'Gender',
-     *    Data: 'm',
-     *    GSIK: '9',
-     * }]
      */
   });
 ```
