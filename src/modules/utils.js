@@ -178,23 +178,27 @@ function checkConfiguration(config = {}) {
   if (table === undefined) throw new Error('Table is undefined');
 }
 /**
- * Modifies an item to have its data on a `Data` property, instead of on its
- * `String` or `Number` property.
- * @param {object} item - Item object to parse.
- * @property {string} [String] - Item string data.
- * @property {number} [Number] - Item number data.
- * @return {object} Parsed object.
- * @property {string|number} Data='' - Parsed item data.
+ * List of GraphItem keys that may contain the `tenant` information.
+ * @type string[]
  */
-function parseItem(item) {
-  item = Object.assign({}, item);
-
-  item.Data = item.String || item.Number || '';
-
-  delete item.String;
-  delete item.Number;
-
-  return item;
+var GRAPH_ITEM_KEYS_WITH_TENANT = ['Node', 'GSIK', 'Target'];
+/**
+ * Removes the tenant from the item.
+ * @param {GraphItem} item - Item object to parse.
+ */
+function parseItem(options = {}) {
+  var { Item = {} } = options;
+  var list;
+  Item = Object.assign({}, Item);
+  Object.keys(Item).forEach(key => {
+    if (GRAPH_ITEM_KEYS_WITH_TENANT.indexOf(key) > -1) {
+      list = Item[key].split('|');
+      if (list.length > 1) {
+        Item[key] = list.slice(1).join('|');
+      }
+    }
+  });
+  return { Item };
 }
 /**
  * List of valid query operators.

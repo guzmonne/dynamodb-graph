@@ -115,15 +115,45 @@ describe('#parseItem()', () => {
     expect(typeof utils.parseItem).toBe('function');
   });
 
-  test('should return a new object with default Data property', () => {
-    expect(utils.parseItem()).toEqual({ Data: '' });
+  test('should remove the `tenant` value from the `Node`, `GSIK`, and `Target` attributes', () => {
+    var tenant = cuid();
+    var node = cuid();
+    var target = cuid();
+    var data = cuid();
+    var type = cuid();
+    var Item = {
+      Node: utils.prefixTenant(tenant, node),
+      Type: type,
+      Data: data,
+      Target: utils.prefixTenant(tenant, target),
+      GSIK: utils.calculateGSIK({ node, tenant })
+    };
+    utils.parseItem({ Item });
+    expect(Item).toEqual({
+      Node: node,
+      Type: type,
+      Data: data,
+      Target: target,
+      GSIK: '0'
+    });
   });
 
-  test('should transform a `String` or `Number` property into a `Data` property', () => {
-    var string = cuid();
-    var number = Math.random();
-    expect(utils.parseItem({ String: string })).toEqual({ Data: string });
-    expect(utils.parseItem({ Number: number })).toEqual({ Data: number });
+  test('should not modify the item is a `tenant` was not used', () => {
+    var tenant = '';
+    var node = cuid();
+    var target = cuid();
+    var data = cuid();
+    var type = cuid();
+    var Item = {
+      Node: utils.prefixTenant(tenant, node),
+      Type: type,
+      Data: data,
+      Target: utils.prefixTenant(tenant, target),
+      GSIK: utils.calculateGSIK({ node, tenant })
+    };
+    var expected = Object.assign({}, Item);
+    utils.parseItem({ Item });
+    expect(Item).toEqual(expected);
   });
 });
 
