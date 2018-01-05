@@ -1,13 +1,12 @@
 'use strict';
 
 var cuid = require('cuid');
+var { calculateGSIK, prefixTenant } = require('./modules/utils.js');
 
 module.exports = nodeFactory;
 
-var { calculateGSIK } = require('./modules/utils.js');
-
 function nodeFactory(config = {}) {
-  var { documentClient, table, maxGSIK, tenant } = config;
+  var { documentClient, table, maxGSIK, tenant = '' } = config;
 
   return function node(options = {}) {
     var { node: id = cuid(), type } = options;
@@ -35,15 +34,19 @@ function nodeFactory(config = {}) {
           'Can configure `prop`, `target`, and `data` values at the same type'
         );
 
+      var pTenant = prefixTenant(tenant);
+
+      var item = {
+        Node: pTenant(id),
+        Type: type,
+        Data: data || prop,
+        Target: pTenant(target || id),
+        GSIK: calculateGSIK({ node: id, maxGSIK, tenant })
+      };
+
       var params = {
         TableName: table,
-        Item: {
-          Node: id,
-          Type: type,
-          Data: data || prop,
-          Target: target || id,
-          GSIK: calculateGSIK({ node: id, maxGSIK, tenant })
-        }
+        Item: item
       };
 
       if (prop !== undefined) delete params.Item.Target;

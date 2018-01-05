@@ -3,7 +3,7 @@
 var cuid = require('cuid');
 var sinon = require('sinon');
 var nodeFactory = require('../src/node.js');
-var { calculateGSIK } = require('../src/modules/utils.js');
+var { calculateGSIK, prefixTenant } = require('../src/modules/utils.js');
 
 describe('nodeFactory', () => {
   test('should be a function', () => {
@@ -26,6 +26,7 @@ describe('nodeFactory', () => {
     };
     var maxGSIK = 10;
     var tenant = Math.random() > 0.5 ? undefined : cuid();
+    var pTenant = prefixTenant(tenant);
     var table = 'TestTable';
     var node = nodeFactory({
       documentClient,
@@ -86,10 +87,10 @@ describe('nodeFactory', () => {
           expect(documentClient.put.args[0][0]).toEqual({
             TableName: table,
             Item: {
-              Node: id,
+              Node: pTenant(id),
               Data: data,
               Type: type,
-              Target: id,
+              Target: pTenant(id),
               GSIK: calculateGSIK({ node: id, tenant, maxGSIK })
             }
           });
@@ -102,10 +103,10 @@ describe('nodeFactory', () => {
           expect(documentClient.put.args[0][0]).toEqual({
             TableName: table,
             Item: {
-              Node: id,
+              Node: pTenant(id),
               Data: data,
               Type: type,
-              Target: target,
+              Target: pTenant(target),
               GSIK: calculateGSIK({ node: id, tenant, maxGSIK })
             }
           });
@@ -130,7 +131,7 @@ describe('nodeFactory', () => {
           expect(documentClient.put.args[0][0]).toEqual({
             TableName: table,
             Item: {
-              Node: id,
+              Node: pTenant(id),
               Data: prop,
               Type: type,
               GSIK: calculateGSIK({ node: id, tenant, maxGSIK })
