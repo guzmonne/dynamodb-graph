@@ -4,7 +4,7 @@ var sinon = require('sinon');
 var cuid = require('cuid');
 var chunk = require('lodash/chunk.js');
 var range = require('lodash/range.js');
-var getNodeTypesFactory = require('../../src/query/getNodeTypes.js');
+var getNodeTypesFactory = require('../../src/getNodeTypes.js');
 var utils = require('../../src/modules/utils.js');
 
 describe('getNodeTypesFactory()', () => {
@@ -33,13 +33,6 @@ describe('getNodeTypesFactory()', () => {
 
   test('should be a function', () => {
     expect(typeof getNodeTypesFactory).toEqual('function');
-  });
-
-  test('should call the `utils.checkConfiguration` function', () => {
-    sinon.spy(utils, 'checkConfiguration');
-    getNodeTypesFactory(config);
-    expect(utils.checkConfiguration.calledOnce).toBe(true);
-    utils.checkConfiguration.restore();
   });
 
   describe('#getNodeTypes()', () => {
@@ -119,16 +112,6 @@ describe('getNodeTypesFactory()', () => {
 
       return getNodeTypes({ node, types }).then(result => {
         expect(result.Items.length).toEqual(1000);
-      });
-    });
-
-    test('should parse the Items returned', () => {
-      var types = range(0, 1000).map(cuid);
-
-      return getNodeTypes({ node, types }).then(result => {
-        range(0, 1000).forEach(i => {
-          expect(!!result.Items[i].Data).toBe(true);
-        });
       });
     });
 

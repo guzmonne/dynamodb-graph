@@ -2,7 +2,7 @@
 
 var chunk = require('lodash/chunk.js');
 var get = require('lodash/get.js');
-var utils = require('../modules/utils.js');
+var utils = require('./modules/utils.js');
 
 var TIMEOUT = process.env.TIMEOUT || 2; // ms
 var MAX_RETRIES = process.env.MAX_RETRIES || 10;
@@ -16,8 +16,6 @@ var MAX_RETRIES = process.env.MAX_RETRIES || 10;
  */
 module.exports = function getNodeTypesFactory(config) {
   var { documentClient, table } = config;
-
-  utils.checkConfiguration(config);
 
   /**
    * Function that queries the DynamoDB table recursively. If one of the
@@ -53,11 +51,6 @@ module.exports = function getNodeTypesFactory(config) {
           }
         }
       };
-
-      if (process.env.DEBUG) {
-        params.ReturnConsumedCapacity = 'INDEXES';
-        params.ReturnItemCollectionMetrics = 'SIZE';
-      }
 
       return new Promise((resolve, reject) => {
         return Promise.resolve()
