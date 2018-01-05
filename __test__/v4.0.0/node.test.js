@@ -2,8 +2,8 @@
 
 var cuid = require('cuid');
 var sinon = require('sinon');
-var nodeFactory = require('../src/node.js');
-var { calculateGSIK, prefixTenant } = require('../src/modules/utils.js');
+var nodeFactory = require('../../src/node.js');
+var { calculateGSIK, prefixTenant } = require('../../src/modules/utils.js');
 
 describe('nodeFactory', () => {
   test('should be a function', () => {

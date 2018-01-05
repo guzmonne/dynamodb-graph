@@ -2,7 +2,7 @@
 
 var cuid = require('cuid');
 var range = require('lodash/range');
-var utils = require('../../src/modules/utils.js');
+var utils = require('../../../src/modules/utils.js');
 
 describe('#checkConfiguration', () => {
   var maxGSIK = 10;
@@ -129,12 +129,14 @@ describe('#parseItem()', () => {
       GSIK: utils.calculateGSIK({ node, tenant })
     };
     utils.parseItem({ Item });
-    expect(Item).toEqual({
-      Node: node,
-      Type: type,
-      Data: data,
-      Target: target,
-      GSIK: '0'
+    expect(utils.parseItem({ Item })).toEqual({
+      Item: {
+        Node: node,
+        Type: type,
+        Data: data,
+        Target: target,
+        GSIK: '0'
+      }
     });
   });
 
