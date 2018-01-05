@@ -178,12 +178,12 @@ var g = require('dynamodb-graph')({
 We can provide our own Node identifier, or let the library create a random CUID value. To create a new node, we call the `create` function passing the data to be stored on the node. The data must be a string, if it is not, it will throw an Error. If you want to store numbers, booleans, or any other kind of object, you must stringify it before saving it to the table.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var type = 'Character';
 var data = 'Homer Simpson';
 
 g
-  .node({ node, type })
+  .node({ id, type })
   .create({ data })
   .then(result => {
     console.log(result.Item);
@@ -215,18 +215,22 @@ Running the `create` method on that node will create it with the random `cuid` s
 
 ```javascript
 var data = 'Homer Simpson';
-node.create({ data }).then(result => {
-  console.log(result.Item);
-  /**
-   * {
-   *    Node: 'cjc1bicq30000aetcfkub88p7',
-   *    Type: 'Character',
-   *    Data: 'Homer Simpson',
-   *    GSIK: '9',
-   *    Target: 'cjc1bicq30000aetcfkub88p7'
-   * }
-   */
-});
+var type = 'Character';
+g
+  .node({ type })
+  .create({ data })
+  .then(result => {
+    console.log(result.Item);
+    /**
+     * {
+     *    Node: 'cjc1bicq30000aetcfkub88p7',
+     *    Type: 'Character',
+     *    Data: 'Homer Simpson',
+     *    GSIK: '9',
+     *    Target: 'cjc1bicq30000aetcfkub88p7'
+     * }
+     */
+  });
 ```
 
 #### Create edge
@@ -234,13 +238,13 @@ node.create({ data }).then(result => {
 Here we are connecting a character Node to an episode Node. To do that, we select the node and type where we want to store the edge, and then we call the `create` method, passing the `target` id and the data to be stored.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var type = 'StarredIn';
 var target = 'Episode#1';
 var data = 'Bart the Genius';
 
 g
-  .node({ node, type })
+  .node({ id, type })
   .create({ target, data })
   .then(result => {
     console.log(result.Item);
@@ -263,12 +267,12 @@ A property is like an edge, but without a target. It allows to store additional 
 To create them we call the `create` function with the `prop` data to be stored.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var type = 'Gender';
 var prop = 'm';
 
 g
-  .node({ node, type })
+  .node({ id, type })
   .create({ prop })
   .then(result => {
     console.log(result.Item);
@@ -290,11 +294,11 @@ g
 Use the `get` method, after providing the Node `id` and `type` to the `node()` function.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var type = 'Character';
 
 g
-  .node({ node, type })
+  .node({ id, type })
   .get()
   .then(result => {
     console.log(result.Item);
@@ -315,12 +319,12 @@ g
 To get all the Node edges or props, we use the `get.edges()` or `get.props()` method respectively, after providing the node `id`, to the `node` function.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var type = 'Character';
 
 // -- Edges --
 g
-  .node({ node, type })
+  .node({ id, type })
   .get.edges()
   .then(result => {
     console.log(result.Items);
@@ -336,7 +340,7 @@ g
   });
 // -- Props --
 g
-  .node({ node, type })
+  .node({ id, type })
   .get.props()
   .then(result => {
     console.log(result.Items);
@@ -356,11 +360,11 @@ g
 Both the `get.edges` and `get.props` methods accept an options object to modify their behaviour. If we pass in a list of `types`, it will return all the items with those types on the `node`. If a `type` is also provided when calling the `node()` method it will also be returned.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 
 // -- Edges --
 g
-  .node({ node })
+  .node({ id })
   .get.edges({ types: ['StarredIn'] })
   .then(result => {
     console.log(result.Items);
@@ -378,7 +382,7 @@ g
 var type = 'Character';
 
 g
-  .node({ node, type })
+  .node({ id, type })
   .get.props({ types: ['Gender'] })
   .then(result => {
     console.log(result);
@@ -409,7 +413,7 @@ g
 We can query over the props and edges types of a node by providing the `query` function with the Node `id`, and a `where` claus object. The `where` object, should contain only a key called `type`, pointing to an object with just one key, corresponding to a valid DynamoDB query operator, and its value. The value must be a string for most operators. except the `between` and `in` operator, which requires an array of two or more strings.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var operator = 'begins_with';
 var value = 'Line';
 
@@ -436,7 +440,7 @@ g.query({ node, where: { type: { [operator]: value } } }).then(result => {
 We can add another condition to the query using the `and` object, which should be constructed just as the `where` object, but with a key called `data` instead of `type`. Note that this aditional condition will be applied as a `FilterExpression`, which means, that the condition will be used after all the items that match the first conditions are returned.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var operator = 'begins_with';
 var value = 'Line';
 var name = 'Bart';
@@ -466,7 +470,7 @@ g
 Just as with types, we can query the props and edges of a node by using the `where` object, configured with a `data` object.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var operator = 'begins_with';
 var value = 'Bart';
 
@@ -493,7 +497,7 @@ g.query({ node, where: { data: { [operator]: value } } }).then(result => {
 We can add another condition to the query using the `and` object, which should be constructed just as the `where` object, but with a key called `type` instead of `data`. Note that this aditional condition will be applied as a `FilterExpression`, which means, that the condition will be used after all the items that match the first conditions are returned.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var operator = 'begins_with';
 var value = 'Bart';
 
@@ -690,11 +694,11 @@ g
 To update a node value you just overwrite it by creating a new node with the same Node `id` and `type`.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var type = 'Character';
 var data = 'homer simpson';
 
-var Node = g.node({ node, type });
+var Node = g.node({ id, type });
 
 Node.create({ data })
   .then(result => {
@@ -730,11 +734,11 @@ Node.create({ data })
 The interface to delete a node is very similar to how you create one. You just define a Node with its `id` and `type`, and then you call the `destroy` method on it.
 
 ```javascript
-var node = 'Character#2';
+var id = 'Character#2';
 var type = 'Character';
 
 g
-  .node({ node, type })
+  .node({ id, type })
   .destroy()
   .then(result => {
     console.log(result);
