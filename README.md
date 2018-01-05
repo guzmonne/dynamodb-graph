@@ -199,6 +199,36 @@ g
   });
 ```
 
+If the Node `id` is not set when calling the `node()` method, then a random
+`cuid` will be configured on it. You can check this value by accessing the Node
+`id` property.
+
+```javascript
+var type = 'Character';
+var node = g.node({ type });
+
+console.log(node.id);
+// cjc1bicq30000aetcfkub88p7
+```
+
+Running the `create` method on that node will create it with the random `cuid` selected as Node `id`.
+
+```javascript
+var data = 'Homer Simpson';
+node.create({ data }).then(result => {
+  console.log(result.Item);
+  /**
+   * {
+   *    Node: 'Simpsons#cjc1bicq30000aetcfkub88p7',
+   *    Type: 'Character',
+   *    Data: 'Homer Simpson',
+   *    GSIK: 'Simpsons#9',
+   *    Target: 'Simpsons#cjc1bicq30000aetcfkub88p7'
+   * }
+   */
+});
+```
+
 #### Create edge
 
 Here we are connecting a character Node to an episode Node. To do that, we select the node and type where we want to store the edge, and then we call the `create` method, passing the `target` id and the data to be stored.
