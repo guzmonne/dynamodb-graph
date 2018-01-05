@@ -7,6 +7,8 @@ var mergeWith = require('lodash/mergeWith.js');
 var isNumber = require('lodash/isNumber.js');
 
 module.exports = {
+  atob,
+  btoa,
   calculateGSIK,
   calculateTGSIK,
   checkConfiguration,
@@ -186,10 +188,13 @@ var GRAPH_ITEM_KEYS_WITH_TENANT = ['Node', 'GSIK', 'Target'];
  * Removes the tenant from the item.
  * @param {GraphItem} item - Item object to parse.
  */
-function parseItem(options = {}) {
-  var { Item = {} } = options;
-  var list;
-  Item = Object.assign({}, Item);
+function parseItem(item = {}) {
+  var list,
+    Item =
+      typeof item.Item === 'object'
+        ? Object.assign({}, item.Item)
+        : Object.assign({}, item);
+
   Object.keys(Item).forEach(key => {
     if (GRAPH_ITEM_KEYS_WITH_TENANT.indexOf(key) > -1) {
       list = Item[key].split('|');
@@ -198,7 +203,18 @@ function parseItem(options = {}) {
       }
     }
   });
-  return { Item };
+
+  return typeof item.Item === 'object' ? { Item } : Item;
+}
+/**
+ * Applies the `parseItem` function to each Item of the response.
+ * @param {object} response - Response object.
+ * @property {array} Items - List of items.
+ */
+function parseResponse(response = {}) {
+  var { Items = [] } = response;
+  response.Items = Items.map(parseItem);
+  return response;
 }
 /**
  * List of valid query operators.
@@ -252,16 +268,6 @@ function parseWhere(where = {}) {
 
   return { attribute, expression, value, operator };
 }
-/**
- * Applies the `parseItem` function to each Item of the response.
- * @param {object} response - Response object.
- * @property {array} Items - List of items.
- */
-function parseResponse(response = {}) {
-  var { Items = [] } = response;
-  response.Items = Items.map(parseItem);
-  return response;
-}
 
 function prefixTenant(tenant, string) {
   if (tenant === undefined || tenant === '')
@@ -270,4 +276,12 @@ function prefixTenant(tenant, string) {
   return string === undefined
     ? string => tenant + '|' + string
     : tenant + '|' + String(string);
+}
+
+function btoa(string) {
+  return new Buffer(string).toString('base64');
+}
+
+function atob(string) {
+  return new Buffer(string, 'base64').toString('ascii');
 }
