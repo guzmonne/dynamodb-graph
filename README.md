@@ -355,6 +355,29 @@ g
   });
 ```
 
+Both functions allow to set a limit on how much items you want. Just set the `limit` configuration value to some number.
+
+```javascript
+var id = 'Character#2';
+var type = 'Character';
+
+g
+  .node({ id, type })
+  .edges({ limit: 1 })
+  .then(result => {
+    console.log(result.Items);
+    /**
+     * [{
+     *    Node: 'Character#2',
+     *    Type: 'StarredIn',
+     *    Data: 'Bart the Genius',
+     *    GSIK: '9',
+     *    Target: 'Episode#1'
+     * }]
+     */
+  });
+```
+
 #### Get a list of props or edges.
 
 Both the `get.edges` and `get.props` methods accept an options object to modify their behaviour. If we pass in a list of `types`, it will return all the items with those types on the `node`. If a `type` is also provided when calling the `node()` method it will also be returned.
