@@ -1,45 +1,106 @@
 'use strict';
 
 var cuid = require('cuid');
-var { calculateGSIK, prefixTenant, parseItem } = require('./modules/utils.js');
+var {
+  calculateGSIK,
+  prefixTenant,
+  parseItem,
+  atob,
+  btoa
+} = require('./modules/utils.js');
 
 module.exports = nodeFactory;
 
 function nodeFactory(config = {}) {
   var { documentClient, table, maxGSIK, tenant = '' } = config;
   var pTenant = prefixTenant(tenant);
+  var getNodeTypes = require('./getNodeTypes.js')(config);
 
   return function node(options = {}) {
     var { id, type } = options;
 
     if (id !== undefined && typeof id !== 'string')
       throw new Error('Node ID is not a string');
-    if (type === undefined) throw new Error('Type is undefined');
 
     var api = {
       create,
-      get
+      get,
+      edges: items('edge'),
+      props: items('prop'),
+      all: items()
     };
 
     return api;
 
     // ---
-    function get() {
+    function get(types) {
       if (id === undefined) throw new Error('Node is undefined');
+      if (type === undefined) throw new Error('Type is undefined');
 
-      return documentClient
-        .get({
-          TableName: table,
-          Key: {
-            Node: pTenant(id),
-            Type: type
-          }
-        })
-        .promise()
-        .then(parseItem);
+      var promise =
+        Array.isArray(types) === true
+          ? getNodeTypes({ node: pTenant(id), types })
+          : documentClient
+              .get({
+                TableName: table,
+                Key: {
+                  Node: pTenant(id),
+                  Type: type
+                }
+              })
+              .promise()
+              .then(parseItem);
+
+      return promise;
     }
 
-    get.prototype.edges = function() {};
+    function items(itemType) {
+      return function(attributes = {}) {
+        if (id === undefined) throw new Error('Node ID is undefined');
+
+        var { limit, offset } = attributes;
+
+        var params = {
+          TableName: table,
+          ExpressionAttributeNames: {
+            '#Node': 'Node',
+            '#Target': 'Target'
+          },
+          ExpressionAttributeValues: {
+            ':Node': pTenant(id)
+          },
+          KeyConditionExpression: '#Node = :Node'
+        };
+
+        if (itemType === 'edge') params.FilterExpression = '#Target <> :Node';
+        else if (itemType === 'prop')
+          params.FilterExpression = 'attribute_not_exists(#Target)';
+
+        if (limit > 0) params.Limit = limit;
+
+        if (typeof offset === 'string')
+          params.ExclusiveStartKey = {
+            Node: id,
+            Type: atob(offset)
+          };
+
+        return documentClient
+          .query(params)
+          .promise()
+          .then(response =>
+            Object.assign(
+              {},
+              response,
+              {
+                Items: response.Items.map(parseItem)
+              },
+              response.LastEvaluatedKey !== undefined
+                ? { Offset: btoa(response.LastEvaluatedKey.Type) }
+                : {}
+            )
+          );
+      };
+    }
 
     function create(attributes) {
       if (attributes === undefined) throw new Error('Options is undefined');

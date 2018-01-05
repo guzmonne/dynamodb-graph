@@ -3,7 +3,83 @@
 var cuid = require('cuid');
 var sinon = require('sinon');
 var nodeFactory = require('../../src/node.js');
-var { calculateGSIK, prefixTenant } = require('../../src/modules/utils.js');
+var {
+  calculateGSIK,
+  prefixTenant,
+  btoa
+} = require('../../src/modules/utils.js');
+
+var maxGSIK = 10;
+var tenant = Math.random() > 0.5 ? undefined : cuid();
+var pTenant = prefixTenant(tenant);
+var table = 'TestTable';
+var id = cuid();
+var type = cuid();
+var data = cuid();
+var documentClient = {
+  put: params => ({
+    promise: () => {
+      return Promise.resolve({
+        Item: params.Item
+      });
+    }
+  }),
+  get: params => ({
+    promise: () => {
+      return Promise.resolve({
+        Item: Object.assign({}, params.Key, {
+          Data: 'Data',
+          Target: 'Target',
+          GSIK: '0'
+        })
+      });
+    }
+  }),
+  batchGet: params => ({
+    promise: () => {
+      return Promise.resolve({
+        Responses: {
+          [table]: params.RequestItems[table].Keys.map(key => {
+            var node = key.Node;
+            return Object.assign({}, key, {
+              Data: 'Data',
+              Target: pTenant('Target'),
+              GSIK: calculateGSIK({ node, tenant })
+            });
+          })
+        }
+      });
+    }
+  }),
+  query: params => ({
+    promise: () => {
+      var id = params.ExpressionAttributeValues[':Node'];
+      return Promise.resolve({
+        Count: 1,
+        ScannedCount: 3,
+        LastEvaluatedKey: {
+          Node: id,
+          Type: 'Type'
+        },
+        Items: [
+          {
+            Node: id,
+            Type: 'Type',
+            Data: 'Data',
+            Target: 'Target',
+            GSIK: '0'
+          }
+        ]
+      });
+    }
+  })
+};
+var node = nodeFactory({
+  documentClient,
+  maxGSIK,
+  tenant,
+  table
+});
 
 describe('nodeFactory', () => {
   test('should be a function', () => {
@@ -15,46 +91,8 @@ describe('nodeFactory', () => {
   });
 
   describe('#node', () => {
-    var documentClient = {
-      put: params => ({
-        promise: () => {
-          return Promise.resolve({
-            Item: params.Item
-          });
-        }
-      }),
-      get: params => ({
-        promise: () => {
-          return Promise.resolve({
-            Item: Object.assign({}, params.Key, {
-              Data: 'Data',
-              Target: 'Target',
-              GSIK: '0'
-            })
-          });
-        }
-      })
-    };
-    var maxGSIK = 10;
-    var tenant = Math.random() > 0.5 ? undefined : cuid();
-    var pTenant = prefixTenant(tenant);
-    var table = 'TestTable';
-    var id = cuid();
-    var type = cuid();
-    var data = cuid();
-    var node = nodeFactory({
-      documentClient,
-      maxGSIK,
-      tenant,
-      table
-    });
-
     test('should throw if `id` is not a string', () => {
       expect(() => node({ id: true })).toThrow('Node ID is not a string');
-    });
-
-    test('should throw if the type is undefined', () => {
-      expect(() => node({ id })).toThrow('Type is undefined');
     });
 
     test('should set the node `id` value to a random `cuid` if it is undefined', () => {
@@ -216,6 +254,10 @@ describe('nodeFactory', () => {
         expect(() => node({ type }).get()).toThrow('Node is undefined');
       });
 
+      test('should throw if the type is undefined', () => {
+        expect(() => node({ id }).get()).toThrow('Type is undefined');
+      });
+
       test('should return a promise', () => {
         expect(testNode.get() instanceof Promise).toBe(true);
       });
@@ -258,10 +300,401 @@ describe('nodeFactory', () => {
           });
       });
 
-      describe('#edges()', () => {
-        test('should be a function', () => {
-          expect(typeof node({ id, type }).get.edges).toEqual('function');
-        });
+      test('should call the `documentClient.batchGet` method with valid params, when the argument to the `get()` method is a list of types.', () => {
+        sinon.spy(documentClient, 'batchGet');
+        return node({ id, type })
+          .get(['Type1', 'Type2'])
+          .then(() => {
+            expect(documentClient.batchGet.args[0][0]).toEqual({
+              RequestItems: {
+                TestTable: {
+                  Keys: [
+                    { Node: pTenant(id), Type: 'Type1' },
+                    { Node: pTenant(id), Type: 'Type2' }
+                  ]
+                }
+              }
+            });
+            documentClient.batchGet.restore();
+          });
+      });
+
+      test('should get a list of items if a list of types is provided as an argument', () => {
+        return node({ id, type })
+          .get(['Type1', 'Type2'])
+          .then(result => {
+            expect(result).toEqual({
+              Count: 2,
+              ScannedCount: 2,
+              Items: [
+                {
+                  Node: id,
+                  Type: 'Type1',
+                  Data: 'Data',
+                  Target: 'Target',
+                  GSIK: '0'
+                },
+                {
+                  Node: id,
+                  Type: 'Type2',
+                  Data: 'Data',
+                  Target: 'Target',
+                  GSIK: '0'
+                }
+              ]
+            });
+          });
+      });
+
+      test('should get the list of items parsed', () => {
+        return node({ id, type })
+          .get(['Type1', 'Type2'])
+          .then(result => {
+            expect(result).toEqual({
+              Count: 2,
+              ScannedCount: 2,
+              Items: [
+                {
+                  Node: id,
+                  Type: 'Type1',
+                  Data: 'Data',
+                  Target: 'Target',
+                  GSIK: '0'
+                },
+                {
+                  Node: id,
+                  Type: 'Type2',
+                  Data: 'Data',
+                  Target: 'Target',
+                  GSIK: '0'
+                }
+              ]
+            });
+          });
+      });
+    });
+
+    describe('#edges()', () => {
+      beforeEach(() => {
+        sinon.spy(documentClient, 'query');
+      });
+
+      afterEach(() => {
+        documentClient.query.restore();
+      });
+
+      test('should be a function', () => {
+        expect(typeof node({ id, type }).edges).toEqual('function');
+      });
+
+      test('should throw if `id` is undefined', () => {
+        expect(() => node({ type }).edges()).toThrow('Node ID is undefined');
+      });
+
+      test('should return a Promise', () => {
+        expect(node({ id, type }).edges() instanceof Promise).toBe(true);
+      });
+
+      test('should call the `documentClient.query` method to get all the Node edges, if no attribute is defined', () => {
+        return node({ id, type })
+          .edges()
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: '#Node = :Node',
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Target': 'Target'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id)
+              },
+              FilterExpression: '#Target <> :Node'
+            });
+          });
+      });
+
+      test('should call the `documentClient.query` method to get a specic ammount of node edges, if the `limit` attribute is a number', () => {
+        return node({ id, type })
+          .edges({ limit: 1 })
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: '#Node = :Node',
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Target': 'Target'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id)
+              },
+              FilterExpression: '#Target <> :Node',
+              Limit: 1
+            });
+          });
+      });
+
+      test('should return a parsed list of items', () => {
+        return node({ id, type })
+          .edges()
+          .then(result => {
+            expect(result.Items).toEqual([
+              {
+                Node: id,
+                Type: 'Type',
+                Data: 'Data',
+                Target: 'Target',
+                GSIK: '0'
+              }
+            ]);
+          });
+      });
+
+      test('should return the offset value if a `LastEvaluatedKey` was returned by DynamoDB', () => {
+        return node({ id })
+          .edges()
+          .then(result => {
+            expect(result.Offset).toEqual(btoa('Type'));
+          });
+      });
+
+      test('should start the query from the `offset` value', () => {
+        var offset = btoa(type);
+        return node({ id, type })
+          .edges({ offset })
+          .then(result => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: '#Node = :Node',
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Target': 'Target'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id)
+              },
+              ExclusiveStartKey: {
+                Node: id,
+                Type: type
+              },
+              FilterExpression: '#Target <> :Node'
+            });
+          });
+      });
+    });
+
+    describe('#props()', () => {
+      beforeEach(() => {
+        sinon.spy(documentClient, 'query');
+      });
+
+      afterEach(() => {
+        documentClient.query.restore();
+      });
+
+      test('should be a function', () => {
+        expect(typeof node({ id, type }).props).toEqual('function');
+      });
+
+      test('should throw if `id` is undefined', () => {
+        expect(() => node({ type }).props()).toThrow('Node ID is undefined');
+      });
+
+      test('should return a Promise', () => {
+        expect(node({ id, type }).props() instanceof Promise).toBe(true);
+      });
+
+      test('should call the `documentClient.query` method to get all the Node props, if no attribute is defined', () => {
+        return node({ id, type })
+          .props()
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: '#Node = :Node',
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Target': 'Target'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id)
+              },
+              FilterExpression: 'attribute_not_exists(#Target)'
+            });
+          });
+      });
+
+      test('should call the `documentClient.query` method to get a specic ammount of node props, if the `limit` attribute is a number', () => {
+        return node({ id, type })
+          .props({ limit: 1 })
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: '#Node = :Node',
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Target': 'Target'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id)
+              },
+              FilterExpression: 'attribute_not_exists(#Target)',
+              Limit: 1
+            });
+          });
+      });
+
+      test('should return a parsed list of items', () => {
+        return node({ id, type })
+          .props()
+          .then(result => {
+            expect(result.Items).toEqual([
+              {
+                Node: id,
+                Type: 'Type',
+                Data: 'Data',
+                Target: 'Target',
+                GSIK: '0'
+              }
+            ]);
+          });
+      });
+
+      test('should return the offset value if a `LastEvaluatedKey` was returned by DynamoDB', () => {
+        return node({ id })
+          .props()
+          .then(result => {
+            expect(result.Offset).toEqual(btoa('Type'));
+          });
+      });
+
+      test('should start the query from the `offset` value', () => {
+        var offset = btoa(type);
+        return node({ id, type })
+          .props({ offset })
+          .then(result => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: '#Node = :Node',
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Target': 'Target'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id)
+              },
+              ExclusiveStartKey: {
+                Node: id,
+                Type: type
+              },
+              FilterExpression: 'attribute_not_exists(#Target)'
+            });
+          });
+      });
+    });
+
+    describe('#all()', () => {
+      beforeEach(() => {
+        sinon.spy(documentClient, 'query');
+      });
+
+      afterEach(() => {
+        documentClient.query.restore();
+      });
+
+      test('should be a function', () => {
+        expect(typeof node({ id, type }).all).toEqual('function');
+      });
+
+      test('should throw if `id` is undefined', () => {
+        expect(() => node({ type }).all()).toThrow('Node ID is undefined');
+      });
+
+      test('should return a Promise', () => {
+        expect(node({ id, type }).all() instanceof Promise).toBe(true);
+      });
+
+      test('should call the `documentClient.query` method to get all the Node all, if no attribute is defined', () => {
+        return node({ id, type })
+          .all()
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: '#Node = :Node',
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Target': 'Target'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id)
+              }
+            });
+          });
+      });
+
+      test('should call the `documentClient.query` method to get a specic ammount of node all, if the `limit` attribute is a number', () => {
+        return node({ id, type })
+          .all({ limit: 1 })
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: '#Node = :Node',
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Target': 'Target'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id)
+              },
+              Limit: 1
+            });
+          });
+      });
+
+      test('should return a parsed list of items', () => {
+        return node({ id, type })
+          .all()
+          .then(result => {
+            expect(result.Items).toEqual([
+              {
+                Node: id,
+                Type: 'Type',
+                Data: 'Data',
+                Target: 'Target',
+                GSIK: '0'
+              }
+            ]);
+          });
+      });
+
+      test('should return the offset value if a `LastEvaluatedKey` was returned by DynamoDB', () => {
+        return node({ id })
+          .all()
+          .then(result => {
+            expect(result.Offset).toEqual(btoa('Type'));
+          });
+      });
+
+      test('should start the query from the `offset` value', () => {
+        var offset = btoa(type);
+        return node({ id, type })
+          .all({ offset })
+          .then(result => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: '#Node = :Node',
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Target': 'Target'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id)
+              },
+              ExclusiveStartKey: {
+                Node: id,
+                Type: type
+              }
+            });
+          });
       });
     });
   });
