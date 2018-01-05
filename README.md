@@ -355,6 +355,8 @@ g
   });
 ```
 
+Take into account that the `type` value declared on the node is not necessary and won't be taken into consideration when this function is called.
+
 Both functions allow to set a limit on how much items you want. Just set the `limit` configuration value to some number.
 
 ```javascript
@@ -375,12 +377,44 @@ g
      *    Target: 'Episode#1'
      * }]
      */
+    console.log(result.Offset);
+    /**
+     * Q2hhcmFjdGVy
+     */
+  });
+```
+
+If the Node has more edges or props that were not returned but matched the current query, then the `Offset` parameter is returned. This value points to the last element evaluated while performing the query, and can be used in subsequent queries as its starging point. Use the `offset` attribute for this purpose.
+
+```javascript
+var id = 'Character#2';
+var type = 'Character';
+var offset = 'Q2hhcmFjdGVy';
+
+g
+  .node({ id, type })
+  .edges({ offset })
+  .then(result => {
+    console.log(result.Items);
+    /**
+     * [{
+     *    Node: 'Character#2',
+     *    Type: 'SpokeLine#269#Episode#32',
+     *    Data: 'Oh.',
+     *    GSIK: '9',
+     *    Target: 'Line#9609'
+     * }]
+     */
+    console.log(result.LastEvaluatedKey);
+    /**
+     * Q2hhcmFjdGVyIzJ8Q2hhcmFjdGVy
+     */
   });
 ```
 
 #### Get a list of props or edges.
 
-Both the `get.edges` and `get.props` methods accept an options object to modify their behaviour. If we pass in a list of `types`, it will return all the items with those types on the `node`. If a `type` is also provided when calling the `node()` method it will also be returned.
+Both the `get.edges` and `get.props` methods accept an options object to modify their behaviour. If we pass in a list of `types`, it will return all the items with those types on the `node`.
 
 ```javascript
 var id = 'Character#2';
