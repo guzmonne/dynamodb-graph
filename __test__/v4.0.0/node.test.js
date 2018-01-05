@@ -309,6 +309,7 @@ describe('nodeFactory', () => {
               RequestItems: {
                 TestTable: {
                   Keys: [
+                    { Node: pTenant(id), Type: type },
                     { Node: pTenant(id), Type: 'Type1' },
                     { Node: pTenant(id), Type: 'Type2' }
                   ]
@@ -324,9 +325,16 @@ describe('nodeFactory', () => {
           .get(['Type1', 'Type2'])
           .then(result => {
             expect(result).toEqual({
-              Count: 2,
-              ScannedCount: 2,
+              Count: 3,
+              ScannedCount: 3,
               Items: [
+                {
+                  Node: id,
+                  Type: type,
+                  Data: 'Data',
+                  Target: 'Target',
+                  GSIK: '0'
+                },
                 {
                   Node: id,
                   Type: 'Type1',
@@ -351,9 +359,16 @@ describe('nodeFactory', () => {
           .get(['Type1', 'Type2'])
           .then(result => {
             expect(result).toEqual({
-              Count: 2,
-              ScannedCount: 2,
+              Count: 3,
+              ScannedCount: 3,
               Items: [
+                {
+                  Node: id,
+                  Type: type,
+                  Data: 'Data',
+                  Target: 'Target',
+                  GSIK: '0'
+                },
                 {
                   Node: id,
                   Type: 'Type1',

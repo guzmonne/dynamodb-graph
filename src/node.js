@@ -35,8 +35,11 @@ function nodeFactory(config = {}) {
     // ---
     function get(types) {
       if (id === undefined) throw new Error('Node is undefined');
-      if (type === undefined) throw new Error('Type is undefined');
+      if (type === undefined && types === undefined)
+        throw new Error('Type is undefined');
 
+      if (type !== undefined && Array.isArray(types) === true)
+        types = [type].concat(types);
       var promise =
         Array.isArray(types) === true
           ? getNodeTypes({ node: pTenant(id), types })
