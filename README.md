@@ -330,16 +330,16 @@ g
     /**
      * [{
      *    Node: 'Character#2',
-     *    Type: 'StarredIn',
-     *    Data: 'Bart the Genius',
-     *    GSIK: '9',
-     *    Target: 'Episode#1'
-     * }, {
-     *    Node: 'Character#2',
      *    Type: 'Character',
      *    Data: 'Homer Simpson',
      *    GSIK: '9',
      *    Target: 'Character#2'
+     * }, {
+     *    Node: 'Character#2',
+     *    Type: 'StarredIn',
+     *    Data: 'Bart the Genius',
+     *    GSIK: '9',
+     *    Target: 'Episode#1'
      * }, {
      *    Node: 'Character#2',
      *    Type: 'Gender',
