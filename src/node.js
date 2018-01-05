@@ -7,19 +7,40 @@ module.exports = nodeFactory;
 
 function nodeFactory(config = {}) {
   var { documentClient, table, maxGSIK, tenant = '' } = config;
+  var pTenant = prefixTenant(tenant);
 
   return function node(options = {}) {
-    var { node: id = cuid(), type } = options;
+    var { id, type } = options;
 
     if (id !== undefined && typeof id !== 'string')
-      throw new Error('Node is not a string');
+      throw new Error('Node ID is not a string');
+    if (type === undefined) throw new Error('Type is undefined');
 
-    return {
-      id,
-      create: create
+    var api = {
+      create,
+      get
     };
 
+    return api;
+
     // ---
+    function get() {
+      if (id === undefined) throw new Error('Node is undefined');
+
+      return documentClient
+        .get({
+          TableName: table,
+          Key: {
+            Node: pTenant(id),
+            Type: type
+          }
+        })
+        .promise()
+        .then(parseItem);
+    }
+
+    get.prototype.edges = function() {};
+
     function create(attributes) {
       if (attributes === undefined) throw new Error('Options is undefined');
       if (type === undefined) throw new Error('Type is undefined');
@@ -34,7 +55,7 @@ function nodeFactory(config = {}) {
           'Can configure `prop`, `target`, and `data` values at the same type'
         );
 
-      var pTenant = prefixTenant(tenant);
+      id || (id = cuid());
 
       var item = {
         Node: pTenant(id),

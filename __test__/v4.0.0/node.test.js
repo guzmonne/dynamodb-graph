@@ -22,12 +22,26 @@ describe('nodeFactory', () => {
             Item: params.Item
           });
         }
+      }),
+      get: params => ({
+        promise: () => {
+          return Promise.resolve({
+            Item: Object.assign({}, params.Key, {
+              Data: 'Data',
+              Target: 'Target',
+              GSIK: '0'
+            })
+          });
+        }
       })
     };
     var maxGSIK = 10;
     var tenant = Math.random() > 0.5 ? undefined : cuid();
     var pTenant = prefixTenant(tenant);
     var table = 'TestTable';
+    var id = cuid();
+    var type = cuid();
+    var data = cuid();
     var node = nodeFactory({
       documentClient,
       maxGSIK,
@@ -35,43 +49,45 @@ describe('nodeFactory', () => {
       table
     });
 
-    test('should throw if `node` is undefined', () => {
-      expect(() => node({ node: true })).toThrow('Node is not a string');
+    test('should throw if `id` is not a string', () => {
+      expect(() => node({ id: true })).toThrow('Node ID is not a string');
+    });
+
+    test('should throw if the type is undefined', () => {
+      expect(() => node({ id })).toThrow('Type is undefined');
     });
 
     test('should set the node `id` value to a random `cuid` if it is undefined', () => {
-      expect(!!node().id).toEqual(true);
+      expect(() => node({ type }).create({ data })).not.toThrow();
     });
-
-    var id = cuid();
 
     test('should return an object', () => {
-      expect(typeof node({ node: id })).toEqual('object');
+      expect(typeof node({ id, type })).toEqual('object');
     });
+
+    var testNode = node({ id, type });
 
     describe('#create', () => {
       test('should be a function', () => {
-        expect(typeof node({ node: id }).create).toEqual('function');
+        expect(typeof node({ id, type }).create).toEqual('function');
       });
 
       test('should throw if options argument is undefined', () => {
-        expect(() => node({ node: id }).create()).toThrow(
+        expect(() => node({ id, type }).create()).toThrow(
           'Options is undefined'
         );
       });
 
       test('should throw if type is undefined', () => {
-        expect(() => node({ node: id }).create({ data })).toThrow(
+        expect(() => node({ id }).create({ data })).toThrow(
           'Type is undefined'
         );
       });
 
-      var data = 'TestData';
-      var type = 'TestType';
-      var _node = node({ node: id, type });
-
       test('should return a Promise', () => {
-        expect(_node.create({ data, type }) instanceof Promise).toEqual(true);
+        expect(testNode.create({ data, type }) instanceof Promise).toEqual(
+          true
+        );
       });
 
       beforeEach(() => {
@@ -83,7 +99,7 @@ describe('nodeFactory', () => {
       });
 
       test('should call the `documentClient.put` method with a valid params object, in order to create a new node when the `data` attribute is set', () => {
-        return _node.create({ data }).then(result => {
+        return testNode.create({ data }).then(result => {
           expect(documentClient.put.args[0][0]).toEqual({
             TableName: table,
             Item: {
@@ -104,7 +120,7 @@ describe('nodeFactory', () => {
           tenant,
           table
         });
-        return node({ node: id, type })
+        return node({ id, type })
           .create({ data })
           .then(result => {
             expect(result).toEqual({
@@ -121,7 +137,7 @@ describe('nodeFactory', () => {
 
       test('should call the `documentClient.put` method with a valid params object, in order to create a new edge when the `data` and `target` attributes are set', () => {
         var target = cuid();
-        return _node.create({ data, target }).then(result => {
+        return testNode.create({ data, target }).then(result => {
           expect(documentClient.put.args[0][0]).toEqual({
             TableName: table,
             Item: {
@@ -137,7 +153,7 @@ describe('nodeFactory', () => {
 
       test('should return a valid Edge item when the `data` and `target` attributes are set', () => {
         var target = cuid();
-        return _node.create({ target, data }).then(result => {
+        return testNode.create({ target, data }).then(result => {
           expect(result).toEqual({
             Item: {
               Node: id,
@@ -153,18 +169,17 @@ describe('nodeFactory', () => {
       test('should throw an error if the `data` or `target` values are configured with the `prop` value', () => {
         var target = cuid();
         var prop = cuid();
-        var data = cuid();
-        expect(() => _node.create({ prop, target })).toThrow(
+        expect(() => testNode.create({ prop, target })).toThrow(
           'Can configure `prop`, `target`, and `data` values at the same type'
         );
-        expect(() => _node.create({ prop, data })).toThrow(
+        expect(() => testNode.create({ prop, data })).toThrow(
           'Can configure `prop`, `target`, and `data` values at the same type'
         );
       });
 
       test('should call the `documentClient.put` method with a valid params object, in order to create a new prop when the `prop` attribute is set', () => {
         var prop = cuid();
-        return _node.create({ prop }).then(result => {
+        return testNode.create({ prop }).then(result => {
           expect(documentClient.put.args[0][0]).toEqual({
             TableName: table,
             Item: {
@@ -179,7 +194,7 @@ describe('nodeFactory', () => {
 
       test('should return a valid Edge item when the `prop` attribute is set', () => {
         var prop = cuid();
-        return _node.create({ prop }).then(result => {
+        return testNode.create({ prop }).then(result => {
           expect(result).toEqual({
             Item: {
               Node: id,
@@ -188,6 +203,64 @@ describe('nodeFactory', () => {
               GSIK: calculateGSIK({ node: id, maxGSIK })
             }
           });
+        });
+      });
+    });
+
+    describe('#get', () => {
+      test('should be a function', () => {
+        expect(typeof testNode.get).toEqual('function');
+      });
+
+      test('should throw if `node` is undefined', () => {
+        expect(() => node({ type }).get()).toThrow('Node is undefined');
+      });
+
+      test('should return a promise', () => {
+        expect(testNode.get() instanceof Promise).toBe(true);
+      });
+
+      beforeEach(() => {
+        sinon.spy(documentClient, 'get');
+      });
+
+      afterEach(() => {
+        documentClient.get.restore();
+      });
+
+      test('should call `documentClient.get` method with the appropiate parameters to get an item, if the `node` and `type` attributes are defined', () => {
+        return node({ id, type })
+          .get()
+          .then(() => {
+            expect(documentClient.get.args[0][0]).toEqual({
+              TableName: table,
+              Key: {
+                Node: prefixTenant(tenant, id),
+                Type: type
+              }
+            });
+          });
+      });
+
+      test('should return a valid Item', () => {
+        return node({ id, type })
+          .get()
+          .then(result => {
+            expect(result).toEqual({
+              Item: {
+                Node: id,
+                Type: type,
+                Data: 'Data',
+                Target: 'Target',
+                GSIK: '0'
+              }
+            });
+          });
+      });
+
+      describe('#edges()', () => {
+        test('should be a function', () => {
+          expect(typeof node({ id, type }).get.edges).toEqual('function');
         });
       });
     });

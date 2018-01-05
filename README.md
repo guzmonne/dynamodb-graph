@@ -316,7 +316,7 @@ g
 
 #### Get all the node edges or props.
 
-To get all the Node edges or props, we use the `get.edges()` or `get.props()` method respectively, after providing the node `id`, to the `node` function.
+To get all the Node edges or props, we use the `edges()` or `props()` method respectively, after providing the node `id`, to the `node` function.
 
 ```javascript
 var id = 'Character#2';
@@ -325,7 +325,7 @@ var type = 'Character';
 // -- Edges --
 g
   .node({ id, type })
-  .get.edges()
+  .edges()
   .then(result => {
     console.log(result.Items);
     /**
@@ -341,7 +341,7 @@ g
 // -- Props --
 g
   .node({ id, type })
-  .get.props()
+  .props()
   .then(result => {
     console.log(result.Items);
     /**
@@ -365,7 +365,7 @@ var id = 'Character#2';
 // -- Edges --
 g
   .node({ id })
-  .get.edges({ types: ['StarredIn'] })
+  .edges({ types: ['StarredIn'] })
   .then(result => {
     console.log(result.Items);
     /**
@@ -383,7 +383,7 @@ var type = 'Character';
 
 g
   .node({ id, type })
-  .get.props({ types: ['Gender'] })
+  .props({ types: ['Gender'] })
   .then(result => {
     console.log(result);
     /**
