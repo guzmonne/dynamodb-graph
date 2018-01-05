@@ -189,11 +189,11 @@ g
     console.log(result.Item);
     /**
      * {
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Character',
      *    Data: 'Homer Simpson',
-     *    GSIK: 'Simpsons#9',
-     *    Target: 'Simpsons#Character#2'
+     *    GSIK: '9',
+     *    Target: 'Character#2'
      * }
      */
   });
@@ -219,11 +219,11 @@ node.create({ data }).then(result => {
   console.log(result.Item);
   /**
    * {
-   *    Node: 'Simpsons#cjc1bicq30000aetcfkub88p7',
+   *    Node: 'cjc1bicq30000aetcfkub88p7',
    *    Type: 'Character',
    *    Data: 'Homer Simpson',
-   *    GSIK: 'Simpsons#9',
-   *    Target: 'Simpsons#cjc1bicq30000aetcfkub88p7'
+   *    GSIK: '9',
+   *    Target: 'cjc1bicq30000aetcfkub88p7'
    * }
    */
 });
@@ -246,11 +246,11 @@ g
     console.log(result.Item);
     /**
      * {
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'StarredIn',
      *    Data: 'Bart the Genius',
-     *    GSIK: 'Simpsons#9',
-     *    Target: 'Simpsons#Episode#1'
+     *    GSIK: '9',
+     *    Target: 'Episode#1'
      * }
      */
   });
@@ -274,10 +274,10 @@ g
     console.log(result.Item);
     /**
      * {
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Gender',
      *    Data: 'm',
-     *    GSIK: 'Simpsons#9',
+     *    GSIK: '9',
      * }
      */
   });
@@ -300,11 +300,11 @@ g
     console.log(result.Item);
     /**
      * {
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Character',
      *    Data: 'Homer Simpson',
-     *    GSIK: 'Simpsons#9',
-     *    Target: 'Simpsons#Character#2'
+     *    GSIK: '9',
+     *    Target: 'Character#2'
      * }
      */
   });
@@ -326,11 +326,11 @@ g
     console.log(result.Items);
     /**
      * [{
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'StarredIn',
      *    Data: 'Bart the Genius',
-     *    GSIK: 'Simpsons#9',
-     *    Target: 'Simpsons#Episode#1'
+     *    GSIK: '9',
+     *    Target: 'Episode#1'
      * }]
      */
   });
@@ -342,10 +342,10 @@ g
     console.log(result.Items);
     /**
      * [{
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Gender',
      *    Data: 'm',
-     *    GSIK: 'Simpsons#9',
+     *    GSIK: '9',
      * }]
      */
   });
@@ -366,11 +366,11 @@ g
     console.log(result.Items);
     /**
      * [{
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'StarredIn',
      *    Data: 'Bart the Genius',
-     *    GSIK: 'Simpsons#9',
-     *    Target: 'Simpsons#Episode#1'
+     *    GSIK: '9',
+     *    Target: 'Episode#1'
      * }]
      */
   });
@@ -385,16 +385,16 @@ g
     /**
      * Note that now `result` is a **list**.
      * [{
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Character',
      *    Data: 'Homer Simpson',
-     *    GSIK: 'Simpsons#9',
-     *    Target: 'Simpsons#Character#2'
+     *    GSIK: '9',
+     *    Target: 'Character#2'
      * }, {
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Gender',
      *    Data: 'm',
-     *    GSIK: 'Simpsons#9',
+     *    GSIK: '9',
      * }]
      */
   });
@@ -417,17 +417,17 @@ g.query({ node, where: { type: { [operator]: value } } }).then(result => {
   console.log(result.Items);
   /**
    * [{
-   *    Node: 'Simpsons#Character#2',
+   *    Node: 'Character#2',
    *    Type: 'Line#265#Episode#32',
    *    Data: 'Bart didn't get one vote?! Oh, this is...'
-   *    GSIK: 'Simpsons#9'
-   *    Target: 'Simpsons#Line#9605'
+   *    GSIK: '9'
+   *    Target: 'Line#9605'
    * }, {
-   *    Node: 'Simpsons#Character#2',
+   *    Node: 'Character#2',
    *    Type: 'Line#114#Episode#33',
    *    Data: 'Marge! What are you doing?...'
-   *    GSIK: 'Simpsons#9'
-   *    Target: 'Simpsons#Line#9769'
+   *    GSIK: '9'
+   *    Target: 'Line#9769'
    * }]
    */
 });
@@ -451,11 +451,11 @@ g
     console.log(result.Items);
     /**
      * [{
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Line#265#Episode#32',
      *    Data: 'Bart didn't get one vote?! Oh, this is...'
-     *    GSIK: 'Simpsons#9'
-     *    Target: 'Simpsons#Line#9605'
+     *    GSIK: '9'
+     *    Target: 'Line#9605'
      * }]
      */
   });
@@ -474,17 +474,17 @@ g.query({ node, where: { data: { [operator]: value } } }).then(result => {
   console.log(result.Items);
   /**
    * [{
-   *    Node: 'Simpsons#Character#2',
+   *    Node: 'Character#2',
    *    Type: 'Line#265#Episode#32',
    *    Data: 'Bart didn't get one vote?! Oh, this is...'
-   *    GSIK: 'Simpsons#9'
-   *    Target: 'Simpsons#Line#9605'
+   *    GSIK: '9'
+   *    Target: 'Line#9605'
    * }, {
-   *    Node: 'Simpsons#Character#2',
+   *    Node: 'Character#2',
    *    Type: 'Line#140#Episode#34',
    *    Data: 'Bart! Stop it!'
-   *    GSIK: 'Simpsons#9'
-   *    Target: 'Simpsons#Line#10134'
+   *    GSIK: '9'
+   *    Target: 'Line#10134'
    * }]
    */
 });
@@ -507,11 +507,11 @@ g
     console.log(result.Items);
     /**
      * [{
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Line#140#Episode#34',
      *    Data: 'Bart! Stop it!'
-     *    GSIK: 'Simpsons#9'
-     *    Target: 'Simpsons#Line#10134'
+     *    GSIK: '9'
+     *    Target: 'Line#10134'
      * }]
      */
   });
@@ -551,17 +551,17 @@ g.query({ where: { type: { [operator]: value } } }).then(result => {
   console.log(result.Items);
   /**
    * [{
-   *    Node: 'Simpsons#Character#2',
+   *    Node: 'Character#2',
    *    Type: 'Character',
    *    Data: 'Homer Simpson'
-   *    GSIK: 'Simpsons#9'
-   *    Target: 'Simpsons#Character#2'
+   *    GSIK: '9'
+   *    Target: 'Character#2'
    * }, {
-   *    Node: 'Simpsons#Character#8',
+   *    Node: 'Character#8',
    *    Type: 'Character',
    *    Data: 'Bart Simpson'
-   *    GSIK: 'Simpsons#5'
-   *    Target: 'Simpsons#Character#8'
+   *    GSIK: '5'
+   *    Target: 'Character#8'
    * }]
    */
 });
@@ -583,11 +583,11 @@ g
     console.log(result.Items);
     /**
      * [{
-     *    Node: 'Simpsons#Character#8',
+     *    Node: 'Character#8',
      *    Type: 'Character',
      *    Data: 'Bart Simpson'
-     *    GSIK: 'Simpsons#5'
-     *    Target: 'Simpsons#Character#8'
+     *    GSIK: '5'
+     *    Target: 'Character#8'
      * }]
      */
   });
@@ -605,23 +605,23 @@ g.query({ where: { data: { [operator]: value } } }).then(result => {
   console.log(result.Items);
   /**
    * [{
-   *    Node: 'Simpsons#Character#2',
+   *    Node: 'Character#2',
    *    Type: 'Character',
    *    Data: 'Homer Simpson'
-   *    GSIK: 'Simpsons#9'
-   *    Target: 'Simpsons#Character#2'
+   *    GSIK: '9'
+   *    Target: 'Character#2'
    * }, {
-   *    Node: 'Simpsons#Location#5',
+   *    Node: 'Location#5',
    *    Type: 'Location',
    *    Data: 'Simpson Home'
-   *    GSIK: 'Simpsons#0'
-   *    Target: 'Simpsons#Location#5'
+   *    GSIK: '0'
+   *    Target: 'Location#5'
    * }, {
-   *    Node: 'Simpsons#Character#8',
+   *    Node: 'Character#8',
    *    Type: 'Character',
    *    Data: 'Bart Simpson'
-   *    GSIK: 'Simpsons#5'
-   *    Target: 'Simpsons#Character#8'
+   *    GSIK: '5'
+   *    Target: 'Character#8'
    * }]
    */
 });
@@ -643,11 +643,11 @@ g
     console.log(result.Items);
     /**
      * [{
-     *    Node: 'Simpsons#Location#5',
+     *    Node: 'Location#5',
      *    Type: 'Location',
      *    Data: 'Simpson Home'
-     *    GSIK: 'Simpsons#0'
-     *    Target: 'Simpsons#Location#5'
+     *    GSIK: '0'
+     *    Target: 'Location#5'
      * }]
      */
   });
@@ -675,11 +675,11 @@ g
     console.log(result.Items);
     /**
      * [{
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Character',
      *    Data: 'Homer Simpson'
-     *    GSIK: 'Simpsons#9'
-     *    Target: 'Simpsons#Character#2'
+     *    GSIK: '9'
+     *    Target: 'Character#2'
      * }]
      */
   });
@@ -701,11 +701,11 @@ Node.create({ data })
     console.log(result.Item);
     /**
      * {
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Character',
      *    Data: 'homer simpson',
-     *    GSIK: 'Simpsons#9',
-     *    Target: 'Simpsons#Character#2'
+     *    GSIK: '9',
+     *    Target: 'Character#2'
      * }
      */
     return Node.create({ data: 'Homer Simpson' });
@@ -714,11 +714,11 @@ Node.create({ data })
     console.log(result.Item);
     /**
      * {
-     *    Node: 'Simpsons#Character#2',
+     *    Node: 'Character#2',
      *    Type: 'Character',
      *    Data: 'Homer Simpson',
-     *    GSIK: 'Simpsons#9',
-     *    Target: 'Simpsons#Character#2'
+     *    GSIK: '9',
+     *    Target: 'Character#2'
      * }
      */
     return Node.create({ data: 'Homer Simpson' });

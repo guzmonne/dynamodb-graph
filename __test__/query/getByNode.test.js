@@ -119,13 +119,6 @@ describe('getByNodeFactory()', () => {
       });
     });
 
-    test('should rename the query Items `String` and `Number` property to `Data`', () => {
-      var node = cuid();
-      return getByNode({ node }).then(result => {
-        expect(result.Items.map(item => item.Data)).toEqual([data, number]);
-      });
-    });
-
     test('should call the `documentClient.query function` with a valid params object when `expression` and `value` is defined', () => {
       sinon.spy(documentClient, 'query');
       var value = cuid();

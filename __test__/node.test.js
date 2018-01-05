@@ -97,6 +97,28 @@ describe('nodeFactory', () => {
         });
       });
 
+      test('should return a valid Node item when the `data` attribute is set', () => {
+        var node = nodeFactory({
+          documentClient,
+          maxGSIK: 0,
+          tenant,
+          table
+        });
+        return node({ node: id, type })
+          .create({ data })
+          .then(result => {
+            expect(result).toEqual({
+              Item: {
+                Node: id,
+                Data: data,
+                Type: type,
+                Target: id,
+                GSIK: '0'
+              }
+            });
+          });
+      });
+
       test('should call the `documentClient.put` method with a valid params object, in order to create a new edge when the `data` and `target` attributes are set', () => {
         var target = cuid();
         return _node.create({ data, target }).then(result => {
@@ -108,6 +130,21 @@ describe('nodeFactory', () => {
               Type: type,
               Target: pTenant(target),
               GSIK: calculateGSIK({ node: id, tenant, maxGSIK })
+            }
+          });
+        });
+      });
+
+      test('should return a valid Edge item when the `data` and `target` attributes are set', () => {
+        var target = cuid();
+        return _node.create({ target, data }).then(result => {
+          expect(result).toEqual({
+            Item: {
+              Node: id,
+              Data: data,
+              Type: type,
+              Target: target,
+              GSIK: calculateGSIK({ node: id, maxGSIK })
             }
           });
         });
@@ -135,6 +172,20 @@ describe('nodeFactory', () => {
               Data: prop,
               Type: type,
               GSIK: calculateGSIK({ node: id, tenant, maxGSIK })
+            }
+          });
+        });
+      });
+
+      test('should return a valid Edge item when the `prop` attribute is set', () => {
+        var prop = cuid();
+        return _node.create({ prop }).then(result => {
+          expect(result).toEqual({
+            Item: {
+              Node: id,
+              Data: prop,
+              Type: type,
+              GSIK: calculateGSIK({ node: id, maxGSIK })
             }
           });
         });

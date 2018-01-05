@@ -1,7 +1,7 @@
 'use strict';
 
 var cuid = require('cuid');
-var { calculateGSIK, prefixTenant } = require('./modules/utils.js');
+var { calculateGSIK, prefixTenant, parseItem } = require('./modules/utils.js');
 
 module.exports = nodeFactory;
 
@@ -51,7 +51,10 @@ function nodeFactory(config = {}) {
 
       if (prop !== undefined) delete params.Item.Target;
 
-      return documentClient.put(params).promise();
+      return documentClient
+        .put(params)
+        .promise()
+        .then(parseItem);
     }
   };
 }
