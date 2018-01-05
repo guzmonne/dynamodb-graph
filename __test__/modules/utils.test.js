@@ -1,6 +1,7 @@
 'use strict';
 
 var cuid = require('cuid');
+var range = require('lodash/range');
 var utils = require('../../src/modules/utils.js');
 
 describe('#checkConfiguration', () => {
@@ -52,15 +53,28 @@ describe('#calculateGSIK()', () => {
     expect(typeof utils.calculateGSIK({ tenant, node })).toEqual('string');
   });
 
-  test('should end with #0 if the maxGSIK value is undefined or less than 2', () => {
-    expect(utils.calculateGSIK({ tenant, node }).indexOf('#0') > -1).toBe(true);
-    expect(utils.calculateGSIK({ tenant, node }).indexOf('#0') > -1).toBe(true);
+  test('should return just a number stringified if the `tenant` is undefined or empty', () => {
+    expect(utils.calculateGSIK({ tenant: undefined, node })).toEqual('0');
   });
 
-  test('should end with a # plus a number between 0 and maxGSIK', () => {
-    var maxGSIK = Math.floor(Math.random() * 4) + 2;
-    var gsik = utils.calculateGSIK({ tenant, node, maxGSIK });
-    expect(gsik.indexOf('#' + gsik[gsik.length - 1]) > -1).toBe(true);
+  test('should end with |0 if the maxGSIK value is undefined, or less than 2', () => {
+    expect(utils.calculateGSIK({ tenant, node }).indexOf('|0') > -1).toBe(true);
+    expect(
+      utils.calculateGSIK({ tenant, node, maxGSIK: 0 }).indexOf('|0') > -1
+    ).toBe(true);
+    expect(
+      utils.calculateGSIK({ tenant, node, maxGSIK: 1 }).indexOf('|0') > -1
+    ).toBe(true);
+  });
+
+  test('should end with a | plus a number between 0 and maxGSIK', () => {
+    var maxGSIK = Math.floor(Math.random() * 10) + 10;
+    expect(
+      range(0, maxGSIK).every(
+        i =>
+          utils.calculateGSIK({ tenant, node, maxGSIK }).indexOf('|' + i) === -1
+      )
+    ).toBe(false);
   });
 });
 
@@ -146,8 +160,8 @@ describe('#parseWhere', () => {
     expect(actual).toEqual({
       attribute,
       expression:
-        operator === 'BEGINS_WITH'
-          ? `BEGINS_WITH(#Type, :Type)`
+        operator === 'begins_with'
+          ? `begins_with(#Type, :Type)`
           : Array.isArray(value)
             ? '#Type BETWEEN :a AND :b'
             : `#Type ${operator} :Type`,
@@ -167,8 +181,8 @@ describe('#parseWhere', () => {
     expect(actual).toEqual({
       attribute,
       expression:
-        operator === 'BEGINS_WITH'
-          ? `BEGINS_WITH(#String, :String)`
+        operator === 'begins_with'
+          ? `begins_with(#String, :String)`
           : Array.isArray(value)
             ? '#String BETWEEN :a AND :b'
             : `#String ${operator} :String`,
@@ -189,13 +203,44 @@ describe('#parseWhere', () => {
     expect(actual).toEqual({
       attribute,
       expression:
-        operator === 'BEGINS_WITH'
-          ? `BEGINS_WITH(#Number, :Number)`
+        operator === 'begins_with'
+          ? `begins_with(#Number, :Number)`
           : Array.isArray(value)
             ? '#Number BETWEEN :a AND :b'
             : `#Number ${operator} :Number`,
       value,
       operator
     });
+  });
+});
+
+describe('#prefixTenant', () => {
+  test('should be a function', () => {
+    expect(typeof utils.prefixTenant).toEqual('function');
+  });
+
+  var string = cuid();
+
+  test('should return the string if tenant is undefined', () => {
+    expect(utils.prefixTenant(undefined, string)).toEqual(string);
+  });
+
+  var tenant = cuid();
+
+  test('should prefix the tenant to the string if it is defined', () => {
+    expect(utils.prefixTenant(tenant, string)).toEqual(tenant + '|' + string);
+  });
+
+  test('should return just the string if the tenant is empty', () => {
+    expect(utils.prefixTenant('', string)).toEqual(string);
+  });
+
+  test('should return a function if the string is undefined', () => {
+    expect(typeof utils.prefixTenant(tenant)).toEqual('function');
+  });
+
+  test('should return a function that returns the prefixed string', () => {
+    expect(utils.prefixTenant(tenant)(string)).toEqual(tenant + '|' + string);
+    expect(utils.prefixTenant('')(string)).toEqual(string);
   });
 });

@@ -9,14 +9,15 @@ var isNumber = require('lodash/isNumber.js');
 module.exports = {
   calculateGSIK,
   calculateTGSIK,
+  checkConfiguration,
   createCapacityAccumulator,
   hashCode,
-  parseResponseItemsData,
   mergeDynamoResponses,
-  checkConfiguration,
   parseItem,
-  parseWhere,
   parseResponse,
+  parseResponseItemsData,
+  parseWhere,
+  prefixTenant,
   get _operators() {
     return operators.slice();
   }
@@ -106,10 +107,12 @@ function randomInt(n) {
  */
 function calculateGSIK(config = {}) {
   var { tenant = '', node, maxGSIK = 0 } = config;
-  var gsik = tenant !== undefined && tenant !== '' ? tenant + '#' : '';
+
   if (node === undefined) throw new Error('Node is undefined');
-  if (maxGSIK < 2) return (gsik += 0);
-  return (gsik += Math.abs(hashCode(node)) % maxGSIK);
+
+  if (maxGSIK < 2) return prefixTenant(tenant, 0);
+
+  return prefixTenant(tenant, Math.abs(hashCode(node)) % maxGSIK);
 }
 /**
  * Returns a random GSIK based on the tenant and a random number.
@@ -254,4 +257,13 @@ function parseResponse(response = {}) {
   var { Items = [] } = response;
   response.Items = Items.map(parseItem);
   return response;
+}
+
+function prefixTenant(tenant, string) {
+  if (tenant === undefined || tenant === '')
+    return string === undefined ? string => String(string) : String(string);
+
+  return string === undefined
+    ? string => tenant + '|' + string
+    : tenant + '|' + String(string);
 }
