@@ -15,6 +15,7 @@ function nodeFactory(config = {}) {
   var { documentClient, table, maxGSIK, tenant = '' } = config;
   var pTenant = prefixTenant(tenant);
   var getNodeTypes = require('./getNodeTypes.js')(config);
+  var _query = require('./query.js')(config);
 
   return function node(options = {}) {
     var { id, type } = options;
@@ -27,12 +28,25 @@ function nodeFactory(config = {}) {
       get,
       edges: items('edge'),
       props: items('prop'),
-      all: items()
+      query
     };
 
     return api;
 
     // ---
+    function query(attributes = {}) {
+      var { where = {}, and = {} } = attributes;
+      var { data } = where;
+      var { type } = and;
+      // Switch where.data for and.type if defined.
+      if (type !== undefined && data !== undefined) {
+        attributes.where = { type };
+        attributes.and = { data };
+      }
+
+      return _query(Object.assign({}, attributes, { node: id }));
+    }
+
     function get(types) {
       if (id === undefined) throw new Error('Node is undefined');
       if (type === undefined && types === undefined)

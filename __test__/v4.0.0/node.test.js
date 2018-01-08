@@ -607,7 +607,7 @@ describe('nodeFactory', () => {
       });
     });
 
-    describe('#all()', () => {
+    describe('#query()', () => {
       beforeEach(() => {
         sinon.spy(documentClient, 'query');
       });
@@ -617,97 +617,91 @@ describe('nodeFactory', () => {
       });
 
       test('should be a function', () => {
-        expect(typeof node({ id, type }).all).toEqual('function');
+        expect(typeof testNode.query).toEqual('function');
       });
 
-      test('should throw if `id` is undefined', () => {
-        expect(() => node({ type }).all()).toThrow('Node ID is undefined');
+      test('should pass the Node `id` into the `query` attributes', () => {
+        var value = cuid();
+        return testNode.query({ where: { type: { '=': value } } }).then(() => {
+          expect(documentClient.query.args[0][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#Node': 'Node',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':Node': pTenant(id),
+              ':Type': value
+            }
+          });
+        });
       });
 
-      test('should return a Promise', () => {
-        expect(node({ id, type }).all() instanceof Promise).toBe(true);
+      test('should pass the Node `id` into the `query` attributes', () => {
+        var value = cuid();
+        return testNode.query({ where: { type: { '=': value } } }).then(() => {
+          expect(documentClient.query.args[0][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#Node': 'Node',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':Node': pTenant(id),
+              ':Type': value
+            }
+          });
+        });
       });
 
-      test('should call the `documentClient.query` method to get all the Node all, if no attribute is defined', () => {
-        return node({ id, type })
-          .all()
+      test('should permit to query by Node `data` using a `FilterExpression`', () => {
+        var value = cuid();
+        var data = cuid();
+        return testNode
+          .query({
+            and: { type: { '=': value } },
+            where: { data: { '=': data } }
+          })
           .then(() => {
             expect(documentClient.query.args[0][0]).toEqual({
               TableName: table,
-              KeyConditionExpression: '#Node = :Node',
+              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
               ExpressionAttributeNames: {
                 '#Node': 'Node',
-                '#Target': 'Target'
+                '#Type': 'Type',
+                '#Data': 'Data'
               },
               ExpressionAttributeValues: {
-                ':Node': pTenant(id)
-              }
+                ':Node': pTenant(id),
+                ':Type': value,
+                ':Data': data
+              },
+              FilterExpression: `#Data = :Data`
             });
           });
       });
 
-      test('should call the `documentClient.query` method to get a specic ammount of node all, if the `limit` attribute is a number', () => {
-        return node({ id, type })
-          .all({ limit: 1 })
+      test('should permit to query by Node `data` without defining a `type` condition object', () => {
+        var data = cuid();
+        return testNode
+          .query({
+            where: { data: { contains: data } }
+          })
           .then(() => {
             expect(documentClient.query.args[0][0]).toEqual({
               TableName: table,
-              KeyConditionExpression: '#Node = :Node',
+              KeyConditionExpression: `#Node = :Node`,
               ExpressionAttributeNames: {
                 '#Node': 'Node',
-                '#Target': 'Target'
+                '#Data': 'Data'
               },
               ExpressionAttributeValues: {
-                ':Node': pTenant(id)
+                ':Node': pTenant(id),
+                ':Data': data
               },
-              Limit: 1
-            });
-          });
-      });
-
-      test('should return a parsed list of items', () => {
-        return node({ id, type })
-          .all()
-          .then(result => {
-            expect(result.Items).toEqual([
-              {
-                Node: id,
-                Type: 'Type',
-                Data: 'Data',
-                Target: 'Target',
-                GSIK: '0'
-              }
-            ]);
-          });
-      });
-
-      test('should return the offset value if a `LastEvaluatedKey` was returned by DynamoDB', () => {
-        return node({ id })
-          .all()
-          .then(result => {
-            expect(result.Offset).toEqual(btoa('Type'));
-          });
-      });
-
-      test('should start the query from the `offset` value', () => {
-        var offset = btoa(type);
-        return node({ id, type })
-          .all({ offset })
-          .then(result => {
-            expect(documentClient.query.args[0][0]).toEqual({
-              TableName: table,
-              KeyConditionExpression: '#Node = :Node',
-              ExpressionAttributeNames: {
-                '#Node': 'Node',
-                '#Target': 'Target'
-              },
-              ExpressionAttributeValues: {
-                ':Node': pTenant(id)
-              },
-              ExclusiveStartKey: {
-                Node: id,
-                Type: type
-              }
+              FilterExpression: `contains(#Data, :Data)`
             });
           });
       });
