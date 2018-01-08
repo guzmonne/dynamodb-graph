@@ -22,18 +22,10 @@ var ARRAY_OPERATORS = ['BETWEEN', 'IN'];
  */
 var FUNCTIONS_OPERATORS = ['begins_with', 'contains', 'size'];
 /**
- * List of valid where operators.
- * @typedef {string[]} WhereOperators.
- */
-var WHERE_OPERATORS = ['=', '<', '>', '<=', '>=', 'BETWEEN', 'begins_with'];
-/**
  * List of valid and operators.
- * @typedef {string[]} AndOperators.
+ * @typedef {string[]} Operator.
  */
-var AND_OPERATORS = COMMON_OPERATORS.concat(
-  ARRAY_OPERATORS,
-  FUNCTIONS_OPERATORS
-);
+var OPERATORS = COMMON_OPERATORS.concat(ARRAY_OPERATORS, FUNCTIONS_OPERATORS);
 
 module.exports = {
   atob,
@@ -47,14 +39,10 @@ module.exports = {
   parseItem,
   parseResponse,
   parseResponseItemsData,
-  parseAnd: parseFactory(AND_OPERATORS),
-  parseWhere: parseFactory(WHERE_OPERATORS),
+  parseConditionObject,
   prefixTenant,
-  get _whereOperators() {
-    return WHERE_OPERATORS.slice();
-  },
-  get _andOperators() {
-    return AND_OPERATORS.slice();
+  get _operators() {
+    return OPERATORS.slice();
   }
 };
 
@@ -258,73 +246,65 @@ function parseResponse(response = {}) {
  * @property {string} attribute="data"|"type" - Condition attribute.
  * @property {string} expression - Condition expression.
  * @property {string|bool|number|array} value - Consition value.
- * @property {WhereOperators} operator - Query operator value.
+ * @property {Operator} operator - Query operator value.
  */
 /**
- * Creates a parse function.
- * @param {string[]} mainOperators - Main operator list.
- * @return {function} Parse function.
+ * Parses a `where` or `and` object expression.
+ * @param {object} objectExpression - Object to parse;
+ * @property {QueryCondition} [data] - Data query condition.
+ * @property {QueryCondition} [type] - Type query condition.
+ * @return {ConditionExpressionResults} Object with the query attribute,
+ *                                      expression, and value.
  */
-function parseFactory(mainOperators) {
-  /**
-   * Parses a `where` or `and` object expression.
-   * @param {object} objectExpression - Object to parse;
-   * @property {QueryCondition} [data] - Data query condition.
-   * @property {QueryCondition} [type] - Type query condition.
-   * @return {ConditionExpressionResults} Object with the query attribute,
-   *                                      expression, and value.
-   */
-  return function parse(objectExpression = {}) {
-    var attributes = objectExpression.data || objectExpression.type;
-    var attribute = Object.keys(objectExpression)[0];
+function parseConditionObject(objectExpression = {}) {
+  var attributes = objectExpression.data || objectExpression.type;
+  var attribute = Object.keys(objectExpression)[0];
 
-    if (attributes === undefined) throw new Error('Invalid attributes');
+  if (attributes === undefined) throw new Error('Invalid attributes');
 
-    var operator = Object.keys(attributes)[0];
+  var operator = Object.keys(attributes)[0];
 
-    if (mainOperators.indexOf(operator) === -1)
-      throw new Error('Invalid operator');
+  if (OPERATORS.indexOf(operator) === -1) throw new Error('Invalid operator');
 
-    var value = attributes[operator];
+  var value = attributes[operator];
 
-    if (value === undefined) throw new Error('Value is undefined');
+  if (value === undefined) throw new Error('Value is undefined');
 
-    if (COMMON_OPERATORS.indexOf(operator) > -1 && typeof value !== 'string')
-      throw new Error('Value is not a string');
+  if (COMMON_OPERATORS.indexOf(operator) > -1 && typeof value !== 'string')
+    throw new Error('Value is not a string');
 
-    if (
-      ARRAY_OPERATORS.indexOf(operator) > -1 &&
-      (Array.isArray(value) === false ||
-        value.every(v => typeof v === 'string') === false)
-    )
-      throw new Error('Value is not a list of strings');
+  if (
+    ARRAY_OPERATORS.indexOf(operator) > -1 &&
+    (Array.isArray(value) === false ||
+      value.every(v => typeof v === 'string') === false)
+  )
+    throw new Error('Value is not a list of strings');
 
-    var variable = attribute === 'type' ? 'Type' : 'Data';
+  var variable = attribute === 'type' ? 'Type' : 'Data';
 
-    var expression;
+  var expression;
 
-    if (COMMON_OPERATORS.indexOf(operator) > -1)
-      expression = `#${variable} ${operator} :${variable}`;
+  if (COMMON_OPERATORS.indexOf(operator) > -1)
+    expression = `#${variable} ${operator} :${variable}`;
 
-    if (ARRAY_OPERATORS.indexOf(operator) > -1)
-      expression = `#${variable} ${operator} ${
-        operator === 'BETWEEN'
-          ? ':a AND :b'
-          : range(0, value.length)
-              .map(i => `:x${i}`)
-              .join(', ')
-      }`;
+  if (ARRAY_OPERATORS.indexOf(operator) > -1)
+    expression = `#${variable} ${operator} ${
+      operator === 'BETWEEN'
+        ? ':a AND :b'
+        : range(0, value.length)
+            .map(i => `:x${i}`)
+            .join(', ')
+    }`;
 
-    if (FUNCTIONS_OPERATORS.indexOf(operator) > -1)
-      expression =
-        operator === 'size'
-          ? `size(#${variable}) = :${variable}`
-          : `${operator}(#${variable}, :${variable})`;
+  if (FUNCTIONS_OPERATORS.indexOf(operator) > -1)
+    expression =
+      operator === 'size'
+        ? `size(#${variable}) = :${variable}`
+        : `${operator}(#${variable}, :${variable})`;
 
-    if (expression === undefined) throw new Error('Invalid opertator');
+  if (expression === undefined) throw new Error('Invalid opertator');
 
-    return { attribute, expression, value, operator };
-  };
+  return { attribute, expression, value, operator };
 }
 
 function prefixTenant(tenant, string) {

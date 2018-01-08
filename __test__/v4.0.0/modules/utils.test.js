@@ -159,97 +159,37 @@ describe('#parseItem()', () => {
   });
 });
 
-describe('#parseWhere', () => {
+describe('#parseConditionObject', () => {
   test('should be a function', () => {
-    expect(typeof utils.parseWhere).toEqual('function');
+    expect(typeof utils.parseConditionObject).toEqual('function');
   });
 
   test('should fail if `data` and `type` is undefined', () => {
-    expect(() => utils.parseWhere()).toThrow('Invalid attribute');
+    expect(() => utils.parseConditionObject()).toThrow('Invalid attribute');
   });
 
   test('should fail if the attribute operator is invalid', () => {
-    expect(() => utils.parseWhere({ data: { o: true } })).toThrow(
+    expect(() => utils.parseConditionObject({ data: { o: true } })).toThrow(
       'Invalid operator'
     );
   });
 
   test('should fail if the attribute operator value is undefined', () => {
-    expect(() => utils.parseWhere({ data: { '=': undefined } })).toThrow(
-      'Value is undefined'
-    );
+    expect(() =>
+      utils.parseConditionObject({ data: { '=': undefined } })
+    ).toThrow('Value is undefined');
   });
 
   test('should return the attribute, the expression, and the value, if the attribute is `type`', () => {
-    var operator = pickOne(utils._whereOperators);
-    var attribute = 'type';
-    var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
-
-    var actual = utils.parseWhere({ [attribute]: { [operator]: value } });
-
-    expect(actual).toEqual({
-      attribute,
-      expression:
-        operator === 'begins_with'
-          ? `begins_with(#Type, :Type)`
-          : Array.isArray(value)
-            ? '#Type BETWEEN :a AND :b'
-            : `#Type ${operator} :Type`,
-      value,
-      operator
-    });
-  });
-
-  test('should return the attribute, the expression, and the value, if the attribute is `data`', () => {
-    var operator = pickOne(utils._whereOperators);
-    var attribute = 'data';
-    var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
-
-    var actual = utils.parseWhere({ [attribute]: { [operator]: value } });
-
-    expect(actual).toEqual({
-      attribute,
-      expression:
-        operator === 'begins_with'
-          ? `begins_with(#Data, :Data)`
-          : Array.isArray(value)
-            ? '#Data BETWEEN :a AND :b'
-            : `#Data ${operator} :Data`,
-      value,
-      operator
-    });
-  });
-});
-
-describe('#parseAnd', () => {
-  test('should be a function', () => {
-    expect(typeof utils.parseAnd).toEqual('function');
-  });
-
-  test('should fail if `data` and `type` is undefined', () => {
-    expect(() => utils.parseAnd()).toThrow('Invalid attribute');
-  });
-
-  test('should fail if the attribute operator is invalid', () => {
-    expect(() => utils.parseAnd({ data: { o: true } })).toThrow(
-      'Invalid operator'
-    );
-  });
-
-  test('should fail if the attribute operator value is undefined', () => {
-    expect(() => utils.parseAnd({ data: { '=': undefined } })).toThrow(
-      'Value is undefined'
-    );
-  });
-
-  test('should return the attribute, the expression, and the value, if the attribute is `type`', () => {
-    var operator = pickOne(utils._andOperators);
+    var operator = pickOne(utils._operators);
     var attribute = 'type';
     var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
 
     if (operator === 'IN') value = [cuid(), cuid(), cuid()];
 
-    var actual = utils.parseAnd({ [attribute]: { [operator]: value } });
+    var actual = utils.parseConditionObject({
+      [attribute]: { [operator]: value }
+    });
     var expression = `#Type ${operator} :Type`;
 
     if (operator === 'begins_with') expression = `begins_with(#Type, :Type)`;
@@ -267,13 +207,15 @@ describe('#parseAnd', () => {
   });
 
   test('should return the attribute, the expression, and the value, if the attribute is `data`', () => {
-    var operator = pickOne(utils._andOperators);
+    var operator = pickOne(utils._operators);
     var attribute = 'data';
     var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
 
     if (operator === 'IN') value = [cuid(), cuid(), cuid()];
 
-    var actual = utils.parseAnd({ [attribute]: { [operator]: value } });
+    var actual = utils.parseConditionObject({
+      [attribute]: { [operator]: value }
+    });
     var expression = `#Data ${operator} :Data`;
 
     if (operator === 'begins_with') expression = `begins_with(#Data, :Data)`;
