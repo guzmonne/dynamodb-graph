@@ -7,6 +7,8 @@ var utils = require('../../src/modules/utils.js');
 
 var COMMON_OPERATORS = ['=', '<', '>', '<=', '>='];
 
+var maxGSIK = 10;
+var tenant = cuid();
 var table = 'GraphTable';
 var documentClient = {
   query: params => ({
@@ -28,7 +30,7 @@ describe('queryFactory()', () => {
     expect(typeof queryFactory()).toEqual('function');
   });
 
-  var query = queryFactory({ documentClient, table });
+  var query = queryFactory({ documentClient, table, tenant, maxGSIK });
 
   describe('#query()', () => {
     test('should throw if `where` is not defined', () => {
@@ -64,27 +66,24 @@ describe('queryFactory()', () => {
       var operator = 'BETWEEN';
       expect(() =>
         query({ where: { type: { [operator]: Math.random() } } })
-      ).toThrow('Value is not a list with a pair of strings');
+      ).toThrow('Value is not a list of strings');
       expect(() =>
         query({
           where: { type: { [operator]: [Math.random(), Math.random()] } }
         })
-      ).toThrow('Value is not a list with a pair of strings');
-      expect(() =>
-        query({
-          where: { type: { [operator]: [cuid(), cuid(), cuid()] } }
-        })
-      ).toThrow('Value is not a list with a pair of strings');
+      ).toThrow('Value is not a list of strings');
       expect(() =>
         query({
           where: { type: { [operator]: [cuid(), cuid()] } }
         })
-      ).not.toThrow('Value is not a list with a pair of strings');
+      ).not.toThrow('Value is not a list of strings');
     });
 
-    test('should query over the table indexed by type, if the `node` attribute is defined, and the `where` attribute points to the type', () => {
+    test('should query over the table indexed by type if the `node` attribute is defined, and the `where` attribute points to the type', () => {
       var string = cuid();
       var array = [cuid(), cuid()];
+      var operator = pickOne(utils._whereOperators);
+      if (operator === 'BETWEEN' || operator === 'begins_with') operator = '=';
       sinon.spy(documentClient, 'query');
       return query({ node, where: { type: { begins_with: string } } })
         .then(() => {
@@ -96,7 +95,7 @@ describe('queryFactory()', () => {
               '#Type': 'Type'
             },
             ExpressionAttributeValues: {
-              ':Node': node,
+              ':Node': utils.prefixTenant(tenant, node),
               ':Type': string
             }
           });
@@ -111,12 +110,123 @@ describe('queryFactory()', () => {
               '#Type': 'Type'
             },
             ExpressionAttributeValues: {
-              ':Node': node,
+              ':Node': utils.prefixTenant(tenant, node),
               ':a': array[0],
               ':b': array[1]
             }
           });
+          return query({ node, where: { type: { [operator]: string } } });
+        })
+        .then(() => {
+          expect(documentClient.query.args[2][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#Node = :Node AND #Type ${operator} :Type`,
+            ExpressionAttributeNames: {
+              '#Node': 'Node',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':Node': utils.prefixTenant(tenant, node),
+              ':Type': string
+            }
+          });
           documentClient.query.restore();
+        });
+    });
+
+    test('should throw an error if the `node` and `where` attributes are defined, but the `and` attribute is not an object', () => {
+      expect(() =>
+        query({ node, where: { type: { '=': cuid() } }, and: false })
+      ).toThrow('And is not an object');
+    });
+
+    test('should query over the table indexed by type if the `node` attribute is defined, the `where` attribute points to the type, and the `and` attribute points to the data', () => {
+      var string = cuid();
+      var dstring = cuid();
+      var array = [cuid(), cuid()];
+      var darray = [cuid(), cuid(), cuid()];
+      var operator = pickOne(utils._whereOperators);
+      var doperator = pickOne(utils._andOperators);
+      if (operator === 'BETWEEN' || operator === 'begins_with') operator = '=';
+      if (
+        doperator === 'BETWEEN' ||
+        doperator === 'begins_with' ||
+        doperator === 'contains' ||
+        doperator === 'size' ||
+        doperator === 'IN'
+      )
+        doperator = '=';
+      sinon.spy(documentClient, 'query');
+      return query({
+        node,
+        where: { type: { begins_with: string } },
+        and: { data: { begins_with: dstring } }
+      })
+        .then(() => {
+          expect(documentClient.query.args[0][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#Node = :Node AND begins_with(#Type, :Type)`,
+            ExpressionAttributeNames: {
+              '#Node': 'Node',
+              '#Type': 'Type',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':Node': utils.prefixTenant(tenant, node),
+              ':Type': string,
+              ':Data': dstring
+            },
+            FilterExpression: `begins_with(#Data, :Data)`
+          });
+          return query({
+            node,
+            where: { type: { BETWEEN: array } },
+            and: { data: { IN: darray } }
+          });
+        })
+        .then(() => {
+          expect(documentClient.query.args[1][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#Node = :Node AND #Type BETWEEN :a AND :b`,
+            ExpressionAttributeNames: {
+              '#Node': 'Node',
+              '#Type': 'Type',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':Node': utils.prefixTenant(tenant, node),
+              ':a': array[0],
+              ':b': array[1],
+              ':x0': darray[0],
+              ':x1': darray[1],
+              ':x2': darray[2]
+            },
+            FilterExpression: `#Data IN :x0, :x1, :x2`
+          });
+          return query({
+            node,
+            where: { type: { [operator]: string } },
+            and: { data: { [doperator]: dstring } }
+          });
+        })
+        .then(() => {
+          expect(documentClient.query.args[2][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#Node = :Node AND #Type ${operator} :Type`,
+            ExpressionAttributeNames: {
+              '#Node': 'Node',
+              '#Type': 'Type',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':Node': utils.prefixTenant(tenant, node),
+              ':Type': string,
+              ':Data': dstring
+            },
+            FilterExpression: `#Data ${doperator} :Data`
+          });
+          documentClient.query.restore();
+          //return query({ node, where: { type: { BETWEEN: array } } });
         });
     });
   });

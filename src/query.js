@@ -1,46 +1,95 @@
 'use strict';
 
-var { parseWhere } = require('./modules/utils.js');
+var {
+  parseWhere,
+  parseAnd,
+  prefixTenant: prefixTenantFactory
+} = require('./modules/utils.js');
 
 module.exports = queryFactory;
 
 // ---
 
 function queryFactory(config = {}) {
-  var { documentClient, table } = config;
+  var { documentClient, table, tenant } = config;
 
-  return function query(options = {}) {
-    var { node, where } = options;
+  var prefixTenant = prefixTenantFactory(tenant);
+
+  return query;
+
+  // ---
+  /**
+   *
+   * @param {object} options - Query options object.
+   * @property {string} [node] - Node identifier.
+   * @property {WhereObject} where - Where expression object.
+   * @property {AndObject} and - And expression object.
+   * @return {Promise} Query results.
+   */
+  function query(options = {}) {
+    var { node, where, and } = options;
 
     if (where === undefined) throw new Error('Where is undefined');
 
-    var { attribute, expression, value } = parseWhere(where);
+    var { expression: whereExpression, value: whereValue } = parseWhere(where);
 
-    return documentClient
-      .query({
-        TableName: table,
-        KeyConditionExpression: `#Node = :Node AND ${expression}`,
-        ExpressionAttributeNames: {
-          '#Node': 'Node',
-          '#Type': 'Type'
-        },
-        ExpressionAttributeValues: expressionValues({ node, value })
-      })
-      .promise();
-  };
-}
+    var attributeValues;
+    var attributeNames = {
+      '#Node': 'Node',
+      '#Type': 'Type'
+    };
+    var expression = `#Node = :Node AND ${whereExpression}`;
+    var params = {
+      TableName: table
+    };
 
-function expressionValues({ node, value }) {
-  var values = {};
+    if (and !== undefined) {
+      if (typeof and !== 'object') throw new Error('And is not an object');
 
-  if (node !== undefined) values[':Node'] = node;
+      var { expression: andExpression, value: andValue } = parseAnd(and);
 
-  if (Array.isArray(value)) {
-    values[':a'] = value[0];
-    values[':b'] = value[1];
-  } else {
-    values[':Type'] = value;
+      attributeNames['#Data'] = 'Data';
+      attributeValues = expressionValues({ node, whereValue, andValue });
+
+      params.FilterExpression = andExpression;
+    }
+
+    if (attributeValues === undefined)
+      attributeValues = expressionValues({ node, whereValue });
+
+    params.KeyConditionExpression = expression;
+    params.ExpressionAttributeNames = attributeNames;
+    params.ExpressionAttributeValues = attributeValues;
+
+    return documentClient.query(params).promise();
   }
+  /**
+   *
+   * @param {object} params - Params object.
+   * @property {string} [node] - Node identifier.
+   * @property {string|string[]|number} whereValue - Where expression value.
+   * @property {string|string[]|number} [andValue] - And expression value.
+   * @returns {object} DynamoDB ExpressionAttributeValues object.
+   */
+  function expressionValues(params) {
+    var { node, whereValue, andValue } = params;
+    var values = {};
 
-  return values;
+    if (node !== undefined) values[':Node'] = prefixTenant(node);
+
+    if (Array.isArray(whereValue)) {
+      values[':a'] = whereValue[0];
+      values[':b'] = whereValue[1];
+    } else {
+      values[':Type'] = whereValue;
+    }
+
+    if (andValue !== undefined) {
+      if (Array.isArray(andValue) === true)
+        andValue.forEach((value, i) => (values[`:x${i}`] = value));
+      else values[':Data'] = andValue;
+    }
+
+    return values;
+  }
 }
