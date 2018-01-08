@@ -181,8 +181,7 @@ describe('#parseWhere', () => {
   });
 
   test('should return the attribute, the expression, and the value, if the attribute is `type`', () => {
-    var operator =
-      utils._operators[Math.floor(Math.random() * utils._operators.length)];
+    var operator = pickOne(utils._operators);
     var attribute = 'type';
     var value =
       operator === 'BETWEEN' ? [Math.random(), Math.random()] : cuid();
@@ -202,7 +201,7 @@ describe('#parseWhere', () => {
     });
   });
 
-  test('should return the attribute, the expression, and the value, if the attribute is `data` and value is a string', () => {
+  test('should return the attribute, the expression, and the value, if the attribute is `data`', () => {
     var operator =
       utils._operators[Math.floor(Math.random() * utils._operators.length)];
     var attribute = 'data';
@@ -214,32 +213,10 @@ describe('#parseWhere', () => {
       attribute,
       expression:
         operator === 'begins_with'
-          ? `begins_with(#String, :String)`
+          ? `begins_with(#Data, :Data)`
           : Array.isArray(value)
-            ? '#String BETWEEN :a AND :b'
-            : `#String ${operator} :String`,
-      value,
-      operator
-    });
-  });
-
-  test('should return the attribute, the expression, and the value, if the attribute is `data` and value is a number', () => {
-    var operator =
-      utils._operators[Math.floor(Math.random() * utils._operators.length)];
-    var attribute = 'data';
-    var value =
-      operator === 'BETWEEN' ? [Math.random(), Math.random()] : Math.random();
-
-    var actual = utils.parseWhere({ [attribute]: { [operator]: value } });
-
-    expect(actual).toEqual({
-      attribute,
-      expression:
-        operator === 'begins_with'
-          ? `begins_with(#Number, :Number)`
-          : Array.isArray(value)
-            ? '#Number BETWEEN :a AND :b'
-            : `#Number ${operator} :Number`,
+            ? '#Data BETWEEN :a AND :b'
+            : `#Data ${operator} :Data`,
       value,
       operator
     });
@@ -276,3 +253,7 @@ describe('#prefixTenant', () => {
     expect(utils.prefixTenant('')(string)).toEqual(string);
   });
 });
+
+function pickOne(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}

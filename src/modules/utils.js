@@ -21,7 +21,7 @@ module.exports = {
   parseWhere,
   prefixTenant,
   get _operators() {
-    return operators.slice();
+    return WHERE_OPERATORS.slice();
   }
 };
 
@@ -217,24 +217,42 @@ function parseResponse(response = {}) {
   return response;
 }
 /**
- * List of valid query operators.
- * @typedef {QueryOperators} QueryOperators.
+ * List of common operators
+ * @typedef {CommonOperators} CommonOperators.
  */
-var operators = ['=', '<', '>', '<=', '>=', 'BETWEEN', 'begins_with'];
+var COMMON_OPERATORS = ['=', '<', '>', '<=', '>=', 'begins_with'];
+/**
+ * List of array operators
+ * @typedef {ArrayOperators} ArrayOperators.
+ */
+var ARRAY_OPERATORS = ['BETWEEN'];
+/**
+ * List of function operators
+ * @typedef {FunctionOperators} FunctionOperators.
+ */
+var FUNCTIONS_OPERATORS = ['IN', 'contains', 'size'];
+/**
+ * List of valid where operators.
+ * @typedef {WhereOperators} WhereOperators.
+ */
+var WHERE_OPERATORS = COMMON_OPERATORS.concat(ARRAY_OPERATORS);
 /**
  * @typedef {Object} QueryCondition
- * @property {any} [QueryOperators] - Query operator value.
+ * @property {sting|string[]|number} [WhereOperators] - Query operator value.
+ */
+/**
+ * @typedef {Object} WhereResult
+ * @property {string} attribute="data"|"type" - Condition attribute.
+ * @property {string} expression - Condition expression.
+ * @property {string|bool|number|array} value - Consition value.
+ * @property {WhereOperators} operator - Query operator value.
  */
 /**
  *
  * @param {object} where - Object to parse;
  * @property {QueryCondition} [data] - Data query condition.
  * @property {QueryCondition} [type] - Type query condition.
- * @return {object} Object with the query attribute, expression, and value.
- * @property {string} attribute="data"|"type" - Condition attribute.
- * @property {string} expression - Condition expression.
- * @property {string|bool|number|array} value - Consition value.
- * @property {QueryOperators} operator - Query operator value.
+ * @return {WhereResult} Object with the query attribute, expression, and value.
  */
 function parseWhere(where = {}) {
   var attributes = where.data || where.type;
@@ -244,20 +262,25 @@ function parseWhere(where = {}) {
 
   var operator = Object.keys(attributes)[0];
 
-  if (operators.indexOf(operator) === -1) throw new Error('Invalid operator');
+  if (WHERE_OPERATORS.indexOf(operator) === -1)
+    throw new Error('Invalid operator');
 
   var value = attributes[operator];
 
   if (value === undefined) throw new Error('Value is undefined');
-  if (operator === 'BEGINS_WITH' && Array.isArray(value))
-    throw new Error('Invalid value for operator');
 
-  var variable =
-    attribute === 'type'
-      ? 'Type'
-      : typeof (Array.isArray(value) ? value[0] : value) === 'number'
-        ? 'Number'
-        : 'String';
+  if (COMMON_OPERATORS.indexOf(operator) > -1 && typeof value !== 'string')
+    throw new Error('Value is not a string');
+
+  if (
+    ARRAY_OPERATORS.indexOf(operator) > -1 &&
+    (Array.isArray(value) === false ||
+      value.length > 2 ||
+      value.every(v => typeof v === 'string') === false)
+  )
+    throw new Error('Value is not a list with a pair of strings');
+
+  var variable = attribute === 'type' ? 'Type' : 'Data';
 
   var expression =
     operator === 'begins_with'
