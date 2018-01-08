@@ -32,7 +32,8 @@ function dynamodbGraph(config = {}) {
   // ---
 
   return {
-    node: require('./node.js')(config)
+    node: require('./node.js')(config),
+    query: require('./query.js')(config)
   };
 
   // ---
