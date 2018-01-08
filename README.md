@@ -568,15 +568,15 @@ g
   });
 ```
 
-On a positive side, filtering by `data` allows us to use other operators, that can't be used over the `type`, when quering over the node. This are:
+On a positive note, `FilterExpresions` allow more operators that we can use. Not all of them can be applied while using this pattern, so I have only the ones of value. These are:
 
 * `IN`: True if the `data` of the Node is included on the `value` list.
 * `contains`: True if the `data` contains a substring equal to the `value`.
 * `size`: True if the `data` has a length equal to the `value`.
 
-Logical evaluations can also be used up two one level, using an `AND`, `OR`, or `NOT` key, with a condition object.
+If you check DynamoDB documentation you'll note that you can use other comparators when working with the `size` function. To make things simpler for myself, I only included the equality. I plan to correct this in further versions.
 
-_On a future version, I plan to allow more than one level of logical evaluations._
+Logical evaluations can also be used up two one level, using an `AND`, `OR`, or `NOT` key, with a condition object. _On a future version, I plan to allow more than one level of logical evaluations._
 
 ```javascript
 var id = 'Character#2';
