@@ -568,7 +568,7 @@ g
   });
 ```
 
-On a positive note, `FilterExpresions` allow more operators that we can use. Not all of them can be applied while using this pattern, so I have only the ones of value. These are:
+On a positive note, `FilterExpresions` has more operators that we can use. Not all of them can be applied while using this pattern, so I have only included the ones with value. These are:
 
 * `IN`: True if the `data` of the Node is included on the `value` list.
 * `contains`: True if the `data` contains a substring equal to the `value`.
@@ -576,7 +576,7 @@ On a positive note, `FilterExpresions` allow more operators that we can use. Not
 
 If you check DynamoDB documentation you'll note that you can use other comparators when working with the `size` function. To make things simpler for myself, I only included the equality. I plan to correct this in further versions.
 
-Logical evaluations can also be used up two one level, using an `AND`, `OR`, or `NOT` key, with a condition object. _On a future version, I plan to allow more than one level of logical evaluations._
+Logical evaluations can also be used up two one level, using an `AND`, `OR`, or `NOT` key, with a condition object. _On a future version, I plan to allow more than just one level of logical evaluations._
 
 ```javascript
 var id = 'Character#2';
@@ -626,7 +626,7 @@ node.query({
    * }]
    */
   console.log(result.Offset);
-  //
+  // OSxDaGFyYWN0ZXIjMixMaW5lIzI2NSNFcGlzb2RlIzMy
   return node.query({
     where: { type: { begins_with: 'Line' } }
     limit: 1,
@@ -671,7 +671,7 @@ If you need more precision you can check out [this article](http://www.danvk.org
 
 To query the Node `types`, regardless of the Node `id`, we can leverage the `GSIK` indexes. By default, the queries will be run over every `GSIK` value, and will return a maximum of 100 items each.
 
-Now instead of using the `node` function, we use the `query` function, with a `where` and a `and` condition object as before. The `where` condition object will define which index to use (`ByType` or `ByData`). Which means, that the operators allowed on the `where` condition **don't** include: `IN`, `contains`, `size`, and logical expressions. They are only allowed on the `and` condition. So make sure you select the best index for your query.
+Now instead of using the `node` function, we use the `query` function, with a `where` and a `and` condition object. The `where` condition object will define which index to use (`ByType` or `ByData`). Which means, that the operators allowed on the `where` condition **don't** include: `IN`, `contains`, `size`, and logical expressions. They are only allowed on the `and` condition. So make sure you select the best index for your query.
 
 ```javascript
 g.query({ where: { type: { '=': 'Character' } } }).then(result => {
@@ -694,7 +694,7 @@ g.query({ where: { type: { '=': 'Character' } } }).then(result => {
 });
 ```
 
-As before, the results can be filtered further by using an `and` object whith the `data` or `type` key present. This will build a `FilterCondition` expression, which will discard any item that doesn't pass the filter, **after** the query operation is done.
+As before, the results can be filtered further by using an `and` object whith the `data` or `type` key present. This will build a `FilterCondition` expression, which will discard any item that doesn't match the condition, **after** the query operation is done.
 
 ```javascript
 g
@@ -764,7 +764,7 @@ var limit = 1;
 g
   .query({
     where: { type: { '=': 'Character' } },
-    gsik: { listGSIK, limit: 1 }
+    gsik: { listGSIK, limit }
   })
   .then(result => {
     console.log(result.Items);
