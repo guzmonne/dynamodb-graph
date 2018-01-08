@@ -606,6 +606,47 @@ g
   });
 ```
 
+As with the `edges()` and `props()` functions, you can provide a `limit` and an `offset` value. They will work exactly the same as with those other methods.
+
+```javascript
+var node = g.node({id});
+node.query({
+  where: { type: { begins_with: 'Line' } }
+  limit: 1,
+})
+.then(result => {
+  console.log(result.Items);
+  /**
+   * [{
+   *    Node: 'Character#2',
+   *    Type: 'Line#265#Episode#32',
+   *    Data: 'Bart didn't get one vote?! Oh, this is...'
+   *    GSIK: '9'
+   *    Target: 'Line#9605'
+   * }]
+   */
+  console.log(result.Offset);
+  //
+  return node.query({
+    where: { type: { begins_with: 'Line' } }
+    limit: 1,
+    offset: result.Offset
+  })
+})
+.then(result => {
+  console.log(result.Items);
+  /**
+   * [{
+   *    Node: 'Character#2',
+   *    Type: 'Line#114#Episode#33',
+   *    Data: 'Marge! What are you doing?...'
+   *    GSIK: '9'
+   *    Target: 'Line#9769'
+   * }]
+   */
+});
+```
+
 #### Handling numbers
 
 As mentioned before, the Node `data` must be stored as a string. Numbers can be stored as strings easily, for example: `4` as `'4'`. The problem with this approach is that all the numeric query operators will become useless.
@@ -653,12 +694,11 @@ g.query({ where: { type: { '=': 'Character' } } }).then(result => {
 });
 ```
 
-As before, the results can be filtered further by using an `and` object whith the `data` key defined (in this case). This will build a `FilterCondition` expression, which will discard any item that doesn't pass the filter, **after** the query operation is done.
+As before, the results can be filtered further by using an `and` object whith the `data` or `type` key present. This will build a `FilterCondition` expression, which will discard any item that doesn't pass the filter, **after** the query operation is done.
 
 ```javascript
 g
   .query({
-    node,
     where: { type: { '=': 'Gender' } },
     and: { data: { '=': 'm' } }
   })
@@ -685,7 +725,6 @@ To use the index `ByData` we invert the `data` and `type` keys.
 ```javascript
 g
   .query({
-    node,
     where: { data: { '=': 'm' } },
     and: { type: { '=': 'Gender' } }
   })
@@ -707,7 +746,7 @@ g
   });
 ```
 
-Looking at the last two examples you can see that, even though they return the same information, the first one is a much better option. The scanned items on the second example could be higher than on the first one.
+Looking at the last two examples you can see that, even though they return the same information, the first one is a much better option. The scanned items on the second example could be much higher than the ones on the first one.
 
 #### GSIK handling
 
@@ -740,6 +779,71 @@ g
      */
   });
 ```
+
+#### Handling offset values
+
+A query by default will only return up too 100 items per GSIK. You can modify this behaviour by changing the `gsik.limit`. None of this means that you'll actually receive the ammount of items you asked for. This is just the behaviour of DynamoDB. If the size of the query is to big, or there aren't enough items on a GSIK, you'll receive a lower count of items. Given this, you can't control how many items will be received after a query (at least no with this version of the library). If you use a `CUID` or `UUID` generator function for the Node `id` value, then you'll probably get the same ammount of items per GSIK, so you can predict how many items will be returned in total.
+
+DynamoDB uses a `LastEvaluatedKey` value to handle offsets on a query. Whenever this key is returned by DynamoDB, it means that there are more items that match the query, but where not returned. Doing the same query using this value will return the remaing items, or a subset of them and another `LastEvaluatedKey` value.
+
+On each call to the query function, you'll receive two of three different attributes you can use to handle the offset of subsequential queries. These are:
+
+* `LastEvaluatedKey`: Only returned when running a query against a known Node.
+* `LastEvaluatedKeys`: A map of `GSIK` to `LastEvaluatedKey's` scanned on each.
+* `Offset`: A base64 encoded string containing just the needed information to reconstruct the `LastEvaluatedKeys` object.
+
+Using the `Offset` value allows for easier paging, since you only care about one value. Also, JSON objects are quite verbose, a simplified base64 encoded string can be much smaller than a stringified JSON object. This is particularly usefull if you must use this value from the frontend through an API.
+
+To paginate the query, you can use (or construct) this results and apply them to the `offset` attribute. The library will make sure to transform it into something that DynamoDB can understand.
+
+If you want to construct your own `GSIK` to `LastEvaluatedKey` map, you don't have to include every `GSIK` you plan to query. The ones that are not defined will just be queried from the beginning.
+
+```javascript
+var listGSIK = [9];
+var limit = 1;
+
+g
+  .query({
+    where: { type: { '=': 'Character' } },
+    gsik: { listGSIK, limit: 1 }
+  })
+  .then(result => {
+    console.log(result.LastEvaluatedKeys);
+    /**
+     * {
+     *    '9': {
+     *      Node: 'Character#2',
+     *      Type: 'Character',
+     *      GSIK: '9'
+     *    }
+     * }
+     */
+    console.log(result.Offset);
+    // OSxDaGFyYWN0ZXIjMixDaGFyYWN0ZXI
+    console.log(JSON.stringify(result.LastEvaluatedKeys));
+    // eyJOb2RlIjoiQ2hhcmFjdGVyIzIiLCJUeXBlIjoiQ2hhcmFjdGVyIiwiR1NJSyI6IjkifQ==
+    return Promise.all(
+      g.query({
+        where: { type: { '=': 'Character' } },
+        gsik: { listGSIK, limit: 1 },
+        offset: result.LastEvaluatedKeys
+      }),
+      g.query({
+        where: { type: { '=': 'Character' } },
+        gsik: { listGSIK, limit: 1 },
+        offset: result.Offset
+      })]
+  })
+  .then(results => {
+    // Both queries work exactly the same.
+    console.log(results[0].Items[0].Node === results[0].Items[1].Node);
+    // true
+  })
+```
+
+On the example using the `Offset` value doesn't look like and advantage, but it can make a difference if you are querying 10 `GSIK` or more.
+
+**Another idea would be to store the next page on another node, and then retrieve it when trying to access the next page.**
 
 ### Update method
 
