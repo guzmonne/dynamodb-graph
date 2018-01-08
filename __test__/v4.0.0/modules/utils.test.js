@@ -181,10 +181,9 @@ describe('#parseWhere', () => {
   });
 
   test('should return the attribute, the expression, and the value, if the attribute is `type`', () => {
-    var operator = pickOne(utils._operators);
+    var operator = pickOne(utils._whereOperators);
     var attribute = 'type';
-    var value =
-      operator === 'BETWEEN' ? [Math.random(), Math.random()] : cuid();
+    var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
 
     var actual = utils.parseWhere({ [attribute]: { [operator]: value } });
 
@@ -202,8 +201,7 @@ describe('#parseWhere', () => {
   });
 
   test('should return the attribute, the expression, and the value, if the attribute is `data`', () => {
-    var operator =
-      utils._operators[Math.floor(Math.random() * utils._operators.length)];
+    var operator = pickOne(utils._whereOperators);
     var attribute = 'data';
     var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
 
@@ -217,6 +215,76 @@ describe('#parseWhere', () => {
           : Array.isArray(value)
             ? '#Data BETWEEN :a AND :b'
             : `#Data ${operator} :Data`,
+      value,
+      operator
+    });
+  });
+});
+
+describe('#parseAnd', () => {
+  test('should be a function', () => {
+    expect(typeof utils.parseAnd).toEqual('function');
+  });
+
+  test('should fail if `data` and `type` is undefined', () => {
+    expect(() => utils.parseAnd()).toThrow('Invalid attribute');
+  });
+
+  test('should fail if the attribute operator is invalid', () => {
+    expect(() => utils.parseAnd({ data: { o: true } })).toThrow(
+      'Invalid operator'
+    );
+  });
+
+  test('should fail if the attribute operator value is undefined', () => {
+    expect(() => utils.parseAnd({ data: { '=': undefined } })).toThrow(
+      'Value is undefined'
+    );
+  });
+
+  test('should return the attribute, the expression, and the value, if the attribute is `type`', () => {
+    var operator = pickOne(utils._andOperators);
+    var attribute = 'type';
+    var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
+
+    if (operator === 'IN') value = [cuid(), cuid(), cuid()];
+
+    var actual = utils.parseAnd({ [attribute]: { [operator]: value } });
+    var expression = `#Type ${operator} :Type`;
+
+    if (operator === 'begins_with') expression = `begins_with(#Type, :Type)`;
+    if (operator === 'contains') expression = `contains(#Type, :Type)`;
+    if (operator === 'size') expression = `size(#Type) = :Type`;
+    if (operator === 'BETWEEN') expression = '#Type BETWEEN :a AND :b';
+    if (operator === 'IN') expression = '#Type IN :x0, :x1, :x2';
+
+    expect(actual).toEqual({
+      attribute,
+      expression,
+      value,
+      operator
+    });
+  });
+
+  test('should return the attribute, the expression, and the value, if the attribute is `data`', () => {
+    var operator = pickOne(utils._andOperators);
+    var attribute = 'data';
+    var value = operator === 'BETWEEN' ? [cuid(), cuid()] : cuid();
+
+    if (operator === 'IN') value = [cuid(), cuid(), cuid()];
+
+    var actual = utils.parseAnd({ [attribute]: { [operator]: value } });
+    var expression = `#Data ${operator} :Data`;
+
+    if (operator === 'begins_with') expression = `begins_with(#Data, :Data)`;
+    if (operator === 'contains') expression = `contains(#Data, :Data)`;
+    if (operator === 'size') expression = `size(#Data) = :Data`;
+    if (operator === 'BETWEEN') expression = '#Data BETWEEN :a AND :b';
+    if (operator === 'IN') expression = '#Data IN :x0, :x1, :x2';
+
+    expect(actual).toEqual({
+      attribute,
+      expression,
       value,
       operator
     });

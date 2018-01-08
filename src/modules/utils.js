@@ -6,6 +6,35 @@ var get = require('lodash/get.js');
 var mergeWith = require('lodash/mergeWith.js');
 var isNumber = require('lodash/isNumber.js');
 
+/**
+ * List of common operators
+ * @typedef {string[]} CommonOperators.
+ */
+var COMMON_OPERATORS = ['=', '<', '>', '<=', '>='];
+/**
+ * List of array operators
+ * @typedef {string[]} ArrayOperators.
+ */
+var ARRAY_OPERATORS = ['BETWEEN', 'IN'];
+/**
+ * List of function operators
+ * @typedef {string[]} FunctionOperators.
+ */
+var FUNCTIONS_OPERATORS = ['begins_with', 'contains', 'size'];
+/**
+ * List of valid where operators.
+ * @typedef {string[]} WhereOperators.
+ */
+var WHERE_OPERATORS = ['=', '<', '>', '<=', '>=', 'BETWEEN', 'begins_with'];
+/**
+ * List of valid and operators.
+ * @typedef {string[]} AndOperators.
+ */
+var AND_OPERATORS = COMMON_OPERATORS.concat(
+  ARRAY_OPERATORS,
+  FUNCTIONS_OPERATORS
+);
+
 module.exports = {
   atob,
   btoa,
@@ -18,10 +47,14 @@ module.exports = {
   parseItem,
   parseResponse,
   parseResponseItemsData,
-  parseWhere,
+  parseAnd: parseFactory(AND_OPERATORS),
+  parseWhere: parseFactory(WHERE_OPERATORS),
   prefixTenant,
-  get _operators() {
+  get _whereOperators() {
     return WHERE_OPERATORS.slice();
+  },
+  get _andOperators() {
+    return AND_OPERATORS.slice();
   }
 };
 
@@ -217,79 +250,81 @@ function parseResponse(response = {}) {
   return response;
 }
 /**
- * List of common operators
- * @typedef {CommonOperators} CommonOperators.
- */
-var COMMON_OPERATORS = ['=', '<', '>', '<=', '>=', 'begins_with'];
-/**
- * List of array operators
- * @typedef {ArrayOperators} ArrayOperators.
- */
-var ARRAY_OPERATORS = ['BETWEEN'];
-/**
- * List of function operators
- * @typedef {FunctionOperators} FunctionOperators.
- */
-var FUNCTIONS_OPERATORS = ['IN', 'contains', 'size'];
-/**
- * List of valid where operators.
- * @typedef {WhereOperators} WhereOperators.
- */
-var WHERE_OPERATORS = COMMON_OPERATORS.concat(ARRAY_OPERATORS);
-/**
  * @typedef {Object} QueryCondition
- * @property {sting|string[]|number} [WhereOperators] - Query operator value.
+ * @property {sting|string[]|number} [(Operator)] - Query operator value.
  */
 /**
- * @typedef {Object} WhereResult
+ * @typedef {Object} ConditionExpressionResults
  * @property {string} attribute="data"|"type" - Condition attribute.
  * @property {string} expression - Condition expression.
  * @property {string|bool|number|array} value - Consition value.
  * @property {WhereOperators} operator - Query operator value.
  */
 /**
- *
- * @param {object} where - Object to parse;
- * @property {QueryCondition} [data] - Data query condition.
- * @property {QueryCondition} [type] - Type query condition.
- * @return {WhereResult} Object with the query attribute, expression, and value.
+ * Creates a parse function.
+ * @param {string[]} mainOperators - Main operator list.
+ * @return {function} Parse function.
  */
-function parseWhere(where = {}) {
-  var attributes = where.data || where.type;
-  var attribute = Object.keys(where)[0];
+function parseFactory(mainOperators) {
+  /**
+   * Parses a `where` or `and` object expression.
+   * @param {object} objectExpression - Object to parse;
+   * @property {QueryCondition} [data] - Data query condition.
+   * @property {QueryCondition} [type] - Type query condition.
+   * @return {ConditionExpressionResults} Object with the query attribute,
+   *                                      expression, and value.
+   */
+  return function parse(objectExpression = {}) {
+    var attributes = objectExpression.data || objectExpression.type;
+    var attribute = Object.keys(objectExpression)[0];
 
-  if (attributes === undefined) throw new Error('Invalid attributes');
+    if (attributes === undefined) throw new Error('Invalid attributes');
 
-  var operator = Object.keys(attributes)[0];
+    var operator = Object.keys(attributes)[0];
 
-  if (WHERE_OPERATORS.indexOf(operator) === -1)
-    throw new Error('Invalid operator');
+    if (mainOperators.indexOf(operator) === -1)
+      throw new Error('Invalid operator');
 
-  var value = attributes[operator];
+    var value = attributes[operator];
 
-  if (value === undefined) throw new Error('Value is undefined');
+    if (value === undefined) throw new Error('Value is undefined');
 
-  if (COMMON_OPERATORS.indexOf(operator) > -1 && typeof value !== 'string')
-    throw new Error('Value is not a string');
+    if (COMMON_OPERATORS.indexOf(operator) > -1 && typeof value !== 'string')
+      throw new Error('Value is not a string');
 
-  if (
-    ARRAY_OPERATORS.indexOf(operator) > -1 &&
-    (Array.isArray(value) === false ||
-      value.length > 2 ||
-      value.every(v => typeof v === 'string') === false)
-  )
-    throw new Error('Value is not a list with a pair of strings');
+    if (
+      ARRAY_OPERATORS.indexOf(operator) > -1 &&
+      (Array.isArray(value) === false ||
+        value.every(v => typeof v === 'string') === false)
+    )
+      throw new Error('Value is not a list of strings');
 
-  var variable = attribute === 'type' ? 'Type' : 'Data';
+    var variable = attribute === 'type' ? 'Type' : 'Data';
 
-  var expression =
-    operator === 'begins_with'
-      ? `begins_with(#${variable}, :${variable})`
-      : `#${variable} ${operator} ${
-          Array.isArray(value) ? ':a AND :b' : `:${variable}`
-        }`;
+    var expression;
 
-  return { attribute, expression, value, operator };
+    if (COMMON_OPERATORS.indexOf(operator) > -1)
+      expression = `#${variable} ${operator} :${variable}`;
+
+    if (ARRAY_OPERATORS.indexOf(operator) > -1)
+      expression = `#${variable} ${operator} ${
+        operator === 'BETWEEN'
+          ? ':a AND :b'
+          : range(0, value.length)
+              .map(i => `:x${i}`)
+              .join(', ')
+      }`;
+
+    if (FUNCTIONS_OPERATORS.indexOf(operator) > -1)
+      expression =
+        operator === 'size'
+          ? `size(#${variable}) = :${variable}`
+          : `${operator}(#${variable}, :${variable})`;
+
+    if (expression === undefined) throw new Error('Invalid opertator');
+
+    return { attribute, expression, value, operator };
+  };
 }
 
 function prefixTenant(tenant, string) {
