@@ -44,7 +44,7 @@ describe('queryFactory()', () => {
     });
 
     test('should fail if an invalid `where` attribute operator is used', () => {
-      expect(() => query({ where: { type: { contains: 'test' } } })).toThrow(
+      expect(() => query({ where: { type: { containing: 'test' } } })).toThrow(
         'Invalid operator'
       );
     });
@@ -82,8 +82,15 @@ describe('queryFactory()', () => {
     test('should query over the table indexed by type if the `node` attribute is defined, and the `where` attribute points to the type', () => {
       var string = cuid();
       var array = [cuid(), cuid()];
-      var operator = pickOne(utils._whereOperators);
-      if (operator === 'BETWEEN' || operator === 'begins_with') operator = '=';
+      var operator = pickOne(utils._operators);
+      if (
+        operator === 'BETWEEN' ||
+        operator === 'begins_with' ||
+        operator === 'contains' ||
+        operator === 'size' ||
+        operator === 'IN'
+      )
+        operator = '=';
       sinon.spy(documentClient, 'query');
       return query({ node, where: { type: { begins_with: string } } })
         .then(() => {
@@ -145,9 +152,16 @@ describe('queryFactory()', () => {
       var dstring = cuid();
       var array = [cuid(), cuid()];
       var darray = [cuid(), cuid(), cuid()];
-      var operator = pickOne(utils._whereOperators);
-      var doperator = pickOne(utils._andOperators);
-      if (operator === 'BETWEEN' || operator === 'begins_with') operator = '=';
+      var operator = pickOne(utils._operators);
+      var doperator = pickOne(utils._operators);
+      if (
+        operator === 'BETWEEN' ||
+        operator === 'begins_with' ||
+        operator === 'contains' ||
+        operator === 'size' ||
+        operator === 'IN'
+      )
+        operator = '=';
       if (
         doperator === 'BETWEEN' ||
         doperator === 'begins_with' ||
