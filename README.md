@@ -474,18 +474,16 @@ g
 [DynamoDB Expression Operators and Functions](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html)
 
 We can query over the `prop` and `edge` types of a Node using the `query()` method. As before, we provide the Node `id` to the `node` function, and then
-we call `query()` over its result, providing a `where` and `and` condition keys.
+we call `query()` over its result, providing a `where` and `and` condition objects.
 
-To construct a condition object, we provide just one key to the `where` or `and` object called either `type` or `data`. Inside this key, we store another object again with just one key, corresponding to a valid [DynamoDB Key Condition operator](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html). The value of this key will be used for the comparison operation. For most operators, the value should be just a string, except the `size` operator which takes a number; for the `BETWEEN` operator an array of two strings, and for the `IN` operator, an array with up to 100 values.
+To construct a condition object, we provide just one key to the `where` or `and` object called either `type` or `data`. Inside this key, we store another object, again with just one key, corresponding to a valid [DynamoDB Key Condition operator](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html). The value of this key will be used for the comparison operation. For most of them, the value should be just a string, except the: `size` operator which takes a number; the `BETWEEN` operator which takes an array of two strings; and for the `IN` operator, an array with up to 100 strings.
 
 ```javascript
 var id = 'Character#2';
-var operator = 'begins_with';
-var value = 'Line';
 
 g
   .node({ id })
-  .query({ where: { type: { [operator]: value } } })
+  .query({ where: { type: { begins_with: 'Line' } } })
   .then(result => {
     console.log(result.Items);
     /**
