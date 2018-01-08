@@ -469,38 +469,44 @@ g
 
 ### Query methods
 
-#### Query items by Node, sorted by Type
+#### Query items by `Node`, sorted by `Type`
 
 [DynamoDB Expression Operators and Functions](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html)
 
-We can query over the props and edges types of a node by providing the `query` function with the Node `id`, and a `where` claus object. The `where` object, should contain only a key called `type`, pointing to an object with just one key, corresponding to a valid DynamoDB query operator, and its value. The value must be a string for most operators. except the `between` and `in` operator, which requires an array of two or more strings.
+We can query over the `prop` and `edge` types of a Node using the `query()` method. As before, we provide the Node `id` to the `node` function, and then
+we call `query()` over its result, providing a `where` and `and` condition keys.
+
+To construct a condition object, we provide just one key to the `where` or `and` object called either `type` or `data`. Inside this key, we store another object again with just one key, corresponding to a valid [DynamoDB Key Condition operator](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html). The value of this key will be used for the comparison operation. For most operators, the value should be just a string, except the `size` operator which takes a number; for the `BETWEEN` operator an array of two strings, and for the `IN` operator, an array with up to 100 values.
 
 ```javascript
 var id = 'Character#2';
 var operator = 'begins_with';
 var value = 'Line';
 
-g.query({ node, where: { type: { [operator]: value } } }).then(result => {
-  console.log(result.Items);
-  /**
-   * [{
-   *    Node: 'Character#2',
-   *    Type: 'Line#265#Episode#32',
-   *    Data: 'Bart didn't get one vote?! Oh, this is...'
-   *    GSIK: '9'
-   *    Target: 'Line#9605'
-   * }, {
-   *    Node: 'Character#2',
-   *    Type: 'Line#114#Episode#33',
-   *    Data: 'Marge! What are you doing?...'
-   *    GSIK: '9'
-   *    Target: 'Line#9769'
-   * }]
-   */
-});
+g
+  .node({ id })
+  .query({ where: { type: { [operator]: value } } })
+  .then(result => {
+    console.log(result.Items);
+    /**
+     * [{
+     *    Node: 'Character#2',
+     *    Type: 'Line#265#Episode#32',
+     *    Data: 'Bart didn't get one vote?! Oh, this is...'
+     *    GSIK: '9'
+     *    Target: 'Line#9605'
+     * }, {
+     *    Node: 'Character#2',
+     *    Type: 'Line#114#Episode#33',
+     *    Data: 'Marge! What are you doing?...'
+     *    GSIK: '9'
+     *    Target: 'Line#9769'
+     * }]
+     */
+  });
 ```
 
-We can add another condition to the query using the `and` object, which should be constructed just as the `where` object, but with a key called `data` instead of `type`. Note that this aditional condition will be applied as a `FilterExpression`, which means, that the condition will be used after all the items that match the first conditions are returned.
+As mentioned before, we can add another condition to the query using the `and` condition expression object, which should be constructed just as the `where` object, configured with the `data` key, instead of the type. Note that this aditional condition will be applied as a `FilterExpression`, which means, that the condition will be applied after all the items that match the condition on the `type` returns.
 
 ```javascript
 var id = 'Character#2';
@@ -509,8 +515,8 @@ var value = 'Line';
 var name = 'Bart';
 
 g
+  .node({ id })
   .query({
-    node,
     where: { type: { [operator]: value } },
     and: { data: { [operator]: name } }
   })
@@ -528,57 +534,96 @@ g
   });
 ```
 
-#### Query items by Node, sorted by Data
-
-Just as with types, we can query the props and edges of a node by using the `where` object, configured with a `data` object.
+If you invert the `data` and `type` keys on the `where` and `and` objects, it will apply first the condition on the `type` and then on the `data`.
 
 ```javascript
 var id = 'Character#2';
 var operator = 'begins_with';
-var value = 'Bart';
-
-g.query({ node, where: { data: { [operator]: value } } }).then(result => {
-  console.log(result.Items);
-  /**
-   * [{
-   *    Node: 'Character#2',
-   *    Type: 'Line#265#Episode#32',
-   *    Data: 'Bart didn't get one vote?! Oh, this is...'
-   *    GSIK: '9'
-   *    Target: 'Line#9605'
-   * }, {
-   *    Node: 'Character#2',
-   *    Type: 'Line#140#Episode#34',
-   *    Data: 'Bart! Stop it!'
-   *    GSIK: '9'
-   *    Target: 'Line#10134'
-   * }]
-   */
-});
-```
-
-We can add another condition to the query using the `and` object, which should be constructed just as the `where` object, but with a key called `type` instead of `data`. Note that this aditional condition will be applied as a `FilterExpression`, which means, that the condition will be used after all the items that match the first conditions are returned.
-
-```javascript
-var id = 'Character#2';
-var operator = 'begins_with';
-var value = 'Bart';
+var value = 'Line';
+var name = 'Bart';
 
 g
+  .node({ id })
   .query({
-    node,
-    where: { type: { [operator]: value } },
-    and: { data: { contains: 'Episode#34' } }
+    where: { data: { [operator]: name } },
+    and: { type: { [operator]: value } }
+  })
+  .then(result => {
+    console.log(result.Items); // Same result as before.
+    /**
+     * [{
+     *    Node: 'Character#2',
+     *    Type: 'Line#265#Episode#32',
+     *    Data: 'Bart didn't get one vote?! Oh, this is...'
+     *    GSIK: '9'
+     *    Target: 'Line#9605'
+     * }]
+     */
+  });
+```
+
+If you only include a `where` condition object applied to the `data` attribute, the query will be run against all the items of the Node. This could be a very inefficient query if your Node has a lot of items connected to it.
+
+```javascript
+var id = 'Character#2';
+var operator = 'begins_with';
+var name = 'Bart';
+
+g
+  .node({ id })
+  .query({
+    where: { data: { [operator]: name } }
   })
   .then(result => {
     console.log(result.Items);
     /**
      * [{
      *    Node: 'Character#2',
-     *    Type: 'Line#140#Episode#34',
-     *    Data: 'Bart! Stop it!'
+     *    Type: 'Line#265#Episode#32',
+     *    Data: 'Bart didn't get one vote?! Oh, this is...'
      *    GSIK: '9'
-     *    Target: 'Line#10134'
+     *    Target: 'Line#9605'
+     * }]
+     */
+    console.log(result.ScannedCount);
+    // This will equal to all the items connected to the Node 'Character#2'
+    // which could be a very big number.
+  });
+```
+
+On a positive side, filtering by `data` allows us to use other operators, that can't be used over the `type`, when quering over the node. This are:
+
+* `IN`: True if the `data` of the Node is included on the `value` list.
+* `contains`: True if the `data` contains a substring equal to the `value`.
+* `size`: True if the `data` has a length equal to the `value`.
+
+Logical evaluations can also be used up two one level, using an `AND`, `OR`, or `NOT` key, with a condition object.
+
+_On a future version, I plan to allow more than one level of logical evaluations._
+
+```javascript
+var id = 'Character#2';
+
+g
+  .node({ id })
+  .query({
+    where: { type: { begins_with: 'Line' } },
+    and: {
+      data: {
+        begins_with: 'Bart',
+        and: { size: 25 }
+      }
+    }
+  })
+  .then(result => {
+    console.log(result.Items);
+    /**
+     * [{
+     *    Node: 'Character#2',
+     *    Type: 'Line#166#Episode#99',
+     *    Data: 'Bart, you're coming home.'
+     *    GSIK: '9'
+     *    Target: 'Line#29206'
      * }]
      */
   });
@@ -586,9 +631,9 @@ g
 
 #### Handling numbers
 
-As mentioned before, the Node data must be stored as a string. A simple way to store numbers could be converting them to a string. For example: `4` to `'4'`. The problem with this approach is that all the numeric query operators will become useless.
+As mentioned before, the Node `data` must be stored as a string. Numbers can be stored as strings easily, for example: `4` as `'4'`. The problem with this approach is that all the numeric query operators will become useless.
 
-A better approach to resolve this issue is by storing the numbers as hexadecimal strings. Here is a snippet on how to store a number as a 4 byte hexadecimal word:
+A better approach, is to store the numbers as hexadecimal strings. Here is a snippet on how to convert a number as a 4 byte hexadecimal word and back:
 
 ```javascript
 function numToFloat32Hex(value) {
@@ -606,15 +651,12 @@ If you need more precision you can check out [this article](http://www.danvk.org
 
 #### Query items by GSIK, sorted By Type
 
-To query the Node `types`, regardless of the Node `id`, we can leverage the `GSIK` index. By default, the queries will be run over each `GSIK` possible value, and will return 100 items from each.
+To query the Node `types`, regardless of the Node `id`, we can leverage the `GSIK` indexes. By default, the queries will be run over every `GSIK` value, and will return a maximum of 100 items each.
 
-The interface is the same as before, only now we don't specify the value of the node. Only the `where` object is necessary.
+Now instead of using the `node` function, we use the `query` function, with a `where` and a `and` condition object as before. The `where` condition object will define which index to use (`ByType` or `ByData`). Which means, that the operators allowed on the `where` condition **don't** include: `IN`, `contains`, `size`, and logical expressions. They are only allowed on the `and` condition. So make sure you select the best index for your query.
 
 ```javascript
-var operator = '=';
-var value = 'Character';
-
-g.query({ where: { type: { [operator]: value } } }).then(result => {
+g.query({ where: { type: { '=': 'Character' } } }).then(result => {
   console.log(result.Items);
   /**
    * [{
@@ -634,91 +676,61 @@ g.query({ where: { type: { [operator]: value } } }).then(result => {
 });
 ```
 
-As before, the results can be filtered further by using an `and` object whith the `data` key defined. This will uses the `FilterCondition` expression, which will discard any item that doesn't pass the filter, after the query operation is done.
+As before, the results can be filtered further by using an `and` object whith the `data` key defined (in this case). This will build a `FilterCondition` expression, which will discard any item that doesn't pass the filter, **after** the query operation is done.
 
 ```javascript
-var operator = '=';
-var value = 'Character';
-
 g
   .query({
     node,
-    where: { type: { [operator]: value } },
-    and: { data: { contains: 'Bart' } }
+    where: { type: { '=': 'Gender' } },
+    and: { data: { '=': 'm' } }
   })
   .then(result => {
     console.log(result.Items);
     /**
      * [{
+     *    Node: 'Character#2',
+     *    Type: 'Gender',
+     *    Data: 'm'
+     *    GSIK: '9'
+     * }, {
      *    Node: 'Character#8',
-     *    Type: 'Character',
-     *    Data: 'Bart Simpson'
+     *    Type: 'Gender',
+     *    Data: 'm'
      *    GSIK: '5'
-     *    Target: 'Character#8'
      * }]
      */
   });
 ```
 
-#### Query by GSIK sorted By Type
-
-Just as with the `types`, we can use the `GSIK` to query by `data`. And the interface to do it is very similar. You only have to change `type` for `data`.
+To use the index `ByData` we invert the `data` and `type` keys.
 
 ```javascript
-var operator = 'contains';
-var value = 'Simpson';
-
-g.query({ where: { data: { [operator]: value } } }).then(result => {
-  console.log(result.Items);
-  /**
-   * [{
-   *    Node: 'Character#2',
-   *    Type: 'Character',
-   *    Data: 'Homer Simpson'
-   *    GSIK: '9'
-   *    Target: 'Character#2'
-   * }, {
-   *    Node: 'Location#5',
-   *    Type: 'Location',
-   *    Data: 'Simpson Home'
-   *    GSIK: '0'
-   *    Target: 'Location#5'
-   * }, {
-   *    Node: 'Character#8',
-   *    Type: 'Character',
-   *    Data: 'Bart Simpson'
-   *    GSIK: '5'
-   *    Target: 'Character#8'
-   * }]
-   */
-});
-```
-
-Now we can use the `and` object whith the `type` key defined, to filter the `types` that don't match our needs. This will uses the `FilterCondition` expression, which will discard any item that doesn't pass the filter, after the query operation is done.
-
-```javascript
-var operator = 'contains';
-var value = 'Simpson';
-
 g
   .query({
     node,
-    where: { data: { [operator]: value } },
-    and: { type: { '=': 'Location' } }
+    where: { data: { '=': 'm' } },
+    and: { type: { '=': 'Gender' } }
   })
   .then(result => {
     console.log(result.Items);
     /**
      * [{
-     *    Node: 'Location#5',
-     *    Type: 'Location',
-     *    Data: 'Simpson Home'
-     *    GSIK: '0'
-     *    Target: 'Location#5'
+     *    Node: 'Character#2',
+     *    Type: 'Gender',
+     *    Data: 'm'
+     *    GSIK: '9'
+     * }, {
+     *    Node: 'Character#8',
+     *    Type: 'Gender',
+     *    Data: 'm'
+     *    GSIK: '5'
      * }]
      */
   });
 ```
+
+Looking at the last two examples you can see that, even though they return the same information, the first one is a much better option. The scanned items on the second example could be higher than on the first one.
 
 #### GSIK handling
 
@@ -726,17 +738,17 @@ In order to control the `GSIK` being queried, you can provide a `gsik` object. T
 
 * `startGSIK`: Start value of the `GSIK`. Equals 0 by default.
 * `endGSIK`: End value of the `GSIK`. Equals `maxGSIK - 1` by default. **Must be larger than `startGSIK`**.
-* `listGSIK`: A list of GSIK to use, provided as a list of numbers. Only the GSIK provided on the list will be used. If `startGSIK` or `endGSIK` are also defined, they will not be considered.
+* `listGSIK`: A list of GSIK to use, provided as a list of numbers. Only the GSIK provided on the list will be queried. If `startGSIK` or `endGSIK` are also defined, they will not be considered.
 * `limit`: Number of items to get per `GSIK`.
 
 ```javascript
-var operator = '=';
-var value = 'Character';
+var listGSIK = [9];
+var limit = 1;
 
 g
   .query({
-    where: { type: { [operator]: value } },
-    gsik: { listGSIK: [9], limit: 1 }
+    where: { type: { '=': 'Character' } },
+    gsik: { listGSIK, limit: 1 }
   })
   .then(result => {
     console.log(result.Items);
@@ -754,7 +766,7 @@ g
 
 ### Update method
 
-To update a node value you just overwrite it by creating a new node with the same Node `id` and `type`.
+To update a node value you just overwrite it with a new node with the same Node `id` and `type`.
 
 ```javascript
 var id = 'Character#2';
@@ -794,7 +806,7 @@ Node.create({ data })
 
 ### Destroy method
 
-The interface to delete a node is very similar to how you create one. You just define a Node with its `id` and `type`, and then you call the `destroy` method on it.
+The interface to destroy a node is very similar to how you create one. You just define a Node with its `id` and `type`, and then you call the `destroy` method on it.
 
 ```javascript
 var id = 'Character#2';
@@ -809,7 +821,7 @@ g
   });
 ```
 
-**Note**
+#### JSDoc Comments
 
 I tried to include information on each function as a JSDoc comment. I plan in the future to transform it into a proper documentation page. I wish there was something like `Sphix` for JavaScript. For now this should be enough, since the surface of the library is quite small.
 
