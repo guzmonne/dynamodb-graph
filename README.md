@@ -388,27 +388,6 @@ g
      * }]
      */
   });
-// -- All --
-g
-  .node({ id })
-  .all()
-  .then(result => {
-    console.log(result.Items);
-    /**
-     * [{
-     *    Node: 'Character#2',
-     *    Type: 'Gender',
-     *    Data: 'm',
-     *    GSIK: '9',
-     * }, {
-     *    Node: 'Character#2',
-     *    Type: 'StarredIn#Episode#1',
-     *    Data: 'Bart the Genius',
-     *    GSIK: '9',
-     *    Target: 'Episode#1'
-     * }]
-     */
-  });
 ```
 
 Take into account that the `type` value declared on the node is not necessary and won't be taken into consideration when this function is called.
@@ -420,7 +399,7 @@ var id = 'Character#2';
 
 g
   .node({ id })
-  .edges({ limit: 1 }) // Also applies to `prop()` and `all()`
+  .edges({ limit: 1 }) // Also applies to `prop()`.
   .then(result => {
     console.log(result.Items);
     /**
@@ -448,7 +427,7 @@ var offset = 'Q2hhcmFjdGVy';
 
 g
   .node({ id })
-  .edges({ offset }) // Also applies to `prop()` and `all()`
+  .edges({ offset }) // Also applies to `prop()`.
   .then(result => {
     console.log(result.Items);
     /**
