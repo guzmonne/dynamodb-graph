@@ -147,7 +147,9 @@ function nodeFactory(config = {}) {
           KeyConditionExpression: '#Node = :Node'
         };
 
-        if (itemType === 'edge') params.FilterExpression = '#Target <> :Node';
+        if (itemType === 'edge')
+          params.FilterExpression =
+            'attribute_exists(#Target) AND #Target <> :Node';
         else if (itemType === 'prop')
           params.FilterExpression = 'attribute_not_exists(#Target)';
 

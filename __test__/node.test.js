@@ -231,7 +231,7 @@ describe('nodeFactory', () => {
         });
       });
 
-      test('should return a valid Edge item when the `prop` attribute is set', () => {
+      test('should return a valid Prop item when the `prop` attribute is set', () => {
         var prop = cuid();
         return testNode.create({ prop }).then(result => {
           expect(result).toEqual({
@@ -457,7 +457,7 @@ describe('nodeFactory', () => {
               ExpressionAttributeValues: {
                 ':Node': pTenant(id)
               },
-              FilterExpression: '#Target <> :Node'
+              FilterExpression: 'attribute_exists(#Target) AND #Target <> :Node'
             });
           });
       });
@@ -476,7 +476,8 @@ describe('nodeFactory', () => {
               ExpressionAttributeValues: {
                 ':Node': pTenant(id)
               },
-              FilterExpression: '#Target <> :Node',
+              FilterExpression:
+                'attribute_exists(#Target) AND #Target <> :Node',
               Limit: 1
             });
           });
@@ -525,7 +526,7 @@ describe('nodeFactory', () => {
                 Node: id,
                 Type: type
               },
-              FilterExpression: '#Target <> :Node'
+              FilterExpression: 'attribute_exists(#Target) AND #Target <> :Node'
             });
           });
       });
