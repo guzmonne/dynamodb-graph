@@ -765,7 +765,6 @@ In order to control the `GSIK` being queried, you can provide a `gsik` object. T
 * `startGSIK`: Start value of the `GSIK`. Equals 0 by default.
 * `endGSIK`: End value of the `GSIK`. Equals `maxGSIK - 1` by default. **Must be larger than `startGSIK`**.
 * `listGSIK`: A list of GSIK to use, provided as a list of numbers. Only the GSIK provided on the list will be queried. If `startGSIK` or `endGSIK` are also defined, they will not be considered.
-* `limit`: Number of items to get per `GSIK`.
 
 ```javascript
 var listGSIK = [9];
@@ -774,7 +773,8 @@ var limit = 1;
 g
   .query({
     where: { type: { '=': 'Character' } },
-    gsik: { listGSIK, limit }
+    gsik: { listGSIK }
+    limit
   })
   .then(result => {
     console.log(result.Items);
@@ -792,7 +792,7 @@ g
 
 #### Handling offset values
 
-A query by default will only return up too 100 items per GSIK. You can modify this behaviour by changing the `gsik.limit`. None of this means that you'll actually receive the ammount of items you asked for. This is just the behaviour of DynamoDB. If the size of the query is to big, or there aren't enough items on a GSIK, you'll receive a lower count of items. Given this, you can't control how many items will be received after a query (at least no with this version of the library). If you use a `CUID` or `UUID` generator function for the Node `id` value, then you'll probably get the same ammount of items per GSIK, so you can predict how many items will be returned in total.
+A query by default will only return up too 100 items per GSIK. You can modify this behaviour by changing the `limit` value. None of this means that you'll actually receive the ammount of items you asked for. This is just the behaviour of DynamoDB. If the size of the query is to big, or there aren't enough items on a GSIK, you'll receive a lower count of items. Given this, you can't control how many items will be received after a query (at least no with this version of the library). If you use a `CUID` or `UUID` generator function for the Node `id` value, then you'll probably get the same ammount of items per GSIK, so you can predict how many items will be returned in total.
 
 DynamoDB uses a `LastEvaluatedKey` value to handle offsets on a query. Whenever this key is returned by DynamoDB, it means that there are more items that match the query, but where not returned. Doing the same query using this value will return the remaing items, or a subset of them and another `LastEvaluatedKey` value.
 
@@ -815,7 +815,8 @@ var limit = 1;
 g
   .query({
     where: { type: { '=': 'Character' } },
-    gsik: { listGSIK, limit: 1 }
+    gsik: { listGSIK }
+    limit
   })
   .then(result => {
     console.log(result.LastEvaluatedKeys);
@@ -835,12 +836,14 @@ g
     return Promise.all(
       g.query({
         where: { type: { '=': 'Character' } },
-        gsik: { listGSIK, limit: 1 },
+        gsik: { listGSIK },
+        limit
         offset: result.LastEvaluatedKeys
       }),
       g.query({
         where: { type: { '=': 'Character' } },
-        gsik: { listGSIK, limit: 1 },
+        gsik: { listGSIK },
+        limit
         offset: result.Offset
       })]
   })
