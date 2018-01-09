@@ -2,25 +2,22 @@
 
 ## Introduction
 
-This is a library aimed to work with DynamoDB as if it was a Graph. The idea came from the "Advanced Design Patterns for Amazon DynamoDB (DAT403-R)" talk from Rick Houlihan on 2017 AWS re:Invent conference. Close to the end, he describes a way to use a DynamoDB table to represent a directed graph. I found that notion very interesting, so I wanted to create a library that would abstract the details of the graph representation, on top of the AWS SDK.
+This is a library built to work with DynamoDB as if it was storing a Graph. The idea came from the "Advanced Design Patterns for Amazon DynamoDB (DAT403-R)" talk from Rick Houlihan on 2017 AWS re:Invent conference. Close to the end, he describes a way to use a DynamoDB table to represent a directed graph. I found that notion very interesting, so I started working on a library that would abstract the details of the graph representation, on top of DynamoDB using the AWS Document Client driver, from the AWS JavaScript SDK.
 
-As a perk, I added three notions of my own:
+Besides the ideas explained in the talk, I other two more:
 
 1. The concept of a `tenant`.
-2. A way to handle the amount of GSI partitions to use.
-3. Storing the data in two separate keys, depending on wether it's a string, or a number.
+2. A way to handle the amount of GSI partitions to use, by defining the maximum number of GSIK allowed, which are generated from the Nodes ids.
 
-So, each node can belong to a `tenant` by concatenating the random ID of the node, with the `tenant` id. The GSI Keys are also prepended with the tenant ID, so that you can check for the data only in the proper GSI partitions. Doing this has another aditional benefit: applying IAM policies to users to allow access only on rows whose `hash` key begins with the `tenant`. That way, you may have multiple users using the same table, without access to the data of the other tenants.
+Each node can belong to a `tenant`, which is a way to box entities (users, companie, groups, etc) into their own parititon inside the table. This is done by concatenating the `id` of each node, and their `GSIK`, with the `tenant id`. This last value if configured when the library is intitialized, and is completely abstracted from the user. Meaning, you can interact with the table as if the `tenant` value didn't exist. You could have multiple users handling the same Node `ids`, as long as they have a unique `tenant` id.
 
-To control the number of GSI Keys you can use the `maxGSIK` option. To allow for a normal distribution on the keys, you should work with mutltiples of 10 for the `maxGSIK`. This will allow to grow this value in the future, while still providing good distribution between the GSI partitions.
+This has another aditional benefit: we can apply IAM policies to let the users only access the keys with their corresponding tenant. Making it impossible to access the keys from other users.
 
-I also added another GSI key to each element, called `TGSIK`. This attribute includes the value of the node `type`, plus the `GSIK`. Indexing on this key, sorted by data, allows to perform queries over the `type` and the `data`, without needing to use a `FilterExpression`, or creating custom logic. I am still debating if this a good call, but for now, its there.
+To control the number of GSI Keys you can use the `maxGSIK` attribute when configuring the library. This value defines the ammount of GSIK allowed on the table, and shoudl be a multiple of 10 to allow a normal distribution of the nodes in each GSIK.
 
-At first I implemented this design storing the data of the node on a `Data` attribute of type `String`. This was good since I could stringify any type of data and store it there. The problem happens when you want to query the data. Since the data is stored as a string, you loose all the number operators. So, I modified the `create` functions to check wether the data is a string, or a number. If it is a number, then it stores it as a `Number` attribute, and a `String` attibute otherwise. To avoid having the user deal with this functionality, all the `query` operations parses the results, and returns them on a `Data` attribute. The details are handled by the library. This separation of types allow for a finer query system, in my opinion.
+The data inside every Node item must be stored as a `string`. That means that you have to stringify the data types that you want to store on the table. On the documentation section, I explain a couple of ways of storing numbers on the database.
 
-The downside of this approach is that this table implementation uses all 5 possible GSI. But, I think most usecases can be solved using the 5 provided by this implementation.
-
-**Important Note:** This library was built on top of Node 6.10.3, because I wanted to use it on AWS Lambda, and at the moment is the highest version supported. It should work on higher versions, but I haven't tried it.
+**Important Note:** This library was built on top of Node 6.10.3, because I wanted to use it on AWS Lambda, and at the moment is the highest version supported. It should work on higher versions, but I haven't tested it.
 
 ##DynamoDB table.
 
@@ -85,20 +82,6 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: "2"
             WriteCapacityUnits: "2"
-        -
-          IndexName: "ByTypeAndData"
-          KeySchema:
-            -
-              AttributeName: "Type"
-              KeyType: "HASH"
-            -
-              AttributeName: "Data"
-              KeyType: "RANGE"
-          Projection:
-            ProjectionType: "ALL"
-          ProvisionedThroughput:
-            ReadCapacityUnits: "2"
-            WriteCapacityUnits: "2"
 ```
 
 On the `scripts` folder you'll find scripts to implement this table on your AWS account. You can call them directly or using `yarn` or `npm` tasks:
@@ -121,7 +104,7 @@ npm install --save dynamodb-graph
 yarn install dynamodb-graph
 ```
 
-Then you can import it to your project, and you must initialize it before you can start using it. Basically, you musth provide the DynamoDB DocumentClient driver, table name, tenant key, and `maxGSIK` value. The table name can also be taken from an environment table called `TABLE_NAME`. I am considering letting other important options be configured the same way.
+Then you can import it to your project, and you must initialize it before you can start using it. Basically, you musth provide the DynamoDB DocumentClient driver, table name, tenant key, and `maxGSIK` value. The table name can also be taken from an environment variable called `TABLE_NAME`. I am considering letting other important options be configured the same way.
 
 ```javascript
 var AWS = require('aws-sdk');
@@ -135,11 +118,9 @@ var tenant = 'Client#123';
 var g = dynamodbGraph({ documentClient, maxGSIK, table, tenant });
 ```
 
-Each function returns a promise, exept the ones who create items.
-
 ## Playground
 
-To be able to test the library I have provided some scripts that work on existing data. More specifically, ["The Simpsons" by the data](https://www.kaggle.com/wcukierski/the-simpsons-by-the-data). You can go to the link, and download it from [Kaggle](https://www.kaggle.com). Then `unzip` the file inside the `scripts` folder, and run the `seed_local_table.js` script. Then go take a cup of coffee, a sandwich, and catch up on your current series, cause it's gonna take a long time to load. I did my best to show the progress of the upload so you know that something is going on.
+To be able to test the library I have provided some scripts that work on existing data. More specifically, ["The Simpsons" by the data](https://www.kaggle.com/wcukierski/the-simpsons-by-the-data). You can go to the link, and download it from [Kaggle](https://www.kaggle.com). Then `unzip` the files inside the `scripts` folder, and run the `seed_local_table.js` script. Then go dring a cup of coffee, eat a sandwich, and catch up on your current series, cause it's gonna take a long time to load. I did my best to show the progress of the upload so you know that something is at least going on.
 
 After all the data is up, you can run the script `playground.js` and see the library in action with some examples I come up with. More examples are welcomed.
 
@@ -151,16 +132,25 @@ var {g, documentClient, dynamo, log, scan} = require('./scripts/repl.js')
 
 Or something like that.
 
-**Important note**: both scripts can be used against DynamoDB itself, though I wouldn't suggest to do so. I won't take responsability for any charges generated on your account while using this library. Instead, you should run a local instance of DynamoDB. To my knowledge, there are two alternatives:
+**Important note**: both scripts can be used against DynamoDB itself, though I wouldn't recommend to do so while testing the library. I won't take responsability for any charges generated on your account while using this library. Instead, you should run a local instance of DynamoDB.
+
+To my knowledge, there are two alternatives:
 
 1. [Dynalite](https://github.com/mhart/dynalite), from [Michael Hart](https://github.com/mhart).
 2. [Official DynamoDB local version](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.html).
 
-Any one of those will work fine, just be sure to run it on `port` **8989** or to set the `ENDPOINT` environment variable pointed to your local process, when running all scripts.
+Any one of those will work fine. Just be sure to run it on `port` **8989** or to set the `ENDPOINT` environment variable pointed to your local port when running all the scripts.
 
 ## Documentation
 
 ### Initialize the library
+
+To initialie the library we must configure some global options.
+
+* `documentClient`: DynamoDB Document Client driver. You can configure it to point to a local DynamoDB process to avoid unneccesary charges while testing the library.
+* `maxGSIK`: Maximum `GSIK` value. Defaults to 10. This value let's you setup the ammount of partitions you believe would be enough to store your data. I recommend setting this value as a multiple of 10, to allow for a close to normal distribution of the keys. **You should never decrease this value, only increase it.**
+* `tenant`: Any string identifier you want to apply to the current tenant. This value will be applied to every Node, and will be taken out befor returning back the results of each operation. That way you don't have to deal with it.
+* `table`: Name of the DynamoDB table to store the data. Can be defined as an environment variable called `TABLE_NAME`.
 
 ```javascript
 var g = require('dynamodb-graph')({
@@ -917,11 +907,11 @@ g
 
 #### JSDoc Comments
 
-I tried to include information on each function as a JSDoc comment. I plan in the future to transform it into a proper documentation page. I wish there was something like `Sphix` for JavaScript. For now this should be enough, since the surface of the library is quite small.
+I tried to include information on each function as a JSDoc comment. I plan in the future to transform it into a proper documentation site. I wish there was something like `Sphix` for JavaScript but for now it should be enough.
 
 ## Test
 
-I am using `jest` to test the library, and Node **6.10.3**. So, just clone the repo, install the dependencies, and run `yarn test` or `npm run test` to run them.
+I am using `jest` and `yarn` to test the library, and Node **6.10.3**. So, just clone the repo, install the dependencies with `yarn install`, and run `yarn test` to start them.
 
 ```
 git clone git@github.com:guzmonne/dynamodb-graph.git
@@ -930,6 +920,10 @@ yarn install
 
 yarn test
 ```
+
+## Contributions
+
+More than welcomed.
 
 ## Licence
 
