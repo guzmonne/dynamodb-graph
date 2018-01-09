@@ -2,7 +2,9 @@
 
 var capitalize = require('lodash/capitalize.js');
 var range = require('lodash/range.js');
+var chunk = require('lodash/chunk.js');
 var {
+  atob,
   btoa,
   mergeDynamoResponses,
   parseItem,
@@ -42,7 +44,7 @@ function queryFactory(config = {}) {
 
     if (node !== undefined) return nodeQuery(options);
 
-    var { where, filter, gsik = {}, limit } = options;
+    var { where, filter, gsik = {}, limit, offset } = options;
 
     var { startGSIK = 0, endGSIK = maxGSIK, listGSIK } = gsik;
 
@@ -51,6 +53,36 @@ function queryFactory(config = {}) {
 
     if (Array.isArray(listGSIK) === false) {
       listGSIK = range(startGSIK, endGSIK);
+    }
+
+    var lastEvaluatedKeys;
+
+    if (typeof offset === 'string') {
+      var attribute = capitalize(Object.keys(where)[0]);
+      lastEvaluatedKeys = chunk(
+        atob(offset)
+          .split('|')
+          .slice(0, -1),
+        3
+      ).reduce((acc, [gsik, node, value]) => {
+        acc[gsik] = {
+          Node: prefixTenant(node),
+          [attribute]: value,
+          GSIK: prefixTenant(gsik)
+        };
+        return acc;
+      }, {});
+    }
+
+    if (typeof offset === 'object') {
+      lastEvaluatedKeys = Object.keys(offset).reduce((acc, key) => {
+        var value = offset[key];
+        acc[key] = Object.assign({}, value, {
+          Node: prefixTenant(value.Node),
+          GSIK: prefixTenant(value.GSIK)
+        });
+        return acc;
+      }, {});
     }
 
     var promises = [];
@@ -65,6 +97,9 @@ function queryFactory(config = {}) {
       }
 
       if (limit > 0) params.Limit = limit;
+
+      if (lastEvaluatedKeys !== undefined && lastEvaluatedKeys[i] !== undefined)
+        params.ExclusiveStartKey = lastEvaluatedKeys[i];
 
       promises.push(
         documentClient
@@ -252,7 +287,7 @@ function queryFactory(config = {}) {
 
     var { Node, Data, Type, GSIK } = key;
 
-    result.Offset = btoa(`${GSIK}|${Node}|${Type || Data}`);
+    result.Offset = btoa(`${GSIK}|${Node}|${Type || Data}|`);
 
     return result;
   }

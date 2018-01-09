@@ -566,7 +566,7 @@ describe('queryFactory()', () => {
             GSIK: gsik
           };
 
-          expectedOffset += btoa(`${gsik}|${node}|Gender`);
+          expectedOffset += btoa(`${gsik}|${node}|Gender|`);
           expectedKeys[gsik] = key;
 
           return Promise.resolve({
@@ -601,6 +601,86 @@ describe('queryFactory()', () => {
         expect(documentClient.query.args.length).toEqual(3);
         expect(result.Offset).toEqual(expectedOffset);
         expect(result.LastEvaluatedKeys).toEqual(expectedKeys);
+      });
+    });
+
+    test('should use the transform the `offset` value into each GSIK `ExclusiveStartKey`, if provided a `LastEvaluatedKey` map', () => {
+      var listGSIK = [0, 1, 2];
+      var node0 = cuid();
+      var node1 = cuid();
+      var node2 = cuid();
+      var type = 'Gender';
+      return query({
+        where: { type: { '=': type } },
+        filter: { data: { '=': 'm' } },
+        gsik: { listGSIK },
+        limit: 1,
+        offset: {
+          0: {
+            Node: node0,
+            Type: type,
+            GSIK: `0`
+          },
+          1: {
+            Node: node1,
+            Type: type,
+            GSIK: `1`
+          },
+          2: {
+            Node: node2,
+            Type: type,
+            GSIK: `2`
+          }
+        }
+      }).then(result => {
+        expect(documentClient.query.args.length).toEqual(3);
+        expect(documentClient.query.args[0][0].ExclusiveStartKey).toEqual({
+          Node: prefixTenant(node0),
+          Type: type,
+          GSIK: prefixTenant(`0`)
+        });
+        expect(documentClient.query.args[1][0].ExclusiveStartKey).toEqual({
+          Node: prefixTenant(node1),
+          Type: type,
+          GSIK: prefixTenant(`1`)
+        });
+        expect(documentClient.query.args[2][0].ExclusiveStartKey).toEqual({
+          Node: prefixTenant(node2),
+          Type: type,
+          GSIK: prefixTenant(`2`)
+        });
+      });
+    });
+
+    test('should use the transform the `offset` value into each GSIK `ExclusiveStartKey`, if provided a `LastEvaluatedKey` encoded string', () => {
+      var listGSIK = [0, 1, 2];
+      var node0 = cuid();
+      var node1 = cuid();
+      var node2 = cuid();
+      var type = 'Gender';
+      return query({
+        where: { type: { '=': type } },
+        filter: { data: { '=': 'm' } },
+        gsik: { listGSIK },
+        limit: 1,
+        offset: btoa(`0|${node0}|Gender|1|${node1}|Gender|2|${node2}|Gender|`)
+      }).then(result => {
+        expect(documentClient.query.args.length).toEqual(3);
+        expect(documentClient.query.args[0][0].ExclusiveStartKey).toEqual({
+          Node: prefixTenant(node0),
+          Type: type,
+          GSIK: prefixTenant(`0`)
+        });
+        expect(documentClient.query.args[1][0].ExclusiveStartKey).toEqual({
+          Node: prefixTenant(node1),
+          Type: type,
+          GSIK: prefixTenant(`1`)
+        });
+        expect(documentClient.query.args[2][0].ExclusiveStartKey).toEqual({
+          Node: prefixTenant(node2),
+          Type: type,
+          GSIK: prefixTenant(`2`)
+        });
       });
     });
   });
