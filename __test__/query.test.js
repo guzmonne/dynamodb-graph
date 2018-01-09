@@ -254,6 +254,7 @@ describe('queryFactory()', () => {
       return query({ where: { type: { '=': type } } }).then(() => {
         expect(documentClient.query.args[0][0]).toEqual({
           TableName: table,
+          IndexName: 'ByType',
           KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
           ExpressionAttributeNames: {
             '#GSIK': 'GSIK',
@@ -267,6 +268,7 @@ describe('queryFactory()', () => {
         });
         expect(documentClient.query.args[9][0]).toEqual({
           TableName: table,
+          IndexName: 'ByType',
           KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
           ExpressionAttributeNames: {
             '#GSIK': 'GSIK',
@@ -290,6 +292,7 @@ describe('queryFactory()', () => {
       }).then(() => {
         expect(documentClient.query.args[0][0]).toEqual({
           TableName: table,
+          IndexName: 'ByType',
           KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
           ExpressionAttributeNames: {
             '#GSIK': 'GSIK',
@@ -306,6 +309,7 @@ describe('queryFactory()', () => {
         });
         expect(documentClient.query.args[9][0]).toEqual({
           TableName: table,
+          IndexName: 'ByType',
           KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
           ExpressionAttributeNames: {
             '#GSIK': 'GSIK',
@@ -336,6 +340,7 @@ describe('queryFactory()', () => {
         .then(() => {
           expect(documentClient.query.args[0][0]).toEqual({
             TableName: table,
+            IndexName: 'ByType',
             KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -353,6 +358,7 @@ describe('queryFactory()', () => {
           });
           expect(documentClient.query.args[9][0]).toEqual({
             TableName: table,
+            IndexName: 'ByType',
             KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -379,6 +385,7 @@ describe('queryFactory()', () => {
         .then(() => {
           expect(documentClient.query.args[10][0]).toEqual({
             TableName: table,
+            IndexName: 'ByData',
             KeyConditionExpression: `#GSIK = :GSIK AND #Data = :Data`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -397,6 +404,7 @@ describe('queryFactory()', () => {
           });
           expect(documentClient.query.args[19][0]).toEqual({
             TableName: table,
+            IndexName: 'ByData',
             KeyConditionExpression: `#GSIK = :GSIK AND #Data = :Data`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -424,6 +432,7 @@ describe('queryFactory()', () => {
         for (let i = 0; i < maxGSIK; i++) {
           expect(documentClient.query.args[i][0]).toEqual({
             TableName: table,
+            IndexName: 'ByType',
             KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -450,6 +459,7 @@ describe('queryFactory()', () => {
         for (let i = 0; i < maxGSIK - startGSIK; i++) {
           expect(documentClient.query.args[i][0]).toEqual({
             TableName: table,
+            IndexName: 'ByType',
             KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -477,6 +487,7 @@ describe('queryFactory()', () => {
         for (let i = 0; i < endGSIK - startGSIK; i++) {
           expect(documentClient.query.args[i][0]).toEqual({
             TableName: table,
+            IndexName: 'ByType',
             KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -505,6 +516,7 @@ describe('queryFactory()', () => {
         listGSIK.map((gsik, i) => {
           expect(documentClient.query.args[i][0]).toEqual({
             TableName: table,
+            IndexName: 'ByType',
             KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',
@@ -535,6 +547,7 @@ describe('queryFactory()', () => {
         listGSIK.map((gsik, i) => {
           expect(documentClient.query.args[i][0]).toEqual({
             TableName: table,
+            IndexName: 'ByType',
             KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
             ExpressionAttributeNames: {
               '#GSIK': 'GSIK',

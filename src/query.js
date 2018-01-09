@@ -185,6 +185,8 @@ function applyWhereCondition(params, where, node) {
 
   attribute = capitalize(attribute);
 
+  if (node === undefined) params.IndexName = `By${attribute}`;
+
   if (attribute === 'Type')
     params.KeyConditionExpression += ` AND ${expression}`;
   else {
