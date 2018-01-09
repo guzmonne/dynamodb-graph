@@ -253,10 +253,11 @@ function parseResponse(response = {}) {
  * @param {object} objectExpression - Object to parse;
  * @property {QueryCondition} [data] - Data query condition.
  * @property {QueryCondition} [type] - Type query condition.
+ * @property {number} [level=0] - Condition nesting level.
  * @return {ConditionExpressionResults} Object with the query attribute,
  *                                      expression, and value.
  */
-function parseConditionObject(objectExpression = {}) {
+function parseConditionObject(objectExpression = {}, level = 0) {
   var attributes = objectExpression.data || objectExpression.type;
   var attribute = Object.keys(objectExpression)[0];
 
@@ -281,26 +282,27 @@ function parseConditionObject(objectExpression = {}) {
     throw new Error('Value is not a list of strings');
 
   var variable = attribute === 'type' ? 'Type' : 'Data';
+  var nested = level > 0;
 
   var expression;
 
   if (COMMON_OPERATORS.indexOf(operator) > -1)
-    expression = `#${variable} ${operator} :${variable}`;
+    expression = `#${variable} ${operator} :${level ? `y${level}` : variable}`;
 
   if (ARRAY_OPERATORS.indexOf(operator) > -1)
     expression = `#${variable} ${operator} ${
       operator === 'BETWEEN'
-        ? ':a AND :b'
+        ? level ? `:y${level}0 AND :y${level}1` : ':a AND :b'
         : range(0, value.length)
-            .map(i => `:x${i}`)
+            .map(i => (level ? `:y${level}${i}` : `:x${i}`))
             .join(', ')
     }`;
 
   if (FUNCTIONS_OPERATORS.indexOf(operator) > -1)
     expression =
       operator === 'size'
-        ? `size(#${variable}) = :${variable}`
-        : `${operator}(#${variable}, :${variable})`;
+        ? `size(#${variable}) = :${level ? `y${level}` : variable}`
+        : `${operator}(#${variable}, :${level ? `y${level}` : variable})`;
 
   if (expression === undefined) throw new Error('Invalid opertator');
 
