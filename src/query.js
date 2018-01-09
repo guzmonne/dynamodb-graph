@@ -48,7 +48,12 @@ function queryFactory(config = {}) {
 
     return documentClient.query(params).promise();
   }
-
+  /**
+   * Applies the where condition into the DynamoDB params object.
+   * @param {object} params - DynamoDB query params object.
+   * @param {object} where - Where condition object.
+   * @param {string} node - Node identifier.
+   */
   function applyWhereCondition(params, where, node) {
     if (where === undefined) throw new Error('Where is undefined');
 
@@ -71,7 +76,11 @@ function queryFactory(config = {}) {
       params.ExpressionAttributeValues[`:${attribute}`] = value;
     }
   }
-
+  /**
+   * Applies the filter condition into the DynamoDB params object recursively.
+   * @param {object} params - DynamoDB query params object.
+   * @param {object} filter - Filter condition object.
+   */
   function applyFilterCondition(params, filter) {
     recursiveApply(filter);
     // ---
@@ -118,9 +127,9 @@ function queryFactory(config = {}) {
       );
 
       if (logicalExpression.length > 0)
-        logicalExpression.forEach(key =>
-          recursiveApply(filter[key], key, level + 1)
-        );
+        logicalExpression
+          .slice(0, 1)
+          .forEach(key => recursiveApply(filter[key], key, level + 1));
     }
   }
 }
