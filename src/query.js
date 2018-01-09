@@ -33,7 +33,7 @@ function queryFactory(config = {}) {
    * @return {Promise} Query results.
    */
   function query(options = {}) {
-    var { node, where, filter } = options;
+    var { node, where, filter, limit } = options;
 
     var params = {
       TableName: table,
@@ -45,6 +45,8 @@ function queryFactory(config = {}) {
         ':Node': prefixTenant(node)
       }
     };
+
+    if (node !== undefined && limit > 0) params.Limit = limit;
 
     applyWhereCondition(params, where, node);
 

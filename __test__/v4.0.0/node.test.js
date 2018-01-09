@@ -870,6 +870,30 @@ describe('nodeFactory', () => {
             });
           });
       });
+
+      test('should limit the number of results when the `limit` attribute is defined', () => {
+        var value = cuid();
+        return testNode
+          .query({
+            where: { type: { '=': value } },
+            limit: 1
+          })
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': value
+              },
+              Limit: 1
+            });
+          });
+      });
     });
   });
 });
