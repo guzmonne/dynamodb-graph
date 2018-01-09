@@ -1,106 +1,58 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Resources: 
-  Graph: 
+Resources:
+  Graph:
     Type: "AWS::DynamoDB::Table"
-    Properties: 
-      TableName: "GraphTable"      
-      AttributeDefinitions: 
-        - 
+    Properties:
+      AttributeDefinitions:
+        -
           AttributeName: "Node"
           AttributeType: "S"
-        - 
+        -
           AttributeName: "Type"
           AttributeType: "S"
-        - 
-          AttributeName: "String"
+        -
+          AttributeName: "Data"
           AttributeType: "S"
-        - 
-          AttributeName: "Number"
-          AttributeType: "N"
         -
           AttributeName: "GSIK"
           AttributeType: "S"
+      KeySchema:
         -
-          AttributeName: "TGSIK"
-          AttributeType: "S"
-      KeySchema: 
-        - 
           AttributeName: "Node"
           KeyType: "HASH"
-        - 
+        -
           AttributeName: "Type"
           KeyType: "RANGE"
-      ProvisionedThroughput: 
+      ProvisionedThroughput:
         ReadCapacityUnits: "1"
         WriteCapacityUnits: "1"
-      GlobalSecondaryIndexes: 
-        - 
+      TableName: "GraphTable"
+      GlobalSecondaryIndexes:
+        -
           IndexName: "ByType"
-          KeySchema: 
-            - 
+          KeySchema:
+            -
               AttributeName: "GSIK"
               KeyType: "HASH"
-            - 
+            -
               AttributeName: "Type"
               KeyType: "RANGE"
-          Projection: 
+          Projection:
             ProjectionType: "ALL"
-          ProvisionedThroughput: 
+          ProvisionedThroughput:
             ReadCapacityUnits: "2"
             WriteCapacityUnits: "2"
-        - 
-          IndexName: "ByNumber"
-          KeySchema: 
-            - 
+        -
+          IndexName: "ByData"
+          KeySchema:
+            -
               AttributeName: "GSIK"
               KeyType: "HASH"
-            - 
+            -
               AttributeName: "Number"
               KeyType: "RANGE"
-          Projection: 
+          Projection:
             ProjectionType: "ALL"
-          ProvisionedThroughput: 
-            ReadCapacityUnits: "2"
-            WriteCapacityUnits: "2"
-        - 
-          IndexName: "ByString"
-          KeySchema: 
-            - 
-              AttributeName: "GSIK"
-              KeyType: "HASH"
-            - 
-              AttributeName: "String"
-              KeyType: "RANGE"
-          Projection: 
-            ProjectionType: "ALL"
-          ProvisionedThroughput: 
-            ReadCapacityUnits: "2"
-            WriteCapacityUnits: "2"
-        - 
-          IndexName: "ByTypeAndNumber"
-          KeySchema: 
-            - 
-              AttributeName: "TGSIK"
-              KeyType: "HASH"
-            - 
-              AttributeName: "Number"
-              KeyType: "RANGE"
-          Projection: 
-            ProjectionType: "ALL"
-          ProvisionedThroughput: 
-            ReadCapacityUnits: "2"
-            WriteCapacityUnits: "2"
-        - 
-          IndexName: "ByTypeAndString"
-          KeySchema: 
-            - 
-              AttributeName: "TGSIK"
-              KeyType: "HASH"
-            - 
-              AttributeName: "String"
-              KeyType: "RANGE"
-          Projection: 
-            ProjectionType: "ALL"
-          ProvisionedThroughput: 
+          ProvisionedThroughput:
             ReadCapacityUnits: "2"
             WriteCapacityUnits: "2"
