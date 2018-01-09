@@ -10,6 +10,12 @@ module.exports = queryFactory;
 
 // ---
 
+/**
+ * Query factory that returns a `query` function, configured with the global
+ * options.
+ * @param {object} config - Global configuration object.
+ * @return {function} Configured `query` function.
+ */
 function queryFactory(config = {}) {
   var { documentClient, table, tenant } = config;
 
