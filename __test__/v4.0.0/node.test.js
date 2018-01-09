@@ -656,12 +656,12 @@ describe('nodeFactory', () => {
         });
       });
 
-      test('should permit to query by Node `data` using a `FilterExpression`', () => {
+      test('should allow to query by Node `type` and filter by `data` using a `FilterCondition expression`', () => {
         var value = cuid();
         var data = cuid();
         return testNode
           .query({
-            and: { type: { '=': value } },
+            filter: { type: { '=': value } },
             where: { data: { '=': data } }
           })
           .then(() => {
@@ -706,14 +706,14 @@ describe('nodeFactory', () => {
           });
       });
       test('should allow a one level deep logical evaluation on the `and` query condition', () => {
-        var data = cuid();
+        var data = [cuid(), cuid()];
         var type = cuid();
         return testNode
           .query({
             where: { type: { '=': type } },
-            and: {
-              data: { contains: data },
-              and: { size: 25 }
+            filter: {
+              data: { BETWEEN: data },
+              and: { data: { size: 25 } }
             }
           })
           .then(() => {
@@ -728,10 +728,126 @@ describe('nodeFactory', () => {
               ExpressionAttributeValues: {
                 ':Node': pTenant(id),
                 ':Type': type,
-                ':Data': data,
-                ':x1': 25
+                ':a': data[0],
+                ':b': data[1],
+                ':y1': 25
               },
-              FilterExpression: `contains(#Data, :Data) AND size(#Data) = :x1`
+              FilterExpression: `#Data BETWEEN :a AND :b AND size(#Data) = :y1`
+            });
+            return testNode.query({
+              where: { type: { '=': type } },
+              filter: {
+                data: { BETWEEN: data },
+                and: { data: { IN: data.concat(data) } }
+              }
+            });
+          })
+          .then(() => {
+            expect(documentClient.query.args[1][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type',
+                '#Data': 'Data'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': type,
+                ':a': data[0],
+                ':b': data[1],
+                ':y10': data[0],
+                ':y11': data[1],
+                ':y12': data[0],
+                ':y13': data[1]
+              },
+              FilterExpression: `#Data BETWEEN :a AND :b AND #Data IN :y10, :y11, :y12, :y13`
+            });
+            return testNode.query({
+              where: { type: { '=': type } },
+              filter: {
+                data: { contains: data[0] },
+                and: { data: { contains: data[1] } }
+              }
+            });
+          })
+          .then(() => {
+            expect(documentClient.query.args[2][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type',
+                '#Data': 'Data'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': type,
+                ':Data': data[0],
+                ':y1': data[1]
+              },
+              FilterExpression: `contains(#Data, :Data) AND contains(#Data, :y1)`
+            });
+            return testNode.query({
+              where: { type: { '=': type } },
+              filter: {
+                data: { contains: data[0] },
+                and: { type: { contains: data[1] } }
+              }
+            });
+          })
+          .then(() => {
+            expect(documentClient.query.args[3][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type',
+                '#Data': 'Data'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': type,
+                ':Data': data[0],
+                ':y1': data[1]
+              },
+              FilterExpression: `contains(#Data, :Data) AND contains(#Type, :y1)`
+            });
+            return testNode.query({
+              where: { type: { '=': type } },
+              filter: {
+                data: { contains: data[0] },
+                and: {
+                  type: { contains: data[1] },
+                  or: {
+                    data: { BETWEEN: ['1', '2'] },
+                    not: { type: { IN: ['2', '3', '4'] } }
+                  }
+                }
+              }
+            });
+          })
+          .then(() => {
+            expect(documentClient.query.args[4][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type',
+                '#Data': 'Data'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': type,
+                ':Data': data[0],
+                ':y1': data[1],
+                ':y20': '1',
+                ':y21': '2',
+                ':y30': '2',
+                ':y31': '3',
+                ':y32': '4'
+              },
+              FilterExpression: `contains(#Data, :Data) AND contains(#Type, :y1) OR #Data BETWEEN :y20 AND :y21 NOT #Type IN :y30, :y31, :y32`
             });
           });
       });

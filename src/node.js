@@ -35,13 +35,13 @@ function nodeFactory(config = {}) {
 
     // ---
     function query(attributes = {}) {
-      var { where = {}, and = {} } = attributes;
+      var { where = {}, filter = {} } = attributes;
       var { data } = where;
-      var { type } = and;
-      // Switch where.data for and.type if defined.
+      var { type } = filter;
+      // Switch where.data for filter.type if defined.
       if (type !== undefined && data !== undefined) {
         attributes.where = { type };
-        attributes.and = { data };
+        attributes.filter = { data };
       }
 
       return _query(Object.assign({}, attributes, { node: id }));
