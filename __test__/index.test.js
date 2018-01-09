@@ -1,6 +1,6 @@
 'use strict';
 
-var dynamodbGraph = require('../../src/index.js');
+var dynamodbGraph = require('../src/index.js');
 
 describe('dynamodbGraph', () => {
   var documentClient = {};

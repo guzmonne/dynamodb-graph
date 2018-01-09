@@ -3,8 +3,8 @@
 var cuid = require('cuid');
 var sinon = require('sinon');
 var range = require('lodash/range');
-var queryFactory = require('../../src/query.js');
-var utils = require('../../src/modules/utils.js');
+var queryFactory = require('../src/query.js');
+var utils = require('../src/modules/utils.js');
 
 var COMMON_OPERATORS = ['=', '<', '>', '<=', '>='];
 

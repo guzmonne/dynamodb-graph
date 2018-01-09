@@ -4,8 +4,8 @@ var sinon = require('sinon');
 var cuid = require('cuid');
 var chunk = require('lodash/chunk.js');
 var range = require('lodash/range.js');
-var getNodeTypesFactory = require('../../src/getNodeTypes.js');
-var utils = require('../../src/modules/utils.js');
+var getNodeTypesFactory = require('../src/getNodeTypes.js');
+var utils = require('../src/modules/utils.js');
 
 describe('getNodeTypesFactory()', () => {
   var node = cuid();

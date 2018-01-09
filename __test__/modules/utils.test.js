@@ -2,7 +2,7 @@
 
 var cuid = require('cuid');
 var range = require('lodash/range');
-var utils = require('../../../src/modules/utils.js');
+var utils = require('../../src/modules/utils.js');
 
 describe('#checkConfiguration', () => {
   var maxGSIK = 10;
