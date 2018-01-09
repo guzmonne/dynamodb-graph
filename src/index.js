@@ -39,6 +39,6 @@ function dynamodbGraph(config = {}) {
   // ---
 }
 
-Object.defineProperty(dynamodbGraph, 'VERSION', {
+Object.defineProperty(dynamodbGraph, '__VERSION__', {
   value: '4.0.0'
 });
