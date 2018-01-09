@@ -2,6 +2,8 @@
 
 var capitalize = require('lodash/capitalize.js');
 var {
+  btoa,
+  parseItem,
   parseConditionObject,
   prefixTenant: prefixTenantFactory
 } = require('./modules/utils.js');
@@ -28,12 +30,13 @@ function queryFactory(config = {}) {
    *
    * @param {object} options - Query options object.
    * @property {string} [node] - Node identifier.
-   * @property {WhereObject} where - Where expression object.
-   * @property {AndObject} and - And expression object.
+   * @property {ConditionObject} where - Where expression object.
+   * @property {ConditionObject} [filter] - Filter expression object.
+   * @property {number} [limit] - Limit value to use when querying a Node.
    * @return {Promise} Query results.
    */
   function query(options = {}) {
-    var { node, where, filter, limit } = options;
+    var { node, where, filter, limit, offset } = options;
 
     var params = {
       TableName: table,
@@ -46,7 +49,14 @@ function queryFactory(config = {}) {
       }
     };
 
-    if (node !== undefined && limit > 0) params.Limit = limit;
+    if (node !== undefined) {
+      if (limit > 0) params.Limit = limit;
+      if (offset !== undefined)
+        params.ExclusiveStartKey = {
+          Node: prefixTenant(node),
+          Type: typeof offset === 'string' ? atob(offset) : offset.Type
+        };
+    }
 
     applyWhereCondition(params, where, node);
 
@@ -54,7 +64,10 @@ function queryFactory(config = {}) {
       applyFilterCondition(params, filter, node);
     }
 
-    return documentClient.query(params).promise();
+    return documentClient
+      .query(params)
+      .promise()
+      .then(parseResponse);
   }
   /**
    * Applies the where condition into the DynamoDB params object.
@@ -147,5 +160,21 @@ function queryFactory(config = {}) {
           .slice(0, 1)
           .forEach(key => recursiveApply(filter[key], key, level + 1));
     }
+  }
+  /**
+   * Removes tenant information and adds the Offset value to the response.
+   * @param {object} response - DynamoDB response object.
+   */
+  function parseResponse(response) {
+    return Object.assign(
+      {},
+      response,
+      {
+        Items: response.Items.map(parseItem)
+      },
+      response.LastEvaluatedKey !== undefined
+        ? { Offset: btoa(response.LastEvaluatedKey.Type) }
+        : {}
+    );
   }
 }

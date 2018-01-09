@@ -872,25 +872,111 @@ describe('nodeFactory', () => {
       });
 
       test('should limit the number of results when the `limit` attribute is defined', () => {
-        var value = cuid();
+        var type = 'Line#265#Episode#32';
+        var begins_with = 'Line';
+        var node = 'Character#2';
+        documentClient.query.restore();
+        sinon.stub(documentClient, 'query').callsFake(() => ({
+          promise: () => {
+            return Promise.resolve({
+              Count: 1,
+              ScannedCount: 3,
+              Items: [
+                {
+                  Node: pTenant(node),
+                  Type: type,
+                  Data: "Bart didn't get one vote?! Oh, this is...",
+                  GSIK: pTenant('9'),
+                  Target: pTenant('Line#9605')
+                }
+              ],
+              LastEvaluatedKey: {
+                Node: node,
+                Type: type
+              }
+            });
+          }
+        }));
         return testNode
           .query({
-            where: { type: { '=': value } },
+            where: { type: { begins_with: type } },
             limit: 1
           })
-          .then(() => {
+          .then(result => {
             expect(documentClient.query.args[0][0]).toEqual({
               TableName: table,
-              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+              KeyConditionExpression: `#Node = :Node AND begins_with(#Type, :Type)`,
               ExpressionAttributeNames: {
                 '#Node': 'Node',
                 '#Type': 'Type'
               },
               ExpressionAttributeValues: {
                 ':Node': pTenant(id),
-                ':Type': value
+                ':Type': type
               },
               Limit: 1
+            });
+            expect(result.Items[0].Node).toEqual(node);
+            expect(result.LastEvaluatedKey).toEqual({
+              Node: node,
+              Type: type
+            });
+            expect(result.Offset).toEqual('TGluZSMyNjUjRXBpc29kZSMzMg==');
+          });
+      });
+      test('should add the `offset` value to the query if defined both as a string and as a DynamoDB key', () => {
+        var type = 'Line#265#Episode#32';
+        var begins_with = 'Line';
+        return testNode
+          .query({
+            where: { type: { begins_with: type } },
+            limit: 1,
+            offset: {
+              Node: id,
+              Type: type
+            }
+          })
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND begins_with(#Type, :Type)`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': type
+              },
+              Limit: 1,
+              ExclusiveStartKey: {
+                Node: pTenant(id),
+                Type: type
+              }
+            });
+            return testNode.query({
+              where: { type: { begins_with: type } },
+              limit: 1,
+              offset: btoa(type)
+            });
+          })
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND begins_with(#Type, :Type)`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': type
+              },
+              Limit: 1,
+              ExclusiveStartKey: {
+                Node: pTenant(id),
+                Type: type
+              }
             });
           });
       });
