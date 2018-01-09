@@ -683,7 +683,7 @@ describe('nodeFactory', () => {
           });
       });
 
-      test('should permit to query by Node `data` without defining a `type` condition object', () => {
+      test('should query only by `data` when a `type` condition expression is missing', () => {
         var data = cuid();
         return testNode
           .query({
@@ -702,6 +702,36 @@ describe('nodeFactory', () => {
                 ':Data': data
               },
               FilterExpression: `contains(#Data, :Data)`
+            });
+          });
+      });
+      test('should allow a one level deep logical evaluation on the `and` query condition', () => {
+        var data = cuid();
+        var type = cuid();
+        return testNode
+          .query({
+            where: { type: { '=': type } },
+            and: {
+              data: { contains: data },
+              and: { size: 25 }
+            }
+          })
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type',
+                '#Data': 'Data'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': type,
+                ':Data': data,
+                ':x1': 25
+              },
+              FilterExpression: `contains(#Data, :Data) AND size(#Data) = :x1`
             });
           });
       });
