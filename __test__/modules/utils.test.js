@@ -78,38 +78,6 @@ describe('#calculateGSIK()', () => {
   });
 });
 
-describe('#parseResponseItemsData', () => {
-  var response = {
-    Items: [
-      { Data: JSON.stringify(true) },
-      { Data: JSON.stringify(123) },
-      {
-        Data: JSON.stringify('text')
-      },
-      {
-        Data: JSON.stringify([1, true, 'string'])
-      }
-    ]
-  };
-
-  test('should return another response object with parsed data items', () => {
-    var actual = utils.parseResponseItemsData(response);
-    var expected = {
-      Items: [
-        { Data: true },
-        { Data: 123 },
-        {
-          Data: 'text'
-        },
-        {
-          Data: [1, true, 'string']
-        }
-      ]
-    };
-    expect(actual).toEqual(expected);
-  });
-});
-
 describe('#parseItem()', () => {
   test('should be a function', () => {
     expect(typeof utils.parseItem).toBe('function');

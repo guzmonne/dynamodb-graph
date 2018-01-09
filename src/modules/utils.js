@@ -31,14 +31,10 @@ module.exports = {
   atob,
   btoa,
   calculateGSIK,
-  calculateTGSIK,
   checkConfiguration,
-  createCapacityAccumulator,
   hashCode,
-  mergeDynamoResponses,
   parseItem,
   parseResponse,
-  parseResponseItemsData,
   parseConditionObject,
   prefixTenant,
   get _operators() {
@@ -47,55 +43,6 @@ module.exports = {
 };
 
 // ---
-/**
- * Merges two DynamoDB Response objects.
- * @param {DynamoDBResponse} response1
- * @param {DynamoDBResponse} response2
- */
-function mergeDynamoResponses(res1, res2) {
-  if (!res1) return res2;
-
-  var result = Object.assign(
-    {},
-    {
-      Items: get(res1, 'Items', []).concat(get(res2, 'Items', [])),
-      Count: get(res1, 'Count', 0) + get(res2, 'Count', 0),
-      ScannedCount: get(res1, 'ScannedCount', 0) + get(res2, 'ScannedCount', 0)
-    },
-    process.env.DEBUG !== undefined
-      ? {
-          ConsumedCapacity: {
-            TableName:
-              get(res1, 'ConsumedCapacity.TableName', '') ||
-              get(res2, 'ConsumedCapacity.TableName', ''),
-            CapacityUnits:
-              get(res1, 'ConsumedCapacity.CapacityUnits', 0) +
-              get(res2, 'ConsumedCapacity.CapacityUnits', 0)
-          }
-        }
-      : {}
-  );
-
-  return result;
-}
-/**
- * Takes a DynamoDB response, and parses all the Data attibute of all its items.
- * @param {DynamoDBResponse} response DynamoDB response object.
- * @returns {DynamoDBResponse} DynamoDB response, with all its items Data parsed
- */
-function parseResponseItemsData(response) {
-  if (response && response.Items) {
-    response = Object.assign({}, response);
-    response.Items.forEach(item => {
-      if (item.Data !== undefined) item.Data = JSON.parse(item.Data);
-    });
-  }
-  if (response && response.Item) {
-    if (response.Item.Data !== undefined)
-      response.Item.Data = JSON.parse(response.Item.Data);
-  }
-  return response;
-}
 /**
  * Applies the hashcode algorithm to turn a string into a number.
  * @param {string} string - String to encode to a number.
@@ -137,47 +84,6 @@ function calculateGSIK(config = {}) {
 
   return prefixTenant(tenant, Math.abs(hashCode(node)) % maxGSIK);
 }
-/**
- * Returns a random GSIK based on the tenant and a random number.
- * @param {object} config - GSIK configuration object.
- * @property {string} node - Identifier of the Node.
- * @property {number} maxGSIK - Maximum GSIK value.
- * @property {string} tenant='' - Identifier of the current tenant.
- * @property {string} type - Node type.
- * @returns {number} Random number between 0 and n.
- */
-function calculateTGSIK(config = {}) {
-  var { tenant, node, type, maxGSIK = 0 } = config;
-  var tgsik = tenant !== undefined && tenant !== '' ? tenant + '#' : '';
-  if (node === undefined) throw new Error('Node is undefined');
-  if (maxGSIK < 2) return (tgsik += type + '#' + 0);
-  return (tgsik += type + '#' + Math.abs(hashCode(node)) % maxGSIK);
-}
-/**
- * Accumulates the capacity consumed by DynamoDB. You have to instantiate it,
- * and then provide it with each DynamoDB response as they came along. Then you
- * can get the accumulated value by calling `accumulator.dump()`.
- * @return {function} Acumulator function.
- * @property {function} dump - Returns the current accumulated object.
- */
-function createCapacityAccumulator() {
-  var consumedCapacity = {};
-
-  function accumulator(response) {
-    consumedCapacity = mergeWith(
-      consumedCapacity,
-      response.ConsumedCapacity || {},
-      (objValue, srcValue) => {
-        if (isNumber(objValue) && isNumber(srcValue))
-          return objValue + srcValue;
-      }
-    );
-  }
-
-  accumulator.dump = () => Object.assign({}, consumedCapacity);
-
-  return accumulator;
-}
 
 /**
  * @typedef {Object} ConfigObject
@@ -187,7 +93,6 @@ function createCapacityAccumulator() {
  * @property {string} [table=TABLE_NAME] - Table name. Can be defined in env
  *                                         variable called TABLE_NAME.
  */
-
 /**
  * Utility function that validates if an object is a valid ConfigObject.
  * @param {ConfigObject} config - Main configuration object
@@ -308,7 +213,13 @@ function parseConditionObject(objectExpression = {}, level = 0) {
 
   return { attribute, expression, value, operator };
 }
-
+/**
+ * Returns either a prefixated string or a function that can apply a prefix to
+ * a given string.
+ * @param {string} tenant - Tenant identifier.
+ * @param {string} string - String to prefix.
+ * @return {string|function} Prefixated string, or prefix function.
+ */
 function prefixTenant(tenant, string) {
   if (tenant === undefined || tenant === '')
     return string === undefined ? string => String(string) : String(string);
@@ -317,11 +228,19 @@ function prefixTenant(tenant, string) {
     ? string => tenant + '|' + string
     : tenant + '|' + String(string);
 }
-
+/**
+ * Encodes a string to base64
+ * @param {string} string - String to encode as a base64 string.
+ * @return Base64 encoded string.
+ */
 function btoa(string) {
   return new Buffer(string).toString('base64');
 }
-
+/**
+ * Decodes a base64 string back to ascii.
+ * @param {string} string - String to decode from base64 to ascii.
+ * @return {string} Decoded base64 string.
+ */
 function atob(string) {
   return new Buffer(string, 'base64').toString('ascii');
 }
