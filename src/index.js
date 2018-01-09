@@ -3,7 +3,15 @@
 module.exports = dynamodbGraph;
 
 // ---
-
+/**
+ *
+ * @param {object} config - Configuration object.
+ * @property {object} documentClient - DynamoDB Document Client driver.
+ * @property {number} [maxGSIK=10] - Max GSIK value.
+ * @property {string} [table=TABLE_NAME] - DynamoDB table name. Can inherit its
+ *                                         from a TABLE_NAME environment varible
+ * @property {string} [tenant=''] - Tenant identifier.
+ */
 function dynamodbGraph(config = {}) {
   var {
     documentClient,
@@ -16,6 +24,8 @@ function dynamodbGraph(config = {}) {
     throw new Error('DynamoDB DocumentClient driver is undefined');
 
   if (table === undefined) throw new Error('Table is undefined');
+
+  // Configure library _meta_ properties.
 
   Object.defineProperty(dynamodbGraph, '_maxGSIK', {
     value: maxGSIK
@@ -39,6 +49,7 @@ function dynamodbGraph(config = {}) {
   // ---
 }
 
+// Library current version
 Object.defineProperty(dynamodbGraph, '__VERSION__', {
-  value: '4.0.0'
+  value: require('../package.json').version
 });
