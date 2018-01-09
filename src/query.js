@@ -246,7 +246,7 @@ function queryFactory(config = {}) {
     };
 
     if (node !== undefined) {
-      result.Offset = btoa(response.LastEvaluatedKey.Type);
+      result.Offset = btoa(key.Type);
       return result;
     }
 
