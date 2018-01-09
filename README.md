@@ -900,7 +900,7 @@ Node.create({ data })
 
 ### Destroy method
 
-The interface to destroy a node is very similar to how you create one. You just define a Node with its `id` and `type`, and then you call the `destroy` method on it.
+The interface to destroy a node is very similar to how you get one. If you want to destroy an item, you select it with the `node` function, and then call the `destroy` method on it.
 
 ```javascript
 var id = 'Character#2';
