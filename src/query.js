@@ -42,9 +42,9 @@ function queryFactory(config = {}) {
 
     if (node !== undefined) return nodeQuery(options);
 
-    var { where, filter, gsik = {} } = options;
+    var { where, filter, gsik = {}, limit } = options;
 
-    var { startGSIK = 0, endGSIK = maxGSIK, listGSIK, limit } = gsik;
+    var { startGSIK = 0, endGSIK = maxGSIK, listGSIK } = gsik;
 
     if (startGSIK >= endGSIK)
       throw new Error('Start GSIK must be smaller than end GSIK');

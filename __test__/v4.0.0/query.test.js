@@ -528,7 +528,8 @@ describe('queryFactory()', () => {
       var type = cuid();
       return query({
         where: { type: { '=': type } },
-        gsik: { startGSIK, endGSIK, listGSIK, limit }
+        gsik: { startGSIK, endGSIK, listGSIK },
+        limit
       }).then(() => {
         expect(documentClient.query.args.length).toEqual(listGSIK.length);
         listGSIK.map((gsik, i) => {
@@ -594,7 +595,8 @@ describe('queryFactory()', () => {
       return query({
         where: { type: { '=': 'Gender' } },
         filter: { data: { '=': 'm' } },
-        gsik: { endGSIK, limit }
+        gsik: { endGSIK },
+        limit
       }).then(result => {
         expect(documentClient.query.args.length).toEqual(3);
         expect(result.Offset).toEqual(expectedOffset);
