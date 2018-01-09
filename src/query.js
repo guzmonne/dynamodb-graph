@@ -84,6 +84,14 @@ function queryFactory(config = {}) {
   function applyFilterCondition(params, filter) {
     recursiveApply(filter);
     // ---
+    /**
+     * Applies the filter condition into the DynamoDB params object.
+     * @param {object} filter - Filter condition object.
+     * @param {string} [logicOperator] - Logic operator used to concatenate the
+     *                                   condition to the current
+     *                                   FilterExpression.
+     * @param {number} [level=0] - Current recursive condition level.
+     */
     function recursiveApply(filter, logicOperator, level = 0) {
       if (typeof filter !== 'object')
         throw new Error('Filter is not an object');
