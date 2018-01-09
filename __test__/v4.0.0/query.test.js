@@ -2,6 +2,7 @@
 
 var cuid = require('cuid');
 var sinon = require('sinon');
+var range = require('lodash/range');
 var queryFactory = require('../../src/query.js');
 var utils = require('../../src/modules/utils.js');
 
@@ -414,11 +415,201 @@ describe('queryFactory()', () => {
           });
         });
     });
+
+    test('should run between 0 and `maxGSIK` by default', () => {
+      var maxGSIK = randomNumber(10, 100);
+      var type = cuid();
+      var query = queryFactory({ documentClient, table, tenant, maxGSIK });
+      return query({ where: { type: { '=': type } } }).then(() => {
+        for (let i = 0; i < maxGSIK; i++) {
+          expect(documentClient.query.args[i][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant(`${i}`),
+              ':Type': type
+            },
+            Limit: 100
+          });
+        }
+      });
+    });
+
+    test('should run between `startGSIK`, and `maxGSIK` if the `startGSIK` is defined on the `gsik` object', () => {
+      var startGSIK = randomNumber(5, 10);
+      var type = cuid();
+      return query({
+        where: { type: { '=': type } },
+        gsik: { startGSIK }
+      }).then(() => {
+        expect(documentClient.query.args.length).toEqual(maxGSIK - startGSIK);
+        for (let i = 0; i < maxGSIK - startGSIK; i++) {
+          expect(documentClient.query.args[i][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant(`${i + startGSIK}`),
+              ':Type': type
+            },
+            Limit: 100
+          });
+        }
+      });
+    });
+
+    test('should run between `startGSIK`, and `endGSIK` if the `startGSIK` and `endGSIK` values are defined on the `gsik` object', () => {
+      var startGSIK = randomNumber(5, 10);
+      var endGSIK = randomNumber(10, 20);
+      var type = cuid();
+      return query({
+        where: { type: { '=': type } },
+        gsik: { startGSIK, endGSIK }
+      }).then(() => {
+        expect(documentClient.query.args.length).toEqual(endGSIK - startGSIK);
+        for (let i = 0; i < endGSIK - startGSIK; i++) {
+          expect(documentClient.query.args[i][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant(`${i + startGSIK}`),
+              ':Type': type
+            },
+            Limit: 100
+          });
+        }
+      });
+    });
+
+    test('should run over the GSIK defined on `listGSIK`, if the `listGSIK` attribute is defined on the `gsik` object, regardless of the `startGSIK` and `endGSIK` value', () => {
+      var startGSIK = randomNumber(5, 10);
+      var endGSIK = randomNumber(10, 20);
+      var listGSIK = range(0, 10).map(() => randomNumber(0, 10000));
+      var type = cuid();
+      return query({
+        where: { type: { '=': type } },
+        gsik: { startGSIK, endGSIK, listGSIK }
+      }).then(() => {
+        expect(documentClient.query.args.length).toEqual(listGSIK.length);
+        listGSIK.map((gsik, i) => {
+          expect(documentClient.query.args[i][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant(`${gsik}`),
+              ':Type': type
+            },
+            Limit: 100
+          });
+        });
+      });
+    });
+
+    test('should return a `limit` value of items, if the `limit` attribute on the `gsik` object is defined', () => {
+      var startGSIK = randomNumber(5, 10);
+      var endGSIK = randomNumber(10, 20);
+      var listGSIK = range(0, 10).map(() => randomNumber(0, 10000));
+      var limit = 1;
+      var type = cuid();
+      return query({
+        where: { type: { '=': type } },
+        gsik: { startGSIK, endGSIK, listGSIK, limit }
+      }).then(() => {
+        expect(documentClient.query.args.length).toEqual(listGSIK.length);
+        listGSIK.map((gsik, i) => {
+          expect(documentClient.query.args[i][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant(`${gsik}`),
+              ':Type': type
+            },
+            Limit: 1
+          });
+        });
+      });
+    });
+
+    test('should return the `LastEvaluatedKeys` object, plus an `Offset` property, to handle pagination', () => {
+      documentClient.query.restore();
+
+      var expectedOffset = '';
+      var expectedKeys = {};
+
+      sinon.stub(documentClient, 'query').callsFake(params => ({
+        promise: () => {
+          var node = `Character#${randomNumber(0, 10000)}`;
+          var gsik = utils.calculateGSIK({ node, maxGSIK });
+          var key = {
+            Node: node,
+            Type: 'Gender',
+            GSIK: gsik
+          };
+
+          expectedOffset += btoa(`${gsik}|${node}|Gender`);
+          expectedKeys[gsik] = key;
+
+          return Promise.resolve({
+            ScannedCount: 2,
+            Count: 1,
+            Items: [
+              {
+                Node: prefixTenant(node),
+                Type: 'Gender',
+                Data: 'm',
+                GSIK: utils.calculateGSIK({ node, maxGSIK, tenant })
+              }
+            ],
+            LastEvaluatedKey: {
+              Node: prefixTenant(node),
+              Type: 'Gender',
+              GSIK: prefixTenant(gsik)
+            }
+          });
+        }
+      }));
+
+      var endGSIK = 3;
+      var limit = 1;
+
+      return query({
+        where: { type: { '=': 'Gender' } },
+        filter: { data: { '=': 'm' } },
+        gsik: { endGSIK, limit }
+      }).then(result => {
+        expect(documentClient.query.args.length).toEqual(3);
+        expect(result.Offset).toEqual(expectedOffset);
+        expect(result.LastEvaluatedKeys).toEqual(expectedKeys);
+      });
+    });
   });
 });
 
 function pickOne(list) {
   return list[Math.floor(Math.random() * list.length)];
+}
+
+function randomNumber(min, max) {
+  return min + Math.floor(Math.random() * (max - min));
 }
 
 function promiseItems(items, count) {

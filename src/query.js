@@ -1,6 +1,7 @@
 'use strict';
 
 var capitalize = require('lodash/capitalize.js');
+var range = require('lodash/range.js');
 var {
   btoa,
   mergeDynamoResponses,
@@ -41,11 +42,20 @@ function queryFactory(config = {}) {
 
     if (node !== undefined) return nodeQuery(options);
 
-    var { where, filter } = options;
+    var { where, filter, gsik = {} } = options;
+
+    var { startGSIK = 0, endGSIK = maxGSIK, listGSIK, limit } = gsik;
+
+    if (startGSIK >= endGSIK)
+      throw new Error('Start GSIK must be smaller than end GSIK');
+
+    if (Array.isArray(listGSIK) === false) {
+      listGSIK = range(startGSIK, endGSIK);
+    }
 
     var promises = [];
 
-    for (let i = 0; i < maxGSIK; i++) {
+    listGSIK.forEach(i => {
       var params = gsikParams(`${i}`);
 
       applyWhereCondition(params, where);
@@ -54,15 +64,17 @@ function queryFactory(config = {}) {
         applyFilterCondition(params, filter);
       }
 
+      if (limit > 0) params.Limit = limit;
+
       promises.push(
         documentClient
           .query(params)
           .promise()
-          .then(parseResponse)
+          .then(parseResponse())
       );
-    }
+    });
 
-    return Promise.all(promises).then(mergeDynamoResponses);
+    return Promise.all(promises).then(mergeResponses);
   }
 
   function nodeQuery(options = {}) {
@@ -96,7 +108,7 @@ function queryFactory(config = {}) {
     return documentClient
       .query(params)
       .promise()
-      .then(parseResponse);
+      .then(parseResponse(node));
   }
   /**
    * Applies the where condition into the DynamoDB params object.
@@ -194,17 +206,19 @@ function queryFactory(config = {}) {
    * Removes tenant information and adds the Offset value to the response.
    * @param {object} response - DynamoDB response object.
    */
-  function parseResponse(response) {
-    return Object.assign(
-      {},
-      response,
-      {
-        Items: response.Items.map(parseItem)
-      },
-      response.LastEvaluatedKey !== undefined
-        ? { Offset: btoa(response.LastEvaluatedKey.Type) }
-        : {}
-    );
+  function parseResponse(node) {
+    return function(response) {
+      return Object.assign(
+        {},
+        response,
+        {
+          Items: response.Items.map(parseItem)
+        },
+        response.LastEvaluatedKey !== undefined
+          ? parseLastEvaluatedKey(response.LastEvaluatedKey, node)
+          : {}
+      );
+    };
   }
   /**
    * Constructs the default DynamoDB GSIK query params object.
@@ -222,5 +236,59 @@ function queryFactory(config = {}) {
       },
       Limit: 100
     };
+  }
+
+  function parseLastEvaluatedKey(key, node) {
+    var key = parseItem(key);
+
+    var result = {
+      LastEvaluatedKey: key
+    };
+
+    if (node !== undefined) {
+      result.Offset = btoa(response.LastEvaluatedKey.Type);
+      return result;
+    }
+
+    var { Node, Data, Type, GSIK } = key;
+
+    result.Offset = btoa(`${GSIK}|${Node}|${Type || Data}`);
+
+    return result;
+  }
+
+  function mergeResponses(responses) {
+    return responses.reduce(
+      (acc, response) => {
+        var { Offset, LastEvaluatedKey } = response;
+
+        acc.Items = acc.Items.concat(response.Items);
+        acc.Count += response.Count;
+        acc.ScannedCount += response.ScannedCount;
+
+        if (Offset !== undefined)
+          acc.Offset =
+            acc.Offset !== undefined
+              ? acc.Offset + response.Offset
+              : response.Offset;
+
+        if (LastEvaluatedKey !== undefined) {
+          var { GSIK } = LastEvaluatedKey;
+          acc.LastEvaluatedKeys =
+            acc.LastEvaluatedKeys !== undefined
+              ? Object.assign(acc.LastEvaluatedKeys, {
+                  [GSIK]: LastEvaluatedKey
+                })
+              : { [GSIK]: LastEvaluatedKey };
+        }
+
+        return acc;
+      },
+      {
+        Items: [],
+        Count: 0,
+        ScannedCount: 0
+      }
+    );
   }
 }
