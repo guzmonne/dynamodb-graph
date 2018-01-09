@@ -1,7 +1,7 @@
 'use strict';
 
+var capitalize = require('lodash/capitalize.js');
 var {
-  parseConditionObject,
   parseConditionObject,
   prefixTenant: prefixTenantFactory
 } = require('./modules/utils.js');
@@ -27,98 +27,100 @@ function queryFactory(config = {}) {
    * @return {Promise} Query results.
    */
   function query(options = {}) {
-    var { node, where, and } = options;
+    var { node, where, filter } = options;
 
-    if (where === undefined) throw new Error('Where is undefined');
-
-    var {
-      attribute,
-      expression: whereExpression,
-      value: whereValue
-    } = parseConditionObject(where);
-
-    var dataQuery = attribute === 'data';
-    var whereAttributeName = `#${dataQuery ? 'Data' : 'Type'}`;
-    var whereAttributeValue = `${dataQuery ? 'Data' : 'Type'}`;
-
-    var attributeValues;
-    var attributeNames = {
-      '#Node': 'Node',
-      [whereAttributeName]: whereAttributeValue
-    };
-    var expression = `#Node = :Node${
-      dataQuery ? '' : ` AND ${whereExpression}`
-    }`;
     var params = {
-      TableName: table
+      TableName: table,
+      KeyConditionExpression: '#Node = :Node',
+      ExpressionAttributeNames: {
+        '#Node': 'Node'
+      },
+      ExpressionAttributeValues: {
+        ':Node': prefixTenant(node)
+      }
     };
 
-    if (and !== undefined) {
-      if (typeof and !== 'object') throw new Error('And is not an object');
+    applyWhereCondition(params, where, node);
 
-      var { expression: andExpression, value: andValue } = parseConditionObject(
-        and
-      );
-
-      var andAttributeName = `#${dataQuery ? 'Type' : 'Data'}`;
-      var andAttributeValue = `${dataQuery ? 'Type' : 'Data'}`;
-
-      attributeNames[andAttributeName] = andAttributeValue;
-      attributeValues = expressionValues({
-        node,
-        whereValue,
-        andValue,
-        dataQuery
-      });
-
-      params.FilterExpression = andExpression;
+    if (filter !== undefined) {
+      applyFilterCondition(params, filter, node);
     }
-
-    if (attributeValues === undefined)
-      attributeValues = expressionValues({
-        node,
-        whereValue,
-        dataQuery
-      });
-
-    if (dataQuery && params.FilterExpression === undefined)
-      params.FilterExpression = whereExpression;
-
-    params.KeyConditionExpression = expression;
-    params.ExpressionAttributeNames = attributeNames;
-    params.ExpressionAttributeValues = attributeValues;
 
     return documentClient.query(params).promise();
   }
-  /**
-   *
-   * @param {object} params - Params object.
-   * @property {string} [node] - Node identifier.
-   * @property {string|string[]|number} whereValue - Where expression value.
-   * @property {string|string[]|number} [andValue] - And expression value.
-   * @property {bool} [dataQuery=false] - Flag indicating that the user is
-   *                                      quering over the data..
-   * @returns {object} DynamoDB ExpressionAttributeValues object.
-   */
-  function expressionValues(params) {
-    var { node, whereValue, andValue, dataQuery = false } = params;
-    var values = {};
 
-    if (node !== undefined) values[':Node'] = prefixTenant(node);
+  function applyWhereCondition(params, where, node) {
+    if (where === undefined) throw new Error('Where is undefined');
 
-    if (Array.isArray(whereValue)) {
-      values[':a'] = whereValue[0];
-      values[':b'] = whereValue[1];
+    var { attribute, expression, value } = parseConditionObject(where);
+
+    attribute = capitalize(attribute);
+
+    if (node !== undefined) {
+      if (attribute === 'Type')
+        params.KeyConditionExpression += ` AND ${expression}`;
+      else if (attribute === 'Data') params.FilterExpression = expression;
+    }
+
+    params.ExpressionAttributeNames['#' + attribute] = attribute;
+
+    if (Array.isArray(value)) {
+      params.ExpressionAttributeValues[':a'] = value[0];
+      params.ExpressionAttributeValues[':b'] = value[1];
     } else {
-      values[`:${dataQuery === true ? 'Data' : 'Type'}`] = whereValue;
+      params.ExpressionAttributeValues[`:${attribute}`] = value;
     }
+  }
 
-    if (andValue !== undefined) {
-      if (Array.isArray(andValue) === true)
-        andValue.forEach((value, i) => (values[`:x${i}`] = value));
-      else values[`:${dataQuery === true ? 'Type' : 'Data'}`] = andValue;
+  function applyFilterCondition(params, filter) {
+    recursiveApply(filter);
+    // ---
+    function recursiveApply(filter, logicOperator, level = 0) {
+      if (typeof filter !== 'object')
+        throw new Error('Filter is not an object');
+
+      var nested = level > 0;
+
+      var { attribute, expression, value, operator } = parseConditionObject(
+        filter,
+        level
+      );
+
+      attribute = capitalize(attribute);
+
+      params.ExpressionAttributeNames['#' + attribute] = attribute;
+
+      if (Array.isArray(value) === true)
+        if (operator === 'BETWEEN') {
+          params.ExpressionAttributeValues[`:${nested ? `y${level}0` : `a`}`] =
+            value[0];
+          params.ExpressionAttributeValues[`:${nested ? `y${level}1` : `b`}`] =
+            value[1];
+        } else
+          value.forEach((v, i) => {
+            params.ExpressionAttributeValues[
+              `:${nested ? `y${level}` : `x`}${i}`
+            ] = v;
+          });
+      else
+        params.ExpressionAttributeValues[
+          `:${nested ? `y${level}` : attribute}`
+        ] = value;
+
+      if (nested) {
+        params.FilterExpression += ` ${logicOperator.toUpperCase()} ${expression}`;
+      } else {
+        params.FilterExpression = expression;
+      }
+
+      var logicalExpression = Object.keys(filter).filter(
+        key => key !== 'data' && key !== 'type'
+      );
+
+      if (logicalExpression.length > 0)
+        logicalExpression.forEach(key =>
+          recursiveApply(filter[key], key, level + 1)
+        );
     }
-
-    return values;
   }
 }

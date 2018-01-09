@@ -141,13 +141,13 @@ describe('queryFactory()', () => {
         });
     });
 
-    test('should throw an error if the `node` and `where` attributes are defined, but the `and` attribute is not an object', () => {
+    test('should throw an error if the `node` and `where` attributes are defined, but the `filter` attribute is not an object', () => {
       expect(() =>
-        query({ node, where: { type: { '=': cuid() } }, and: false })
-      ).toThrow('And is not an object');
+        query({ node, where: { type: { '=': cuid() } }, filter: false })
+      ).toThrow('Filter is not an object');
     });
 
-    test('should query over the table indexed by type if the `node` attribute is defined, the `where` attribute points to the type, and the `and` attribute points to the data', () => {
+    test('should query over the table indexed by type if the `node` attribute is defined, the `where` attribute points to the type, and the `filter` attribute points to the data', () => {
       var string = cuid();
       var dstring = cuid();
       var array = [cuid(), cuid()];
@@ -174,7 +174,7 @@ describe('queryFactory()', () => {
       return query({
         node,
         where: { type: { begins_with: string } },
-        and: { data: { begins_with: dstring } }
+        filter: { data: { begins_with: dstring } }
       })
         .then(() => {
           expect(documentClient.query.args[0][0]).toEqual({
@@ -195,7 +195,7 @@ describe('queryFactory()', () => {
           return query({
             node,
             where: { type: { BETWEEN: array } },
-            and: { data: { IN: darray } }
+            filter: { data: { IN: darray } }
           });
         })
         .then(() => {
@@ -220,7 +220,7 @@ describe('queryFactory()', () => {
           return query({
             node,
             where: { type: { [operator]: string } },
-            and: { data: { [doperator]: dstring } }
+            filter: { data: { [doperator]: dstring } }
           });
         })
         .then(() => {
