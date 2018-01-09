@@ -680,6 +680,25 @@ describe('nodeFactory', () => {
               },
               FilterExpression: `#Data = :Data`
             });
+            return testNode.query({
+              filter: { type: { '>': value } },
+              where: { type: { '=': data } }
+            });
+          })
+          .then(() => {
+            expect(documentClient.query.args[1][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': value
+              },
+              FilterExpression: `#Type > :Type`
+            });
           });
       });
 
