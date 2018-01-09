@@ -11,13 +11,35 @@ var {
 
 module.exports = nodeFactory;
 
+// ---
+
+/**
+ * Returns a function that can interact with Nodes stored on a DynamoDB table.
+ * @param {object} config - Main configuration object.
+ * @property {object} documentClient - DynamoDB Document Client driver.
+ * @property {string} [table] - DynamoDB table name.
+ * @property {number} [maxGSIK] - Max GSIK value.
+ * @property {string} [tenant=''] - Tenant identifier.
+ * @return {function} Node function.
+ */
 function nodeFactory(config = {}) {
   var { documentClient, table, maxGSIK, tenant = '' } = config;
   var pTenant = prefixTenant(tenant);
   var getNodeTypes = require('./getNodeTypes.js')(config);
   var _query = require('./query.js')(config);
 
-  return function node(options = {}) {
+  return node;
+
+  // ---
+
+  /**
+   * Returns an object with methods capable to interact with the configured Node
+   * @param {object} options - Node options object.
+   * @property {string} [id] - Node ID.
+   * @property {string} [type] - Node type
+   * @return {object} Object with functions to interact with the configured Node
+   */
+  function node(options = {}) {
     var { id, type } = options;
 
     if (id !== undefined && typeof id !== 'string')
@@ -35,6 +57,14 @@ function nodeFactory(config = {}) {
     return api;
 
     // ---
+
+    /**
+     * Attempts to run a query against the DynamoDB table.
+     * @param {object} attributes - Query configuration object.
+     * @property {object} [where] - Where condition object.
+     * @property {object} [filter] - Filter condition object.
+     * @return {Promise} DynamoDB query promise.
+     */
     function query(attributes = {}) {
       var { where = {}, filter = {} } = attributes;
       var { data } = where;
@@ -47,7 +77,9 @@ function nodeFactory(config = {}) {
 
       return _query(Object.assign({}, attributes, { node: id }));
     }
-
+    /**
+     * Attempts to destroy a Node item from DynamoDB.
+     */
     function destroy() {
       if (id !== undefined && type !== undefined)
         return documentClient
@@ -62,7 +94,11 @@ function nodeFactory(config = {}) {
 
       return Promise.resolve();
     }
-
+    /**
+     * Attempts to get one or more Node items from DynamoDB.
+     * @param {string[]} types - List of Node types.
+     * @return {Promise} A DynamoDB query to get one or more Node items.
+     */
     function get(types) {
       if (id === undefined) throw new Error('Node is undefined');
       if (type === undefined && types === undefined)
@@ -86,7 +122,13 @@ function nodeFactory(config = {}) {
 
       return promise;
     }
-
+    /**
+     * Helper function to build other function that can interact with a specific
+     * type of Node item ("edge" or "prop").
+     * @param {"edge"|"prop"} itemType - Node item type.
+     * @return {function} Pre-configured function to interact with Node items of
+     *                    type `itemType`.
+     */
     function items(itemType) {
       return function(attributes = {}) {
         if (id === undefined) throw new Error('Node ID is undefined');
@@ -134,7 +176,15 @@ function nodeFactory(config = {}) {
           );
       };
     }
-
+    /**
+     * Attempts to create a new Node, Node edge, or Node prop, constructed from
+     * the provided attributes.
+     * @param {object} attributes - Create attribute object.
+     * @property {string} [data] - Main or edge Node data.
+     * @property {string} [target] - Node edge target.
+     * @property {string} [prop] - Prop node data.
+     * @return {Promise} DynamoDB create request promise.
+     */
     function create(attributes) {
       if (attributes === undefined) throw new Error('Options is undefined');
       if (type === undefined) throw new Error('Type is undefined');
@@ -171,5 +221,5 @@ function nodeFactory(config = {}) {
         .promise()
         .then(parseItem);
     }
-  };
+  }
 }
