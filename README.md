@@ -75,7 +75,7 @@ Resources:
               AttributeName: "GSIK"
               KeyType: "HASH"
             -
-              AttributeName: "Number"
+              AttributeName: "Data"
               KeyType: "RANGE"
           Projection:
             ProjectionType: "ALL"
