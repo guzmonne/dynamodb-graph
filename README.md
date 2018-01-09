@@ -412,7 +412,14 @@ g
      * }]
      */
     console.log(result.Offset);
-    // Q2hhcmFjdGVy
+    // U3RhcnJlZEluI0VwaXNvZGUjMQ==
+    console.log(result.LastEvaluatedKey);
+    /**
+     * {
+     *    Node: 'Character#2',
+     *    Type: 'StarredIn#Episode#1',
+     * }
+     */
   });
 ```
 
@@ -437,9 +444,14 @@ g
      *    Target: 'Line#9609'
      * }]
      */
+    console.log(result.Offset);
+    // U3Bva2VMaW5lIzI2OSNFcGlzb2RlIzMy
     console.log(result.LastEvaluatedKey);
     /**
-     * Q2hhcmFjdGVyIzJ8Q2hhcmFjdGVy
+     * {
+     *    Node: 'Character#2',
+     *    Type: 'SpokeLine#269#Episode#32',
+     * }
      */
   });
 ```
