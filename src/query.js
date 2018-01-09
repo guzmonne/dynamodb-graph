@@ -3,6 +3,7 @@
 var capitalize = require('lodash/capitalize.js');
 var {
   btoa,
+  mergeDynamoResponses,
   parseItem,
   parseConditionObject,
   prefixTenant: prefixTenantFactory
@@ -19,7 +20,7 @@ module.exports = queryFactory;
  * @return {function} Configured `query` function.
  */
 function queryFactory(config = {}) {
-  var { documentClient, table, tenant } = config;
+  var { documentClient, table, tenant, maxGSIK } = config;
 
   var prefixTenant = prefixTenantFactory(tenant);
 
@@ -36,6 +37,35 @@ function queryFactory(config = {}) {
    * @return {Promise} Query results.
    */
   function query(options = {}) {
+    var { node } = options;
+
+    if (node !== undefined) return nodeQuery(options);
+
+    var { where, filter } = options;
+
+    var promises = [];
+
+    for (let i = 0; i < maxGSIK; i++) {
+      var params = gsikParams(`${i}`);
+
+      applyWhereCondition(params, where);
+
+      if (filter !== undefined) {
+        applyFilterCondition(params, filter);
+      }
+
+      promises.push(
+        documentClient
+          .query(params)
+          .promise()
+          .then(parseResponse)
+      );
+    }
+
+    return Promise.all(promises).then(mergeDynamoResponses);
+  }
+
+  function nodeQuery(options = {}) {
     var { node, where, filter, limit, offset } = options;
 
     var params = {
@@ -49,19 +79,18 @@ function queryFactory(config = {}) {
       }
     };
 
-    if (node !== undefined) {
-      if (limit > 0) params.Limit = limit;
-      if (offset !== undefined)
-        params.ExclusiveStartKey = {
-          Node: prefixTenant(node),
-          Type: typeof offset === 'string' ? atob(offset) : offset.Type
-        };
-    }
+    if (limit > 0) params.Limit = limit;
+
+    if (offset !== undefined)
+      params.ExclusiveStartKey = {
+        Node: prefixTenant(node),
+        Type: typeof offset === 'string' ? atob(offset) : offset.Type
+      };
 
     applyWhereCondition(params, where, node);
 
     if (filter !== undefined) {
-      applyFilterCondition(params, filter, node);
+      applyFilterCondition(params, filter);
     }
 
     return documentClient
@@ -73,7 +102,6 @@ function queryFactory(config = {}) {
    * Applies the where condition into the DynamoDB params object.
    * @param {object} params - DynamoDB query params object.
    * @param {object} where - Where condition object.
-   * @param {string} node - Node identifier.
    */
   function applyWhereCondition(params, where, node) {
     if (where === undefined) throw new Error('Where is undefined');
@@ -82,10 +110,11 @@ function queryFactory(config = {}) {
 
     attribute = capitalize(attribute);
 
-    if (node !== undefined) {
-      if (attribute === 'Type')
-        params.KeyConditionExpression += ` AND ${expression}`;
-      else if (attribute === 'Data') params.FilterExpression = expression;
+    if (attribute === 'Type')
+      params.KeyConditionExpression += ` AND ${expression}`;
+    else {
+      if (node !== undefined) params.FilterExpression = expression;
+      else params.KeyConditionExpression += ` AND ${expression}`;
     }
 
     params.ExpressionAttributeNames['#' + attribute] = attribute;
@@ -176,5 +205,22 @@ function queryFactory(config = {}) {
         ? { Offset: btoa(response.LastEvaluatedKey.Type) }
         : {}
     );
+  }
+  /**
+   * Constructs the default DynamoDB GSIK query params object.
+   * @param {string} gsik - GSIK number.
+   */
+  function gsikParams(gsik) {
+    return {
+      TableName: table,
+      KeyConditionExpression: '#GSIK = :GSIK',
+      ExpressionAttributeNames: {
+        '#GSIK': 'GSIK'
+      },
+      ExpressionAttributeValues: {
+        ':GSIK': prefixTenant(gsik)
+      },
+      Limit: 100
+    };
   }
 }

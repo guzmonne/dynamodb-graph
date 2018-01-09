@@ -9,6 +9,7 @@ var COMMON_OPERATORS = ['=', '<', '>', '<=', '>='];
 
 var maxGSIK = 10;
 var tenant = cuid();
+var prefixTenant = utils.prefixTenant(tenant);
 var table = 'GraphTable';
 var documentClient = {
   query: params => ({
@@ -79,6 +80,14 @@ describe('queryFactory()', () => {
       ).not.toThrow('Value is not a list of strings');
     });
 
+    beforeEach(() => {
+      sinon.spy(documentClient, 'query');
+    });
+
+    afterEach(() => {
+      documentClient.query.restore();
+    });
+
     test('should query over the table indexed by type if the `node` attribute is defined, and the `where` attribute points to the type', () => {
       var string = cuid();
       var array = [cuid(), cuid()];
@@ -91,7 +100,6 @@ describe('queryFactory()', () => {
         operator === 'IN'
       )
         operator = '=';
-      sinon.spy(documentClient, 'query');
       return query({ node, where: { type: { begins_with: string } } })
         .then(() => {
           expect(documentClient.query.args[0][0]).toEqual({
@@ -137,7 +145,6 @@ describe('queryFactory()', () => {
               ':Type': string
             }
           });
-          documentClient.query.restore();
         });
     });
 
@@ -170,7 +177,6 @@ describe('queryFactory()', () => {
         doperator === 'IN'
       )
         doperator = '=';
-      sinon.spy(documentClient, 'query');
       return query({
         node,
         where: { type: { begins_with: string } },
@@ -239,8 +245,173 @@ describe('queryFactory()', () => {
             },
             FilterExpression: `#Data ${doperator} :Data`
           });
-          documentClient.query.restore();
-          //return query({ node, where: { type: { BETWEEN: array } } });
+        });
+    });
+
+    test('should query by GSIK when `node` is undefined', () => {
+      var type = cuid();
+      return query({ where: { type: { '=': type } } }).then(() => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          ExpressionAttributeValues: {
+            ':GSIK': prefixTenant('0'),
+            ':Type': type
+          },
+          Limit: 100
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type'
+          },
+          ExpressionAttributeValues: {
+            ':GSIK': prefixTenant('9'),
+            ':Type': type
+          },
+          Limit: 100
+        });
+      });
+    });
+
+    test('should allow to filter the query response using the `filter` attribute', () => {
+      var type = cuid();
+      var filter = cuid();
+      return query({
+        where: { type: { '=': type } },
+        filter: { data: { '>': filter } }
+      }).then(() => {
+        expect(documentClient.query.args[0][0]).toEqual({
+          TableName: table,
+          KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type',
+            '#Data': 'Data'
+          },
+          ExpressionAttributeValues: {
+            ':GSIK': prefixTenant('0'),
+            ':Type': type,
+            ':Data': filter
+          },
+          Limit: 100,
+          FilterExpression: '#Data > :Data'
+        });
+        expect(documentClient.query.args[9][0]).toEqual({
+          TableName: table,
+          KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+          ExpressionAttributeNames: {
+            '#GSIK': 'GSIK',
+            '#Type': 'Type',
+            '#Data': 'Data'
+          },
+          ExpressionAttributeValues: {
+            ':GSIK': prefixTenant('9'),
+            ':Type': type,
+            ':Data': filter
+          },
+          Limit: 100,
+          FilterExpression: '#Data > :Data'
+        });
+      });
+    });
+
+    test('should allow one level logical operations on the `filter` attribute', () => {
+      var type = cuid();
+      var filter = cuid();
+      return query({
+        where: { type: { '=': type } },
+        filter: {
+          data: { '>': filter },
+          and: { type: { begins_with: 'c' } }
+        }
+      })
+        .then(() => {
+          expect(documentClient.query.args[0][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant('0'),
+              ':Type': type,
+              ':Data': filter,
+              ':y1': 'c'
+            },
+            Limit: 100,
+            FilterExpression: '#Data > :Data AND begins_with(#Type, :y1)'
+          });
+          expect(documentClient.query.args[9][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant('9'),
+              ':Type': type,
+              ':Data': filter,
+              ':y1': 'c'
+            },
+            Limit: 100,
+            FilterExpression: '#Data > :Data AND begins_with(#Type, :y1)'
+          });
+          return query({
+            where: { data: { '=': filter } },
+            filter: {
+              type: { '>': type },
+              and: { type: { IN: ['c', 'd'] } }
+            }
+          });
+        })
+        .then(() => {
+          expect(documentClient.query.args[10][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#GSIK = :GSIK AND #Data = :Data`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant('0'),
+              ':y10': 'c',
+              ':y11': 'd',
+              ':Type': type,
+              ':Data': filter
+            },
+            Limit: 100,
+            FilterExpression: '#Type > :Type AND #Type IN :y10, :y11'
+          });
+          expect(documentClient.query.args[19][0]).toEqual({
+            TableName: table,
+            KeyConditionExpression: `#GSIK = :GSIK AND #Data = :Data`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant('9'),
+              ':y10': 'c',
+              ':y11': 'd',
+              ':Type': type,
+              ':Data': filter
+            },
+            Limit: 100,
+            FilterExpression: '#Type > :Type AND #Type IN :y10, :y11'
+          });
         });
     });
   });
@@ -261,20 +432,3 @@ function promiseItems(items, count) {
     }
   };
 }
-
-var result = [
-  {
-    Node: node,
-    Type: 'Line#265#Episode#32',
-    Data: "Bart didn't get one vote?! Oh, this is...",
-    GSIK: '9',
-    Target: 'Line#9605'
-  },
-  {
-    Node: node,
-    Type: 'Line#114#Episode#33',
-    Data: 'Marge! What are you doing?...',
-    GSIK: '9',
-    Target: 'Line#9769'
-  }
-];
