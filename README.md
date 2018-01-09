@@ -736,7 +736,7 @@ To use the index `ByData` we use the `data` key on the `where` object instead of
 g
   .query({
     where: { data: { '=': 'm' } },
-    and: { type: { '=': 'Gender' } }
+    filter: { type: { '=': 'Gender' } }
   })
   .then(result => {
     console.log(result.Items);
