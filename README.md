@@ -483,7 +483,7 @@ g
   });
 ```
 
-As mentioned before, we can add another condition to the query using the `and` condition expression object, which should be constructed just as the `where` object, configured with the `data` key, instead of the type. Note that this aditional condition will be applied as a `FilterExpression`, which means, that the condition will be applied after all the items that match the condition on the `type` returns.
+As mentioned before, we can add a filter condition to the query using the `filter` condition object, which should be constructed just as the `where` object. Note that this aditional condition will be applied as a `FilterExpression`, which means, that the condition will be applied after all the items that match the condition on the `where` condition object returns.
 
 ```javascript
 var id = 'Character#2';
@@ -495,7 +495,7 @@ g
   .node({ id })
   .query({
     where: { type: { [operator]: value } },
-    and: { data: { [operator]: name } }
+    filter: { data: { [operator]: name } }
   })
   .then(result => {
     console.log(result.Items);
@@ -511,7 +511,7 @@ g
   });
 ```
 
-If you invert the `data` and `type` keys on the `where` and `and` objects, it will apply first the condition on the `type` and then on the `data`.
+If you invert the `data` and `type` keys on the `where` and `filter` objects, it will apply first the condition on the `type` and then on the `data`. This is because the data is indexed by `type` on the table.
 
 ```javascript
 var id = 'Character#2';
@@ -539,7 +539,7 @@ g
   });
 ```
 
-If you only include a `where` condition object applied to the `data` attribute, the query will be run against all the items of the Node. This could be a very inefficient query if your Node has a lot of items connected to it.
+If you only include a `where` condition object applied to the `data` attribute, the query will be run against all the items of the Node. This could be a very inefficient query if your Node has a lot of items connected to it, and you only need a few of them.
 
 ```javascript
 var id = 'Character#2';
@@ -568,15 +568,15 @@ g
   });
 ```
 
-On a positive note, `FilterExpresions` has more operators that we can use. Not all of them can be applied while using this pattern, so I have only included the ones with value. These are:
+On a positive note, `filter` conditions can use more operators. These are:
 
 * `IN`: True if the `data` of the Node is included on the `value` list.
 * `contains`: True if the `data` contains a substring equal to the `value`.
 * `size`: True if the `data` has a length equal to the `value`.
 
-If you check DynamoDB documentation you'll note that you can use other comparators when working with the `size` function. To make things simpler for myself, I only included the equality. I plan to correct this in further versions.
+If you check DynamoDB documentation you'll note that you can use other comparators when working with the `size` function. To make things simpler for myself, I only included the equality for now. I plan to correct this in further versions.
 
-Logical evaluations can also be used up two one level, using an `AND`, `OR`, or `NOT` key, with a condition object. _On a future version, I plan to allow more than just one level of logical evaluations._
+Logical evaluations can also be used up two one level, using an `and`, `or`, or `not` key, with a condition object. _On a future version, I plan to allow more than just one level of logical evaluations._
 
 ```javascript
 var id = 'Character#2';
@@ -585,7 +585,7 @@ g
   .node({ id })
   .query({
     where: { type: { begins_with: 'Line' } },
-    and: {
+    filter: {
       data: {
         begins_with: 'Bart',
         and: { size: 25 }
@@ -647,6 +647,8 @@ node.query({
 });
 ```
 
+DynamoDB `LastEvaluatedKey` will also be returned on the `result` object, and can also be used on the `offset` attribute. The reason why I also provide the `Offset` value is explained further ahead.
+
 #### Handling numbers
 
 As mentioned before, the Node `data` must be stored as a string. Numbers can be stored as strings easily, for example: `4` as `'4'`. The problem with this approach is that all the numeric query operators will become useless.
@@ -671,7 +673,7 @@ If you need more precision you can check out [this article](http://www.danvk.org
 
 To query the Node `types`, regardless of the Node `id`, we can leverage the `GSIK` indexes. By default, the queries will be run over every `GSIK` value, and will return a maximum of 100 items each.
 
-Now instead of using the `node` function, we use the `query` function, with a `where` and a `and` condition object. The `where` condition object will define which index to use (`ByType` or `ByData`). Which means, that the operators allowed on the `where` condition **don't** include: `IN`, `contains`, `size`, and logical expressions. They are only allowed on the `and` condition. So make sure you select the best index for your query.
+Now, instead of using the `node` function we use the `query` function, with a `where` and a `filter` condition object. The `where` condition object will define which index to use (`ByType` or `ByData`). Which means, that the operators allowed on the `where` condition **don't** include: `IN`, `contains`, `size`, and logical expressions. They are only allowed on the `filter` condition. So make sure you select the best index for your query.
 
 ```javascript
 g.query({ where: { type: { '=': 'Character' } } }).then(result => {
@@ -694,13 +696,13 @@ g.query({ where: { type: { '=': 'Character' } } }).then(result => {
 });
 ```
 
-As before, the results can be filtered further by using an `and` object whith the `data` or `type` key present. This will build a `FilterCondition` expression, which will discard any item that doesn't match the condition, **after** the query operation is done.
+As before, the results can be filtered further by using a `filter` condition object whith the `data` or `type` key present. This will build a `FilterCondition` expression, which will discard any item that doesn't match the condition, **after** the query operation is done.
 
 ```javascript
 g
   .query({
     where: { type: { '=': 'Gender' } },
-    and: { data: { '=': 'm' } }
+    filter: { data: { '=': 'm' } }
   })
   .then(result => {
     console.log(result.Items);
@@ -720,7 +722,7 @@ g
   });
 ```
 
-To use the index `ByData` we invert the `data` and `type` keys.
+To use the index `ByData` we use the `data` key on the `where` object instead of the `type`.
 
 ```javascript
 g
@@ -746,11 +748,11 @@ g
   });
 ```
 
-Looking at the last two examples you can see that, even though they return the same information, the first one is a much better option. The scanned items on the second example could be much higher than the ones on the first one.
+Looking at the last two examples you can see that, even though they return the same information, the first one is a much better option for this usecase. The scanned items on the second example could be much higher than the ones on the first one.
 
 #### GSIK handling
 
-In order to control the `GSIK` being queried, you can provide a `gsik` object. This object must contain some of this keys:
+In order to control the `GSIK` being queried, you can provide a `gsik` object. This object must contain some of these keys:
 
 * `startGSIK`: Start value of the `GSIK`. Equals 0 by default.
 * `endGSIK`: End value of the `GSIK`. Equals `maxGSIK - 1` by default. **Must be larger than `startGSIK`**.
@@ -841,9 +843,9 @@ g
   })
 ```
 
-On the example using the `Offset` value doesn't look like and advantage, but it can make a difference if you are querying 10 `GSIK` or more.
+On the example using the `Offset` value doesn't look like and advantage, but it can make a huge difference if you are querying over 10 `GSIK` or more.
 
-**Another idea would be to store the next page on another node, and then retrieve it when trying to access the next page.**
+**Another idea would be to store the next page as the `offset` value to use on another node, and then retrieve it when trying to access the next page.**
 
 ### Update method
 
