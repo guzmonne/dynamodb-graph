@@ -350,7 +350,7 @@ g
   });
 ```
 
-#### Get all the node edges, props, or all types.
+#### Get all the node edges or all the node props.
 
 To get all the Node edges or props, we use the `edges()` or `props()` method respectively, after providing the node `id`, to the `node` function.
 
@@ -410,15 +410,6 @@ g
      *    GSIK: '9',
      *    Target: 'Episode#1'
      * }]
-     */
-    console.log(result.Offset);
-    // U3RhcnJlZEluI0VwaXNvZGUjMQ==
-    console.log(result.LastEvaluatedKey);
-    /**
-     * {
-     *    Node: 'Character#2',
-     *    Type: 'StarredIn#Episode#1',
-     * }
      */
   });
 ```
@@ -616,7 +607,7 @@ g
   });
 ```
 
-As with the `edges()` and `props()` functions, you can provide a `limit` and an `offset` value. They will work exactly the same as with those other methods.
+As with the `edges()` and `props()` functions, you can provide a `limit` and an `offset` value. They will work exactly the same as with those other methods. The `Offset` value returned is just the base64 encoded type. To reconstruct it into a DynamoDB key, we just need the node `id`. If you don't want to work with encoded strings, you can just pass to the `offset` attribute an entire DynamoDB key, like the one returned in the `LastEvaluatedKey` value.
 
 ```javascript
 var node = g.node({id});
@@ -636,7 +627,14 @@ node.query({
    * }]
    */
   console.log(result.Offset);
-  // OSxDaGFyYWN0ZXIjMixMaW5lIzI2NSNFcGlzb2RlIzMy
+  // TGluZSMyNjUjRXBpc29kZSMzMg==
+  console.log(result.LastEvaluatedKey);
+  /**
+   * {
+   *    Node: 'Character#2',
+   *    Type: 'Line#265#Episode#32',
+   * }
+   */
   return node.query({
     where: { type: { begins_with: 'Line' } }
     limit: 1,
