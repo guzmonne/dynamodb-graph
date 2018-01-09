@@ -219,7 +219,7 @@ function nodeFactory(config = {}) {
       return documentClient
         .put(params)
         .promise()
-        .then(parseItem);
+        .then(() => ({ Item: parseItem(item) }));
     }
   }
 }
