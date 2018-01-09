@@ -856,7 +856,7 @@ g
 
 On the example using the `Offset` value doesn't look like and advantage, but it can make a huge difference if you are querying over 10 `GSIK` or more.
 
-**Another idea would be to store the next page as the `offset` value to use on another node, and then retrieve it when trying to access the next page.**
+**You could also store the offset value on another Node, to query later when you need to paginate the results.**
 
 ### Update method
 
