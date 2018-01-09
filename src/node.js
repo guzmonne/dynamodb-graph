@@ -28,7 +28,8 @@ function nodeFactory(config = {}) {
       get,
       edges: items('edge'),
       props: items('prop'),
-      query
+      query,
+      destroy
     };
 
     return api;
@@ -45,6 +46,21 @@ function nodeFactory(config = {}) {
       }
 
       return _query(Object.assign({}, attributes, { node: id }));
+    }
+
+    function destroy() {
+      if (id !== undefined && type !== undefined)
+        return documentClient
+          .delete({
+            TableName: table,
+            Key: {
+              Node: pTenant(id),
+              Type: type
+            }
+          })
+          .promise();
+
+      return Promise.resolve();
     }
 
     function get(types) {

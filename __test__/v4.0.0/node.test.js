@@ -24,6 +24,11 @@ var documentClient = {
       });
     }
   }),
+  delete: params => ({
+    promise: () => {
+      return Promise.resolve({});
+    }
+  }),
   get: params => ({
     promise: () => {
       return Promise.resolve({
@@ -242,6 +247,38 @@ describe('nodeFactory', () => {
             }
           });
         });
+      });
+    });
+
+    describe('#destroy', () => {
+      test('should be a function', () => {
+        expect(typeof node({ id, type }).destroy).toEqual('function');
+      });
+
+      test('should return a Promise', () => {
+        expect(node({ id, type }).destroy() instanceof Promise).toEqual(true);
+      });
+
+      beforeEach(() => {
+        sinon.spy(documentClient, 'delete');
+      });
+
+      afterEach(() => {
+        documentClient.delete.restore();
+      });
+
+      test('should destroy the item pointed by the node `id` and `type`', () => {
+        return node({ id, type })
+          .destroy()
+          .then(result => {
+            expect(documentClient.delete.args[0][0]).toEqual({
+              TableName: table,
+              Key: {
+                Node: pTenant(id),
+                Type: type
+              }
+            });
+          });
       });
     });
 
