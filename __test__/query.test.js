@@ -629,6 +629,82 @@ describe('queryFactory()', () => {
       });
     });
 
+    test('should allow to apply a filter over values other than `type` or `data`', () => {
+      var startGSIK = randomNumber(5, 10);
+      var endGSIK = randomNumber(10, 20);
+      var listGSIK = range(0, 10).map(() => randomNumber(0, 10000));
+      var limit = 1;
+      var data = cuid();
+      return query({
+        where: { data: { '=': data } },
+        filter: { target: { contains: 'something' } },
+        gsik: { startGSIK, endGSIK, listGSIK },
+        limit
+      }).then(() => {
+        expect(documentClient.query.args.length).toEqual(listGSIK.length);
+        listGSIK.map((gsik, i) => {
+          expect(documentClient.query.args[i][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByData',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Data = :Data`,
+            FilterExpression: 'contains(#Target, :Target)',
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Data': 'Data',
+              '#Target': 'Target'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant(`${gsik}`),
+              ':Data': data,
+              ':Target': 'something'
+            },
+            Limit: 1
+          });
+        });
+      });
+    });
+
+    test('should allow to build filters over multiple values other than `type` or `data`', () => {
+      var startGSIK = randomNumber(5, 10);
+      var endGSIK = randomNumber(10, 20);
+      var listGSIK = range(0, 10).map(() => randomNumber(0, 10000));
+      var limit = 1;
+      var data = cuid();
+      return query({
+        where: { data: { '=': data } },
+        filter: {
+          target: { contains: 'something' },
+          and: { node: { begins_with: 'else' } }
+        },
+        gsik: { startGSIK, endGSIK, listGSIK },
+        limit
+      }).then(() => {
+        expect(documentClient.query.args.length).toEqual(listGSIK.length);
+        listGSIK.map((gsik, i) => {
+          expect(documentClient.query.args[i][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByData',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Data = :Data`,
+            FilterExpression:
+              'contains(#Target, :Target) AND begins_with(#Node, :y1)',
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Data': 'Data',
+              '#Target': 'Target',
+              '#Node': 'Node'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant(`${gsik}`),
+              ':Data': data,
+              ':Target': 'something',
+              ':y1': 'else'
+            },
+            Limit: 1
+          });
+        });
+      });
+    });
+
     test('should return the `LastEvaluatedKeys` object, plus an `Offset` property, to handle pagination', () => {
       documentClient.query.restore();
 

@@ -258,13 +258,12 @@ function applyFilterCondition(params, filter) {
     }
 
     var logicalExpression = Object.keys(filter).filter(
-      key => key !== 'data' && key !== 'type'
-    );
+      key =>
+        key !== 'data' && key !== 'type' && key !== 'target' && key !== 'node'
+    )[0];
 
-    if (logicalExpression.length > 0)
-      logicalExpression
-        .slice(0, 1)
-        .forEach(key => recursiveApply(filter[key], key, level + 1));
+    if (logicalExpression !== undefined)
+      recursiveApply(filter[logicalExpression], logicalExpression, level + 1);
   }
 }
 /**

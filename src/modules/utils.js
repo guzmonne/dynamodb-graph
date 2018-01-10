@@ -1,11 +1,14 @@
 'use strict';
 
-var chunk = require('lodash/chunk.js');
 var range = require('lodash/range.js');
 var get = require('lodash/get.js');
-var mergeWith = require('lodash/mergeWith.js');
-var isNumber = require('lodash/isNumber.js');
+var capitalize = require('lodash/capitalize.js');
 
+/**
+ * List of valid Node attributes to filter by.
+ * @typedef {string[]} ValidAttributesToFilterBy
+ */
+var VALID_ATTRIBUTES_TO_FILTER_BY = ['node', 'target', 'type', 'data'];
 /**
  * List of common operators
  * @typedef {string[]} CommonOperators.
@@ -163,10 +166,11 @@ function parseResponse(response = {}) {
  *                                      expression, and value.
  */
 function parseConditionObject(objectExpression = {}, level = 0) {
-  var attributes = objectExpression.data || objectExpression.type;
+  //var attributes = objectExpression.data || objectExpression.type;
   var attribute = Object.keys(objectExpression)[0];
+  var attributes = objectExpression[attribute];
 
-  if (attributes === undefined) throw new Error('Invalid attributes');
+  if (typeof attributes !== 'object') throw new Error('Invalid attributes');
 
   var operator = Object.keys(attributes)[0];
 
@@ -186,7 +190,7 @@ function parseConditionObject(objectExpression = {}, level = 0) {
   )
     throw new Error('Value is not a list of strings');
 
-  var variable = attribute === 'type' ? 'Type' : 'Data';
+  var variable = capitalize(attribute);
   var nested = level > 0;
 
   var expression;
