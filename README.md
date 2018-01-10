@@ -380,7 +380,7 @@ g
   });
 ```
 
-Take into account that the `type` value declared on the node is not necessary and won't be taken into consideration when this function is called.
+Take into account that the `type` value declared on the node is not necessary and won't be taken into consideration when the `get` function is called.
 
 Both functions allow to set a limit on how much items you want. Just set the `limit` configuration value to some number.
 
@@ -404,7 +404,7 @@ g
   });
 ```
 
-If the Node has more edges or props that were not returned but matched the current query, then the `Offset` parameter is returned. This value points to the last element evaluated while performing the query, and can be used in subsequent queries as its starging point. Use the `offset` attribute for this purpose.
+If the Node has more edges or props that were not returned but matched the current query, then the `Offset` parameter is returned. This value points to the last element evaluated while performing the query, and can be used in subsequent queries as its starting point. Use the `offset` attribute for this purpose.
 
 ```javascript
 var id = 'Character#2';
