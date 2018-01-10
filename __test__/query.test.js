@@ -35,9 +35,11 @@ describe('queryFactory()', () => {
   var query = queryFactory({ documentClient, table, tenant, maxGSIK });
 
   describe('#query()', () => {
+    /*
     test('should throw if `where` is not defined', () => {
       expect(() => query()).toThrow('Where is undefined');
     });
+    */
 
     test('should fail if an invalid `where` attribute is used', () => {
       expect(() => query({ where: { error: true } })).toThrow(
@@ -556,6 +558,70 @@ describe('queryFactory()', () => {
             ExpressionAttributeValues: {
               ':GSIK': prefixTenant(`${gsik}`),
               ':Type': type
+            },
+            Limit: 1
+          });
+        });
+      });
+    });
+
+    test('should allow to apply a filter on the `type` over all the elements inside one GSIK', () => {
+      var startGSIK = randomNumber(5, 10);
+      var endGSIK = randomNumber(10, 20);
+      var listGSIK = range(0, 10).map(() => randomNumber(0, 10000));
+      var limit = 1;
+      var type = cuid();
+      return query({
+        filter: { type: { '=': type } },
+        gsik: { startGSIK, endGSIK, listGSIK },
+        limit
+      }).then(() => {
+        expect(documentClient.query.args.length).toEqual(listGSIK.length);
+        listGSIK.map((gsik, i) => {
+          expect(documentClient.query.args[i][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByType',
+            KeyConditionExpression: `#GSIK = :GSIK`,
+            FilterExpression: '#Type = :Type',
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant(`${gsik}`),
+              ':Type': type
+            },
+            Limit: 1
+          });
+        });
+      });
+    });
+
+    test('should allow to apply a filter on the `data` over all the elements inside one GSIK', () => {
+      var startGSIK = randomNumber(5, 10);
+      var endGSIK = randomNumber(10, 20);
+      var listGSIK = range(0, 10).map(() => randomNumber(0, 10000));
+      var limit = 1;
+      var data = cuid();
+      return query({
+        filter: { data: { '=': data } },
+        gsik: { startGSIK, endGSIK, listGSIK },
+        limit
+      }).then(() => {
+        expect(documentClient.query.args.length).toEqual(listGSIK.length);
+        listGSIK.map((gsik, i) => {
+          expect(documentClient.query.args[i][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByData',
+            KeyConditionExpression: `#GSIK = :GSIK`,
+            FilterExpression: '#Data = :Data',
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant(`${gsik}`),
+              ':Data': data
             },
             Limit: 1
           });

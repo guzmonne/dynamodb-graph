@@ -55,10 +55,11 @@ function queryFactory(config = {}) {
       listGSIK = range(startGSIK, endGSIK);
     }
 
+    var attribute = capitalize(Object.keys(where || filter)[0]);
+
     var lastEvaluatedKeys;
 
     if (typeof offset === 'string') {
-      var attribute = capitalize(Object.keys(where)[0]);
       lastEvaluatedKeys = chunk(
         atob(offset)
           .split('|')
@@ -89,6 +90,8 @@ function queryFactory(config = {}) {
 
     listGSIK.forEach(i => {
       var params = gsikParams(`${i}`);
+
+      if (node === undefined) params.IndexName = `By${attribute}`;
 
       applyWhereCondition(params, where);
 
@@ -179,13 +182,11 @@ function queryFactory(config = {}) {
  * @param {object} where - Where condition object.
  */
 function applyWhereCondition(params, where, node) {
-  if (where === undefined) throw new Error('Where is undefined');
+  if (where === undefined) return;
 
   var { attribute, expression, value } = parseConditionObject(where);
 
   attribute = capitalize(attribute);
-
-  if (node === undefined) params.IndexName = `By${attribute}`;
 
   if (attribute === 'Type')
     params.KeyConditionExpression += ` AND ${expression}`;
