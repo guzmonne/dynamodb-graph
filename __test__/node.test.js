@@ -690,6 +690,27 @@ describe('nodeFactory', () => {
         });
       });
 
+      test('should allow to run a filter over all the types of a Node', () => {
+        var value = cuid();
+        return testNode
+          .query({ filter: { type: { contains: value } } })
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': value
+              },
+              FilterExpression: 'contains(#Type, :Type)'
+            });
+          });
+      });
+
       test('should allow to query by Node `type` and filter by `data` using a `FilterCondition expression`', () => {
         var value = cuid();
         var data = cuid();
