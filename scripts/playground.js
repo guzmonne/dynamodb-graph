@@ -6,6 +6,7 @@ var sortBy = require('lodash/sortBy.js');
 var pick = require('lodash/pick');
 var chalk = require('chalk');
 var dynamodbGraph = require('../dist/');
+var { hexToDec, decToHex } = require('./toHex.js');
 
 /** Constants */
 var ENDPOINT = process.env.ENDPOINT || 'http://localhost:8989';
@@ -30,7 +31,7 @@ var g = dynamodbGraph({
 /** *** **/
 /** Main */
 var SEASON_NUMBER = 2;
-var RATING = 8.5;
+var RATING = 9;
 
 DynamoDB.listTables({})
   .promise()
@@ -99,17 +100,27 @@ function getSeason(number) {
     return g
       .query({
         where: { type: { '=': 'season' } },
-        and: { data: { '=': number } }
+        filter: { data: { '=': decToHex(number) } }
       })
       .then(({ Items: items }) => {
         var promises = items.map(({ Node: node }) =>
           g
-            .query({
-              node,
-              types: ['episode', 'number_in_series']
+            .node({
+              id: node,
+              type: 'episode'
             })
+            .get(['number_in_season', 'number_in_series'])
             .then(({ Items: items }) => {
-              var item = items.reduce(toItem, {});
+              var item = items
+                .map(item => {
+                  if (
+                    item.Type === 'number_in_season' ||
+                    item.Type === 'number_in_series'
+                  )
+                    item.Data = +hexToDec(item.Data);
+                  return item;
+                })
+                .reduce(toItem, {});
               item.node = node;
               return item;
             })
@@ -117,7 +128,7 @@ function getSeason(number) {
 
         return Promise.all(promises);
       })
-      .then(logTable(`Season #${number}`, 'number_in_series'))
+      .then(logTable(`Season #${number}`, 'number_in_season'))
       .catch(error);
   };
 }
@@ -126,28 +137,30 @@ function getEpisodesRatedHigherThan(compareRating) {
   return g
     .query({
       where: { type: { '=': 'imdb_rating' } },
-      and: { data: { '>': compareRating } }
+      filter: { data: { '=': decToHex(compareRating) } }
     })
     .then(({ Items: items }) => {
-      var promises = items.map(({ Node: node, Data: rating }) =>
+      var promises = items.map(({ Node: id, Data: rating }) =>
         g
-          .query({ node, types: ['episode', 'number_in_series', 'season'] })
+          .node({ id, type: 'episode' })
+          .get(['number_in_series', 'season'])
           .then(({ Items: items }) => {
-            var item = items.reduce(toItem, {});
-            item.imdb_rating = rating;
-            item.node = node;
+            var item = items
+              .map(item => {
+                if (item.Type === 'number_in_series' || item.Type === 'season')
+                  item.Data = hexToDec(item.Data);
+                return item;
+              })
+              .reduce(toItem, {});
+            item.imdb_rating = hexToDec(rating);
+            item.node = id;
             return item;
           })
       );
 
       return Promise.all(promises);
     })
-    .then(
-      logTable(
-        `Episodes with rating higher than #${compareRating}`,
-        'imdb_rating'
-      )
-    )
+    .then(logTable(`Episodes with a rating of #${compareRating}`, 'season'))
     .catch(error);
 }
 
@@ -155,14 +168,18 @@ function getMaggieSimpsonLines() {
   return g
     .query({
       where: { type: { '=': 'character' } },
-      and: { data: { '=': 'Maggie Simpson' } }
+      filter: { data: { '=': 'Maggie Simpson' } },
+      limit: 650
     })
-    .then(({ Items: [{ Node: node }] }) =>
-      g.query({ node, where: { type: { begins_with: 'spoke_line' } } })
-    )
+    .then(result => {
+      var { Items: [{ Node: id }] } = result;
+      return g
+        .node({ id })
+        .query({ where: { type: { begins_with: 'spoke_line' } } });
+    })
     .then(({ Items }) =>
       Items.map(item => pick(item, 'Type', 'Data')).map(item => {
-        var typeData = item.Type.split('#');
+        var typeData = item.Type.split('|');
         item.line_number = +typeData[1];
         item.episode = +typeData[3];
         item.line = item.Data.replace('Maggie Simpson: ', '').slice(0, 100);
@@ -171,7 +188,8 @@ function getMaggieSimpsonLines() {
         return item;
       })
     )
-    .then(logTable('Maggie Lines', 'episode'));
+    .then(logTable('Maggie Lines', 'episode'))
+    .catch(error);
 }
 
 function query() {

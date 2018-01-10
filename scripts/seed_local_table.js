@@ -13,6 +13,7 @@ var identity = require('lodash/identity.js');
 var isObject = require('lodash/isObject.js');
 var isUndefined = require('lodash/isUndefined.js');
 var dynamodbGraph = require('../dist/');
+var { hexToDec, decToHex } = require('./toHex.js');
 
 /** Constants */
 var CHARACTERS_FILE = './the-simpsons-by-the-data/simpsons_characters.csv';
@@ -47,7 +48,7 @@ DynamoDB.listTables({})
   .then(checkTable)
   .then(createTable)
   .then(loadData)
-  .then(result => console.log('DONE!!!'))
+  .then(result => console.log('\n\nDONE!!!'))
   .catch(error => {
     console.log(error);
   });
@@ -57,7 +58,7 @@ DynamoDB.listTables({})
 function nodeGenerator(doc) {
   var type = doc.__type;
   var id = doc.id;
-  return `${type + '#' || ''}${id}`;
+  return `${type + '|' || ''}${id}`;
 }
 
 function checkTable(result) {
@@ -80,9 +81,9 @@ function checkTable(result) {
 function loadData() {
   return Promise.resolve()
     .then(() =>
-      g.node
+      g
+        .node({ type: 'show' })
         .create({
-          type: 'show',
           data: 'The Simpsons'
         })
         .then(result => result.Item)
@@ -100,13 +101,17 @@ function loadData() {
 function loadCharacters() {
   return loadObservable(CHARACTERS_FILE, 'Character', item => {
     return Rx.Observable.fromPromise(
-      g.node
+      g
+        .node({
+          id: `character|${item.id}`,
+          type: 'character'
+        })
         .create({
-          node: `${TENANT}#character#${item.id}`,
-          type: 'character',
           data: item.name
         })
-        .then(({ Item: { Node: node } }) => {
+        .then(result => {
+          var { Item = {} } = result;
+          var { Node: node } = Item;
           var promises = [];
 
           addProps(['gender', 'normalized_name'], item, node, promises);
@@ -120,10 +125,12 @@ function loadCharacters() {
 function loadLocations() {
   return loadObservable(LOCATIONS_FILE, 'Location', item => {
     return Rx.Observable.fromPromise(
-      g.node
+      g
+        .node({
+          id: `location|${item.id}`,
+          type: 'location'
+        })
         .create({
-          node: `${TENANT}#location#${item.id}`,
-          type: 'location',
           data: item.name
         })
         .then(({ Item: { Node: node } }) => {
@@ -140,21 +147,26 @@ function loadLocations() {
 function loadEpisodes(doc) {
   return loadObservable(EPISODES_FILE, 'Episode', item => {
     return Rx.Observable.fromPromise(
-      g.node
+      g
+        .node({
+          id: `episode|${item.id}`,
+          type: 'episode'
+        })
         .create({
-          node: `${TENANT}#episode#${item.id}`,
-          type: 'episode',
           data: item.title
         })
-        .then(({ Item: { Node: node } }) => {
-          return g.edge
+        .then(result => {
+          var { Item: { Node: node } } = result;
+          return g
+            .node({
+              id: doc.Node,
+              type: `episode|${item.id}`
+            })
             .create({
-              node: doc.Node,
-              type: `episode#${item.id}`,
               data: item.title,
               target: node
             })
-            .then(() => {
+            .then(result => {
               var promises = [];
 
               addProps(
@@ -189,17 +201,25 @@ function addProps(properties, item, node, promises) {
 
     prop = prop.replace('+', '');
 
-    var data = isNumber === true ? parseFloat(item[prop] || 0, 10) : item[prop];
+    var data =
+      isNumber === true
+        ? decToHex(parseFloat(item[prop]) || 0, 10)
+        : item[prop];
 
-    if (isNumber === true && isNaN(data)) data = 0;
+    if (isNumber === true && isNaN(data)) data = decToHex(0);
+
+    if (data === null || data === undefined) return;
 
     if (item[prop] !== undefined)
       promises.push(
-        g.property.create({
-          node,
-          type: prop,
-          data
-        })
+        g
+          .node({
+            id: node,
+            type: prop
+          })
+          .create({
+            prop: data
+          })
       );
   });
 }
@@ -207,10 +227,12 @@ function addProps(properties, item, node, promises) {
 function loadScriptLines(doc) {
   return loadObservable(SCRIPT_LINE_FILE, 'Episode', item => {
     return Rx.Observable.fromPromise(
-      g.node
+      g
+        .node({
+          id: `script_line|${item.id}`,
+          type: 'script_line'
+        })
         .create({
-          node: `${TENANT}#script_line#${item.id}`,
-          type: 'script_line',
           data: item.raw_text
         })
         .then(({ Item: { Node: node } }) => {
@@ -253,32 +275,41 @@ function updateEpisode(item, node, promises) {
 
   if (item.number !== undefined && item.raw_text !== undefined)
     promises.push(
-      g.edge.create({
-        node: item.episode_node,
-        type: `line#${item.number}`,
-        data: item.raw_text,
-        target: node
-      })
+      g
+        .node({
+          id: item.episode_node,
+          type: `line|${item.number}`
+        })
+        .create({
+          data: item.raw_text,
+          target: node
+        })
     );
 
   if (item.location_node !== undefined)
     promises.push(
-      g.edge.create({
-        node: item.episode_node,
-        type: `episode#location#${item.location_id}`,
-        data: item.location,
-        target: item.location_id
-      })
+      g
+        .node({
+          id: item.episode_node,
+          type: `episode|location|${item.location_id}`
+        })
+        .create({
+          data: item.location,
+          target: item.location_node
+        })
     );
 
   if (item.character_node !== undefined)
     promises.push(
-      g.edge.create({
-        node: item.episode_node,
-        type: `episode#character#${item.character_id}`,
-        data: item.character,
-        target: item.character_id
-      })
+      g
+        .node({
+          id: item.episode_node,
+          type: `episode|character|${item.character_id}`
+        })
+        .create({
+          data: item.character,
+          target: item.character_node
+        })
     );
 }
 
@@ -289,24 +320,30 @@ function updateCharacter(item, node, promises) {
 
   if (item.location_node !== undefined && item.episode_node !== undefined)
     promises.push(
-      g.edge.create({
-        node: item.character_node,
-        type: `${action}_line#${item.id}#episode#${item.episode_id}`,
-        data: item.raw_text,
-        target: node
-      })
+      g
+        .node({
+          id: item.character_node,
+          type: `${action}_line|${item.id}|episode|${item.episode_id}`
+        })
+        .create({
+          data: item.raw_text,
+          target: node
+        })
     );
 
   if (item.location_node !== undefined && item.episode_node !== undefined)
     promises.push(
-      g.edge.create({
-        node: item.character_node,
-        type: `${action}_at#location#${item.location_id}#episode#${
-          item.episode_id
-        }`,
-        data: item.location,
-        target: item.location_id
-      })
+      g
+        .node({
+          id: item.character_node,
+          type: `${action}_at|location|${item.location_id}|episode|${
+            item.episode_id
+          }`
+        })
+        .create({
+          data: item.location,
+          target: item.location_node
+        })
     );
 }
 
@@ -314,12 +351,15 @@ function updateShow(doc, item, node, promises) {
   if (doc.Node === undefined || node === undefined) return;
 
   promises.push(
-    g.edge.create({
-      node: doc.Node,
-      type: `line#${item.id}`,
-      data: item.raw_text,
-      target: node
-    })
+    g
+      .node({
+        id: doc.Node,
+        type: `line|${item.id}`
+      })
+      .create({
+        data: item.raw_text,
+        target: node
+      })
   );
 }
 
@@ -329,21 +369,28 @@ function processModel(item, promises, node, key) {
 
   if (id === undefined || id === '') return;
 
-  var params = { node: `${TENANT}#${type}#${id}`, type };
-
   promises.push(
-    g.get(params).then(result => {
-      if (result && result.Item && result.Item.Node && result.Item.Data) {
-        item[type] = result.Item.Data;
-        item[`${type}_node`] = result.Item.Node;
-        return g.edge.create({
-          node,
-          type: `line#${type}`,
-          data: result.Item.Data,
-          target: result.Item.Node
-        });
-      }
-    })
+    g
+      .node({
+        id: `${type}|${id}`,
+        type
+      })
+      .get()
+      .then(result => {
+        if (result && result.Item && result.Item.Node && result.Item.Data) {
+          item[type] = result.Item.Data;
+          item[`${type}_node`] = result.Item.Node;
+          return g
+            .node({
+              id: node,
+              type: `line|${type}`
+            })
+            .create({
+              data: result.Item.Data,
+              target: result.Item.Node
+            });
+        }
+      })
   );
 }
 
@@ -366,16 +413,20 @@ function loadObservable(file, type, processItem$) {
           .concatMap((item, i) => {
             item = pickBy(item, identity);
 
-            return processItem$(item).do(() => {
-              process.stdout.write(
-                purple(
-                  `   Processing ${i} of ${data.length} (${Math.round(
-                    i / data.length * 10000,
-                    0
-                  ) / 100}%)\r`
-                )
-              );
-            });
+            return processItem$(item);
+          })
+          .scan(acc => {
+            return acc + 1;
+          }, 0)
+          .do(i => {
+            process.stdout.write(
+              purple(
+                `   Processing ${i} of ${data.length} (${Math.round(
+                  i / data.length * 10000,
+                  0
+                ) / 100}%)\r`
+              )
+            );
           })
           .catch(error => {
             red(error);
@@ -397,7 +448,7 @@ function loadObservable(file, type, processItem$) {
 }
 
 var purple = (function() {
-  return chalk.hex('#551A8B');
+  return chalk.hex('|551A8B');
 })();
 
 function red(v) {

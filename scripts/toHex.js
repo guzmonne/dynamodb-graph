@@ -15,7 +15,7 @@
 
 module.exports = {
   decToHex,
-  hexToDex
+  hexToDec
 };
 
 // ---
