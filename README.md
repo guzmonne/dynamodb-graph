@@ -660,7 +660,7 @@ function numToFloat32Hex(value) {
   return buffer.toString('hex');
 }
 
-function float64HexToNum(value) {
+function float32HexToNum(value) {
   return Buffer(value, 'hex').readFloatLE(0);
 }
 ```
