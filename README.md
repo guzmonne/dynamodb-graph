@@ -649,20 +649,55 @@ DynamoDB `LastEvaluatedKey` will also be returned on the `result` object, and ca
 
 #### Handling numbers
 
-As mentioned before, the Node `data` must be stored as a string. Numbers can be stored as strings easily, for example: `4` as `'4'`. The problem with this approach is that all the numeric query operators will become useless.
+DynamoDB requires that all the attributes that will be indexed, be explicityly defined as: `string`, `number`, or `binary`. For our purposes, storing the data as strings gives us the chance to store any kind of data that can be stringified. How we do this will affect our ability to query the `data` later.
 
-A better approach, is to store the numbers as hexadecimal strings. Here is a snippet on how to convert a number as a 4 byte hexadecimal word and back:
+Storing numbers is a great example. They can be easily stored as their string representations: `4` as `'4'`. The problem with this approach is that all the numeric query operators will become useless. Querying using comparators with numbers stored this way may lead to weird situations, like: `'10' < '9.99' // true`.
+
+A better way to store numbers is as hexadecimal strings. JavaScript uses 64 bit double-precision floating point binary strings to represent numbers, following the [IEEE 754 standar](https://en.wikipedia.org/wiki/IEEE_754).
+
+Basically, a number is stored the following way:
+
+* 1 `sign` bit.
+* 11 `exponent` bits.
+* 52 `significant precision` bits.
+
+![Binary64 representation](https://upload.wikimedia.org/wikipedia/commons/a/a9/IEEE_754_Double_Floating_Point_Format.svg)
+
+Converting JavaScript numbers to their 8 byte hexadecimal string representation will allow us to:
+
+* Save numbers as strings without losing precision.
+* Allow us to use comparator operators when running queries.
+
+Unfortunately, the last point is not entirely true. You can use comparator operators, only if all the numbers stored are positive. Because of the way negative numbers are represented, they will always be bigger than positive ones. Also, comparing two negative numbers will work exactly the same, meaning:
+`-1 < -2`.
+
+I have some ideas of how I might solve this, so some version in the future might not have this issue.
+
+Now, since most of the use cases can work without using negative numbers, I decided to include this solutions to the library. So if you are only storing positive values on the `Data` attribute, you can run any number of queries and they will work. You don't have to make the conversion yourself, the library takes care of that. Every number corresponding to the `Data`, on the `query` or on the `response`, will be converted to and from its hexadecimal representation.
+
+This means that the number `1` will be stored as `0x3ff0000000000000`. Notice the `0x` prefix. It indicates to the library that the strings corresponds to a number. So, if you want to store text that begins with this prefix, you are going to have to modify it. Else, you might receive a corrupted version of your data.
+
+You may found the library that makes converts the number here:
+
+[https://www.npmjs.com/package/hex-2-num](https://www.npmjs.com/package/hex-2-num)
 
 ```javascript
-function numToFloat32Hex(value) {
-  var buffer = Buffer.alloc(4);
-  buffer.writeFloatLE(value, 0);
-  return buffer.toString('hex');
-}
-
-function float32HexToNum(value) {
-  return Buffer(value, 'hex').readFloatLE(0);
-}
+g
+  .query({
+    where: { type: { '=': 'imdb_rating' } },
+    filter: { data: { '>': 9.2 } }
+  })
+  .then(result => {
+    console.log(result.Items);
+    /**
+     * [{
+     *    Node: 'Episode#186',
+     *    Type: 'imdb_rating',
+     *    Data: 9.3
+     *    GSIK: '9'
+     * }]
+     */
+  });
 ```
 
 If you need more precision you can check out [this article](http://www.danvk.org/hex2dec.html) by [danvk](http://www.danvk.org). There is even an [npm module](https://www.npmjs.com/package/hex2dec) if you want to import it to your project.
