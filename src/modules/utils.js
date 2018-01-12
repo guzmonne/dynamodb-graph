@@ -3,8 +3,9 @@
 var range = require('lodash/range.js');
 var get = require('lodash/get.js');
 var capitalize = require('lodash/capitalize.js');
-var { hex2num } = require('hex-2-num');
-
+var { hex2num, num2hex } = require('hex-2-num');
+// ---------
+// Constants
 /**
  * List of valid Node attributes to filter by.
  * @typedef {string[]} ValidAttributesToFilterBy
@@ -30,7 +31,19 @@ var FUNCTIONS_OPERATORS = ['begins_with', 'contains', 'size'];
  * @typedef {string[]} Operator.
  */
 var OPERATORS = COMMON_OPERATORS.concat(ARRAY_OPERATORS, FUNCTIONS_OPERATORS);
-
+/**
+ * List of GraphItem keys that may contain the `tenant` information.
+ * @type string[]
+ */
+var GRAPH_ITEM_KEYS_WITH_TENANT = ['Node', 'GSIK', 'Target'];
+/**
+ * Regular expression used to test if the Data attribute has been stored as an
+ * hexadecimal string.
+ * @type RegExp
+ */
+var HEX_REGEXP = /^0x/;
+// -------
+// Exports
 module.exports = {
   atob,
   btoa,
@@ -45,8 +58,8 @@ module.exports = {
     return OPERATORS.slice();
   }
 };
-
-// ---
+// ---------
+// Functions
 /**
  * Applies the hashcode algorithm to turn a string into a number.
  * @param {string} string - String to encode to a number.
@@ -109,17 +122,6 @@ function checkConfiguration(config = {}) {
     throw new Error('DocumentClient is undefined');
   if (table === undefined) throw new Error('Table is undefined');
 }
-/**
- * List of GraphItem keys that may contain the `tenant` information.
- * @type string[]
- */
-var GRAPH_ITEM_KEYS_WITH_TENANT = ['Node', 'GSIK', 'Target'];
-/**
- * Regular expression used to test if the Data attribute has been stored as an
- * hexadecimal string.
- * @type RegExp
- */
-var HEX_REGEXP = /^0x/;
 /**
  * Removes the tenant from the item.
  * @param {GraphItem} item - Item object to parse.
@@ -195,6 +197,8 @@ function parseConditionObject(objectExpression = {}, level = 0) {
   var value = attributes[operator];
 
   if (value === undefined) throw new Error('Value is undefined');
+
+  if (typeof value === 'number') value = num2hex(value);
 
   if (COMMON_OPERATORS.indexOf(operator) > -1 && typeof value !== 'string')
     throw new Error('Value is not a string');

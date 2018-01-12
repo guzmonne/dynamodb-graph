@@ -59,13 +59,6 @@ describe('queryFactory()', () => {
       ).toThrow('Value is undefined');
     });
 
-    test('should fail if the `where` attribute value is not a string for a common operator', () => {
-      var operator = pickOne(COMMON_OPERATORS);
-      expect(() =>
-        query({ where: { type: { [operator]: Math.random() } } })
-      ).toThrow('Value is not a string');
-    });
-
     test('should fail if the `where` attribute value is not an array of strings when using a `BETWEEN` operator', () => {
       var operator = 'BETWEEN';
       expect(() =>

@@ -988,6 +988,33 @@ describe('nodeFactory', () => {
           });
       });
 
+      test('should convert the `data` value inside the filter expression from a number to an hexadecimal string', () => {
+        var value = cuid();
+        var data = Math.random();
+        return testNode
+          .query({
+            filter: { type: { '=': value } },
+            where: { data: { '=': data } }
+          })
+          .then(() => {
+            expect(documentClient.query.args[0][0]).toEqual({
+              TableName: table,
+              KeyConditionExpression: `#Node = :Node AND #Type = :Type`,
+              ExpressionAttributeNames: {
+                '#Node': 'Node',
+                '#Type': 'Type',
+                '#Data': 'Data'
+              },
+              ExpressionAttributeValues: {
+                ':Node': pTenant(id),
+                ':Type': value,
+                ':Data': num2hex(data)
+              },
+              FilterExpression: `#Data = :Data`
+            });
+          });
+      });
+
       test('should query only by `data` when a `type` condition expression is missing', () => {
         var data = cuid();
         return testNode
@@ -1012,13 +1039,14 @@ describe('nodeFactory', () => {
       });
       test('should allow a one level deep logical evaluation on the `and` query condition', () => {
         var data = [cuid(), cuid()];
+        var number = Math.random();
         var type = cuid();
         return testNode
           .query({
             where: { type: { '=': type } },
             filter: {
               data: { BETWEEN: data },
-              and: { data: { size: 25 } }
+              and: { data: { size: number } }
             }
           })
           .then(() => {
@@ -1035,7 +1063,7 @@ describe('nodeFactory', () => {
                 ':Type': type,
                 ':a': data[0],
                 ':b': data[1],
-                ':y1': 25
+                ':y1': num2hex(number)
               },
               FilterExpression: `#Data BETWEEN :a AND :b AND size(#Data) = :y1`
             });
