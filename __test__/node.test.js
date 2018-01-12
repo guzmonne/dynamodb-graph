@@ -680,6 +680,31 @@ describe('nodeFactory', () => {
           });
       });
 
+      test('should convert the `Data` attribute back to a number if it was stored as an hexadecimal string', () => {
+        var num = Math.random();
+        documentClient.query.restore();
+        sinon.stub(documentClient, 'query').callsFake(() => ({
+          promise: () =>
+            Promise.resolve({
+              Items: [
+                {
+                  Data: num2hex(num)
+                }
+              ]
+            })
+        }));
+
+        return node({ id, type })
+          .edges()
+          .then(result => {
+            expect(result.Items).toEqual([
+              {
+                Data: num
+              }
+            ]);
+          });
+      });
+
       test('should return the offset value if a `LastEvaluatedKey` was returned by DynamoDB', () => {
         return node({ id })
           .edges()
@@ -784,6 +809,31 @@ describe('nodeFactory', () => {
                 Data: 'Data',
                 Target: 'Target',
                 GSIK: '0'
+              }
+            ]);
+          });
+      });
+
+      test('should convert the `Data` attribute back to a number if it was stored as an hexadecimal string', () => {
+        var num = Math.random();
+        documentClient.query.restore();
+        sinon.stub(documentClient, 'query').callsFake(() => ({
+          promise: () =>
+            Promise.resolve({
+              Items: [
+                {
+                  Data: num2hex(num)
+                }
+              ]
+            })
+        }));
+
+        return node({ id, type })
+          .props()
+          .then(result => {
+            expect(result.Items).toEqual([
+              {
+                Data: num
               }
             ]);
           });
@@ -1160,6 +1210,48 @@ describe('nodeFactory', () => {
             expect(result.Offset).toEqual('TGluZSMyNjUjRXBpc29kZSMzMg==');
           });
       });
+
+      test('should convert the `Data` attribute back to a number if it was stored as an hexadecimal string', () => {
+        var num1 = Math.random();
+        var num2 = Math.random();
+        documentClient.query.restore();
+        sinon.stub(documentClient, 'query').callsFake(() => ({
+          promise: () =>
+            Promise.resolve({
+              Items: [
+                {
+                  Data: num2hex(num1)
+                },
+                {
+                  Data: 'Data'
+                },
+                {
+                  Data: num2hex(num2)
+                }
+              ]
+            })
+        }));
+
+        return testNode
+          .query({
+            where: { type: { begins_with: type } },
+            limit: 1
+          })
+          .then(result => {
+            expect(result.Items).toEqual([
+              {
+                Data: num1
+              },
+              {
+                Data: 'Data'
+              },
+              {
+                Data: num2
+              }
+            ]);
+          });
+      });
+
       test('should add the `offset` value to the query if defined both as a string and as a DynamoDB key', () => {
         var type = 'Line#265#Episode#32';
         var begins_with = 'Line';
