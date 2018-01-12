@@ -97,14 +97,6 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-console.reset = function() {
-  return process.stdout.write('\033c');
-};
-
-function hex2buf(hex) {
-  return new Buffer(hex.replace(/^0x/, ''), 'hex');
-}
-
 var now = Date.now();
 var buffer = Buffer.alloc(8);
 exports.write(buffer, now, 0, false, 52, 8);
