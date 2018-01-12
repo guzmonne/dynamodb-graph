@@ -6,7 +6,6 @@ var sortBy = require('lodash/sortBy.js');
 var pick = require('lodash/pick');
 var chalk = require('chalk');
 var dynamodbGraph = require('../dist/');
-var { hexToDec, decToHex } = require('./toHex.js');
 
 /** Constants */
 var ENDPOINT = process.env.ENDPOINT || 'http://localhost:8989';
@@ -100,7 +99,7 @@ function getSeason(number) {
     return g
       .query({
         where: { type: { '=': 'season' } },
-        filter: { data: { '=': decToHex(number) } }
+        filter: { data: { '=': number } }
       })
       .then(({ Items: items }) => {
         var promises = items.map(({ Node: node }) =>
@@ -111,16 +110,7 @@ function getSeason(number) {
             })
             .get(['number_in_season', 'number_in_series'])
             .then(({ Items: items }) => {
-              var item = items
-                .map(item => {
-                  if (
-                    item.Type === 'number_in_season' ||
-                    item.Type === 'number_in_series'
-                  )
-                    item.Data = +hexToDec(item.Data);
-                  return item;
-                })
-                .reduce(toItem, {});
+              var item = items.reduce(toItem, {});
               item.node = node;
               return item;
             })
@@ -137,7 +127,7 @@ function getEpisodesRatedHigherThan(compareRating) {
   return g
     .query({
       where: { type: { '=': 'imdb_rating' } },
-      filter: { data: { '=': decToHex(compareRating) } }
+      filter: { data: { '=': compareRating } }
     })
     .then(({ Items: items }) => {
       var promises = items.map(({ Node: id, Data: rating }) =>
@@ -145,14 +135,8 @@ function getEpisodesRatedHigherThan(compareRating) {
           .node({ id, type: 'episode' })
           .get(['number_in_series', 'season'])
           .then(({ Items: items }) => {
-            var item = items
-              .map(item => {
-                if (item.Type === 'number_in_series' || item.Type === 'season')
-                  item.Data = hexToDec(item.Data);
-                return item;
-              })
-              .reduce(toItem, {});
-            item.imdb_rating = hexToDec(rating);
+            var item = items.reduce(toItem, {});
+            item.imdb_rating = rating;
             item.node = id;
             return item;
           })

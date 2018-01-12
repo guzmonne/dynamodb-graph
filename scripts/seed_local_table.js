@@ -13,7 +13,6 @@ var identity = require('lodash/identity.js');
 var isObject = require('lodash/isObject.js');
 var isUndefined = require('lodash/isUndefined.js');
 var dynamodbGraph = require('../dist/');
-var { hexToDec, decToHex } = require('./toHex.js');
 
 /** Constants */
 var CHARACTERS_FILE = './the-simpsons-by-the-data/simpsons_characters.csv';
@@ -201,14 +200,9 @@ function addProps(properties, item, node, promises) {
 
     prop = prop.replace('+', '');
 
-    var data =
-      isNumber === true
-        ? decToHex(parseFloat(item[prop]) || 0, 10)
-        : item[prop];
+    var data = isNumber === true ? parseFloat(item[prop]) || 0 : item[prop];
 
-    if (isNumber === true && isNaN(data)) data = decToHex(0);
-
-    if (data === null || data === undefined) return;
+    if (data === null || data === undefined || isNan(data)) return;
 
     if (item[prop] !== undefined)
       promises.push(
