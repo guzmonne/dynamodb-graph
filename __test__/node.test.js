@@ -434,6 +434,42 @@ describe('nodeFactory', () => {
           });
       });
 
+      test('should convert the `Data` attribute back to a number if it was stored as a hex string', () => {
+        var num = Math.random();
+        documentClient.get.restore();
+        sinon.stub(documentClient, 'get').callsFake(() => ({
+          promise: () =>
+            Promise.resolve({
+              Item: {
+                Node: id,
+                Type: type,
+                Data: num2hex(num),
+                Target: 'Target',
+                GSIK: '0'
+              }
+            })
+        }));
+        var node = nodeFactory({
+          documentClient,
+          table,
+          maxGSIK: 0,
+          tenant
+        });
+        return node({ id, type })
+          .get()
+          .then(result => {
+            expect(result).toEqual({
+              Item: {
+                Node: id,
+                Type: type,
+                Data: num,
+                Target: 'Target',
+                GSIK: '0'
+              }
+            });
+          });
+      });
+
       test('should call the `documentClient.batchGet` method with valid params, when the argument to the `get()` method is a list of types.', () => {
         sinon.spy(documentClient, 'batchGet');
         return node({ id, type })
@@ -485,6 +521,50 @@ describe('nodeFactory', () => {
                 }
               ]
             });
+          });
+      });
+
+      test('should convert the `Data` attibute of all the items returned, if they where stored as a hex string', () => {
+        var num1 = Math.random();
+        var num2 = Math.random();
+        sinon.stub(documentClient, 'batchGet').callsFake(() => ({
+          promise: () =>
+            Promise.resolve({
+              Responses: {
+                [table]: [
+                  {
+                    Data: 'Data'
+                  },
+                  {
+                    Data: num2hex(num1)
+                  },
+                  {
+                    Data: num2hex(num2)
+                  }
+                ]
+              }
+            })
+        }));
+
+        return node({ id, type })
+          .get(['Type1', 'Type2'])
+          .then(result => {
+            expect(result).toEqual({
+              Count: 3,
+              ScannedCount: 3,
+              Items: [
+                {
+                  Data: 'Data'
+                },
+                {
+                  Data: num1
+                },
+                {
+                  Data: num2
+                }
+              ]
+            });
+            documentClient.batchGet.restore();
           });
       });
 
