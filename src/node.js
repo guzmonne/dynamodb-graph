@@ -8,6 +8,7 @@ var {
   atob,
   btoa
 } = require('./modules/utils.js');
+var { num2hex } = require('hex-2-num');
 
 module.exports = nodeFactory;
 
@@ -203,10 +204,14 @@ function nodeFactory(config = {}) {
 
       id || (id = cuid());
 
+      var itemData = data || prop;
+
+      if (typeof itemData === 'number') itemData = num2hex(itemData);
+
       var item = {
         Node: pTenant(id),
         Type: type,
-        Data: data || prop,
+        Data: itemData,
         Target: pTenant(target || id),
         GSIK: calculateGSIK({ node: id, maxGSIK, tenant })
       };

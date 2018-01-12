@@ -2,6 +2,7 @@
 
 var cuid = require('cuid');
 var sinon = require('sinon');
+var { num2hex, hex2num } = require('hex-2-num');
 var nodeFactory = require('../src/node.js');
 var { calculateGSIK, prefixTenant, btoa } = require('../src/modules/utils.js');
 
@@ -170,6 +171,106 @@ describe('nodeFactory', () => {
                 Target: id,
                 GSIK: '0'
               }
+            });
+          });
+      });
+
+      test('should convert the given `data` attribute to an 8 byte hexadecimal string, if it is a number', () => {
+        var data = Math.random();
+        var target = cuid();
+        return testNode
+          .create({ data })
+          .then(result => {
+            expect(documentClient.put.args[0][0]).toEqual({
+              TableName: table,
+              Item: {
+                Node: pTenant(id),
+                Data: num2hex(data),
+                Type: type,
+                Target: pTenant(id),
+                GSIK: calculateGSIK({ node: id, tenant, maxGSIK })
+              }
+            });
+            return testNode.create({ data, target });
+          })
+          .then(result => {
+            expect(documentClient.put.args[1][0]).toEqual({
+              TableName: table,
+              Item: {
+                Node: pTenant(id),
+                Data: num2hex(data),
+                Type: type,
+                Target: pTenant(target),
+                GSIK: calculateGSIK({ node: id, tenant, maxGSIK })
+              }
+            });
+            return testNode.create({ prop: data });
+          })
+          .then(result => {
+            expect(documentClient.put.args[2][0]).toEqual({
+              TableName: table,
+              Item: {
+                Node: pTenant(id),
+                Data: num2hex(data),
+                Type: type,
+                GSIK: calculateGSIK({ node: id, tenant, maxGSIK })
+              }
+            });
+          });
+      });
+
+      test('should convert the returned `Data` attribute stored as an eight byte hexadecimal string, to a number', () => {
+        documentClient.put.restore();
+        var num = Math.random();
+        var maxGSIK = 10;
+        var data = num2hex(num);
+        var target = cuid();
+        sinon.stub(documentClient, 'put').callsFake(() => ({
+          promise: () =>
+            Promise.resolve({
+              Item: {
+                Node: pTenant(id),
+                Data: data,
+                Type: type,
+                Target: pTenant(id),
+                GSIK: calculateGSIK({ node: id, maxGSIK, tenant })
+              }
+            })
+        }));
+        var node = nodeFactory({
+          documentClient,
+          maxGSIK,
+          tenant,
+          table
+        });
+        return node({ id, type })
+          .create({ data })
+          .then(result => {
+            expect(result.Item).toEqual({
+              Node: id,
+              Data: num,
+              Type: type,
+              Target: id,
+              GSIK: calculateGSIK({ node: id, maxGSIK })
+            });
+            return node({ id, type }).create({ data, target });
+          })
+          .then(result => {
+            expect(result.Item).toEqual({
+              Node: id,
+              Data: num,
+              Type: type,
+              Target: target,
+              GSIK: calculateGSIK({ node: id, maxGSIK })
+            });
+            return node({ id, type }).create({ prop: data });
+          })
+          .then(result => {
+            expect(result.Item).toEqual({
+              Node: id,
+              Data: num,
+              Type: type,
+              GSIK: calculateGSIK({ node: id, maxGSIK })
             });
           });
       });
