@@ -2,6 +2,7 @@
 
 var cuid = require('cuid');
 var range = require('lodash/range');
+var { num2hex, hex2num } = require('hex-2-num');
 var utils = require('../../src/modules/utils.js');
 
 describe('#checkConfiguration', () => {
@@ -106,6 +107,47 @@ describe('#parseItem()', () => {
         GSIK: '0'
       }
     });
+  });
+
+  test('should convert a number `Data` value from an hex to a number', () => {
+    var tenant = cuid();
+    var node = cuid();
+    var target = cuid();
+    var type = cuid();
+    var data = Math.random();
+    var Item = {
+      Node: utils.prefixTenant(tenant, node),
+      Type: type,
+      Data: num2hex(data),
+      Target: utils.prefixTenant(tenant, target),
+      GSIK: utils.calculateGSIK({ node, tenant })
+    };
+    utils.parseItem({ Item });
+    expect(utils.parseItem({ Item })).toEqual({
+      Item: {
+        Node: node,
+        Type: type,
+        Data: data,
+        Target: target,
+        GSIK: '0'
+      }
+    });
+  });
+
+  test('should not fail if the stored `Data` value is an invalid hexadecimal string', () => {
+    var tenant = cuid();
+    var node = cuid();
+    var target = cuid();
+    var type = cuid();
+    var data = '0xUUID';
+    var Item = {
+      Node: utils.prefixTenant(tenant, node),
+      Type: type,
+      Data: num2hex(data),
+      Target: utils.prefixTenant(tenant, target),
+      GSIK: utils.calculateGSIK({ node, tenant })
+    };
+    expect(() => utils.parseItem({ Item })).not.toThrow();
   });
 
   test('should not modify the item is a `tenant` was not used', () => {
