@@ -700,8 +700,6 @@ g
   });
 ```
 
-If you need more precision you can check out [this article](http://www.danvk.org/hex2dec.html) by [danvk](http://www.danvk.org). There is even an [npm module](https://www.npmjs.com/package/hex2dec) if you want to import it to your project.
-
 #### Query items by GSIK, sorted By Type
 
 To query the Node `types`, regardless of the Node `id`, we can leverage the `GSIK` indexes. By default, the queries will be run over every `GSIK` value, and will return a maximum of 100 items each.
