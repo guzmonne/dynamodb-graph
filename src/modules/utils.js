@@ -3,6 +3,7 @@
 var range = require('lodash/range.js');
 var get = require('lodash/get.js');
 var capitalize = require('lodash/capitalize.js');
+var { hex2num } = require('hex-2-num');
 
 /**
  * List of valid Node attributes to filter by.
@@ -114,6 +115,12 @@ function checkConfiguration(config = {}) {
  */
 var GRAPH_ITEM_KEYS_WITH_TENANT = ['Node', 'GSIK', 'Target'];
 /**
+ * Regular expression used to test if the Data attribute has been stored as an
+ * hexadecimal string.
+ * @type RegExp
+ */
+var HEX_REGEXP = /^0x/;
+/**
  * Removes the tenant from the item.
  * @param {GraphItem} item - Item object to parse.
  */
@@ -131,6 +138,9 @@ function parseItem(item = {}) {
         Item[key] = list.slice(1).join('|');
       }
     }
+
+    if (key === 'Data' && HEX_REGEXP.test(Item[key]) === true)
+      Item.Data = hex2num(Item.Data);
   });
 
   return typeof item.Item === 'object' ? { Item } : Item;
