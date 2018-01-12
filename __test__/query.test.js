@@ -3,6 +3,7 @@
 var cuid = require('cuid');
 var sinon = require('sinon');
 var range = require('lodash/range');
+var { num2hex } = require('hex-2-num');
 var queryFactory = require('../src/query.js');
 var utils = require('../src/modules/utils.js');
 
@@ -35,12 +36,6 @@ describe('queryFactory()', () => {
   var query = queryFactory({ documentClient, table, tenant, maxGSIK });
 
   describe('#query()', () => {
-    /*
-    test('should throw if `where` is not defined', () => {
-      expect(() => query()).toThrow('Where is undefined');
-    });
-    */
-
     test('should fail if an invalid `where` attribute is used', () => {
       expect(() => query({ where: { error: true } })).toThrow(
         'Invalid attributes'
@@ -63,11 +58,6 @@ describe('queryFactory()', () => {
       var operator = 'BETWEEN';
       expect(() =>
         query({ where: { type: { [operator]: Math.random() } } })
-      ).toThrow('Value is not a list of strings');
-      expect(() =>
-        query({
-          where: { type: { [operator]: [Math.random(), Math.random()] } }
-        })
       ).toThrow('Value is not a list of strings');
       expect(() =>
         query({
@@ -246,36 +236,181 @@ describe('queryFactory()', () => {
 
     test('should query by GSIK when `node` is undefined', () => {
       var type = cuid();
-      return query({ where: { type: { '=': type } } }).then(() => {
-        expect(documentClient.query.args[0][0]).toEqual({
-          TableName: table,
-          IndexName: 'ByType',
-          KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
-          ExpressionAttributeNames: {
-            '#GSIK': 'GSIK',
-            '#Type': 'Type'
-          },
-          ExpressionAttributeValues: {
-            ':GSIK': prefixTenant('0'),
-            ':Type': type
-          },
-          Limit: 100
+      return query({ where: { type: { '=': type } } })
+        .then(() => {
+          expect(documentClient.query.args[0][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByType',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant('0'),
+              ':Type': type
+            },
+            Limit: 100
+          });
+          expect(documentClient.query.args[9][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByType',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant('9'),
+              ':Type': type
+            },
+            Limit: 100
+          });
+          return query({ where: { data: { '=': type } } });
+        })
+        .then(() => {
+          expect(documentClient.query.args[10][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByData',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Data = :Data`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant('0'),
+              ':Data': type
+            },
+            Limit: 100
+          });
+          expect(documentClient.query.args[19][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByData',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Data = :Data`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': prefixTenant('9'),
+              ':Data': type
+            },
+            Limit: 100
+          });
+          return query({ where: { type: { '=': type } } });
         });
-        expect(documentClient.query.args[9][0]).toEqual({
-          TableName: table,
-          IndexName: 'ByType',
-          KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
-          ExpressionAttributeNames: {
-            '#GSIK': 'GSIK',
-            '#Type': 'Type'
-          },
-          ExpressionAttributeValues: {
-            ':GSIK': prefixTenant('9'),
-            ':Type': type
-          },
-          Limit: 100
+    });
+
+    test('should convert all the attributes send as numbers to their hexadecimal representation, both on the `where` and `filter` object expression', () => {
+      var string = cuid();
+      var number1 = Math.random();
+      var number2 = Math.random();
+      var pair = [Math.random(), Math.random()];
+      var array = [Math.random(), Math.random(), Math.random()];
+      return query({
+        where: { type: { '=': string } },
+        filter: { data: { '<': number1 } }
+      })
+        .then(() => {
+          expect(documentClient.query.args[0][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByType',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Data': 'Data',
+              '#Type': 'Type'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': tenant + '|' + 0,
+              ':Type': string,
+              ':Data': num2hex(number1)
+            },
+            Limit: 100,
+            FilterExpression: `#Data < :Data`
+          });
+          return query({
+            where: { data: { '=': number1 } }
+          });
+        })
+        .then(() => {
+          expect(documentClient.query.args[10][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByData',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Data = :Data`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': tenant + '|' + 0,
+              ':Data': num2hex(number1)
+            },
+            Limit: 100
+          });
+          return query({
+            where: { type: { '=': string } },
+            filter: { data: { BETWEEN: pair } }
+          });
+        })
+        .then(() => {
+          expect(documentClient.query.args[20][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByType',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': tenant + '|' + 0,
+              ':Type': string,
+              ':a': num2hex(pair[0]),
+              ':b': num2hex(pair[1])
+            },
+            Limit: 100,
+            FilterExpression: '#Data BETWEEN :a AND :b'
+          });
+          return query({
+            where: { type: { '=': string } },
+            filter: {
+              data: { BETWEEN: pair },
+              and: { data: { IN: array } }
+            }
+          });
+        })
+        .then(() => {
+          expect(documentClient.query.args[30][0]).toEqual({
+            TableName: table,
+            IndexName: 'ByType',
+            KeyConditionExpression: `#GSIK = :GSIK AND #Type = :Type`,
+            ExpressionAttributeNames: {
+              '#GSIK': 'GSIK',
+              '#Type': 'Type',
+              '#Data': 'Data'
+            },
+            ExpressionAttributeValues: {
+              ':GSIK': tenant + '|' + 0,
+              ':Type': string,
+              ':a': num2hex(pair[0]),
+              ':b': num2hex(pair[1]),
+              ':y10': num2hex(array[0]),
+              ':y11': num2hex(array[1]),
+              ':y12': num2hex(array[2])
+            },
+            Limit: 100,
+            FilterExpression:
+              '#Data BETWEEN :a AND :b AND #Data IN :y10, :y11, :y12'
+          });
+          return query({
+            where: { type: { '=': string } },
+            filter: {
+              data: { BETWEEN: pair },
+              and: { data: { IN: array } }
+            }
+          });
         });
-      });
     });
 
     test('should allow to filter the query response using the `filter` attribute', () => {

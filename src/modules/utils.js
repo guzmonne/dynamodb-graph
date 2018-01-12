@@ -200,6 +200,9 @@ function parseConditionObject(objectExpression = {}, level = 0) {
 
   if (typeof value === 'number') value = num2hex(value);
 
+  if (Array.isArray(value))
+    value = value.map(v => (typeof v === 'number' ? num2hex(v) : v));
+
   if (COMMON_OPERATORS.indexOf(operator) > -1 && typeof value !== 'string')
     throw new Error('Value is not a string');
 
