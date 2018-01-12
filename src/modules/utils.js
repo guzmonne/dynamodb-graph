@@ -140,7 +140,13 @@ function parseItem(item = {}) {
     }
 
     if (key === 'Data' && HEX_REGEXP.test(Item[key]) === true)
-      Item.Data = hex2num(Item.Data);
+      try {
+        Item.Data = hex2num(Item.Data);
+      } catch (err) {
+        console.log(err.name);
+        console.log(err.message);
+        console.log(err.stack);
+      }
   });
 
   return typeof item.Item === 'object' ? { Item } : Item;
