@@ -29,13 +29,13 @@ var g = dynamodbGraph({
 });
 /** *** **/
 /** Main */
-var SEASON_NUMBER = 2;
-var RATING = 9;
+var SEASON = Number(process.env.SEASON) || 2;
+var RATING = Number(process.env.RATING) || 8;
 
 DynamoDB.listTables({})
   .promise()
   .then(checkTable)
-  .then(getSeason(SEASON_NUMBER))
+  .then(getSeason(SEASON))
   .then(getEpisodesRatedHigherThan(RATING))
   .then(getMaggieSimpsonLines())
   /*
@@ -127,7 +127,7 @@ function getEpisodesRatedHigherThan(compareRating) {
   return g
     .query({
       where: { type: { '=': 'imdb_rating' } },
-      filter: { data: { '=': compareRating } }
+      filter: { data: { '>=': compareRating } }
     })
     .then(({ Items: items }) => {
       var promises = items.map(({ Node: id, Data: rating }) =>
@@ -144,7 +144,9 @@ function getEpisodesRatedHigherThan(compareRating) {
 
       return Promise.all(promises);
     })
-    .then(logTable(`Episodes with a rating of #${compareRating}`, 'season'))
+    .then(
+      logTable(`Episodes with a rating higher than ${compareRating}`, 'season')
+    )
     .catch(error);
 }
 

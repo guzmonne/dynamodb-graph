@@ -202,7 +202,7 @@ function addProps(properties, item, node, promises) {
 
     var data = isNumber === true ? parseFloat(item[prop]) || 0 : item[prop];
 
-    if (data === null || data === undefined || isNan(data)) return;
+    if (data === null || data === undefined || isNaN(data)) return;
 
     if (item[prop] !== undefined)
       promises.push(
