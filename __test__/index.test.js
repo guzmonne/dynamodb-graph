@@ -12,7 +12,9 @@ describe('dynamodbGraph', () => {
 
   test('should have configured the current library version', () => {
     dynamodbGraph({ documentClient, table });
-    expect(dynamodbGraph.__VERSION__).toEqual('4.1.0');
+    expect(dynamodbGraph.__VERSION__).toEqual(
+      require('../package.json').version
+    );
   });
 
   test('should throw if `documentClient` is undefined', () => {
