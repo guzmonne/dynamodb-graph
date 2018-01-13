@@ -183,8 +183,7 @@ function parseResponse(response = {}) {
  * @return {ConditionExpressionResults} Object with the query attribute,
  *                                      expression, and value.
  */
-function parseConditionObject(objectExpression = {}, level = 0) {
-  //var attributes = objectExpression.data || objectExpression.type;
+function parseConditionObject(objectExpression = {}, tenant = '', level = 0) {
   var attribute = Object.keys(objectExpression)[0];
   var attributes = objectExpression[attribute];
 
@@ -202,6 +201,9 @@ function parseConditionObject(objectExpression = {}, level = 0) {
 
   if (Array.isArray(value))
     value = value.map(v => (typeof v === 'number' ? num2hex(v) : v));
+
+  if (attribute === 'target' || attribute === 'node')
+    value = prefixTenant(tenant, value);
 
   if (COMMON_OPERATORS.indexOf(operator) > -1 && typeof value !== 'string')
     throw new Error('Value is not a string');

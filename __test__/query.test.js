@@ -784,7 +784,7 @@ describe('queryFactory()', () => {
             ExpressionAttributeValues: {
               ':GSIK': prefixTenant(`${gsik}`),
               ':Data': data,
-              ':Target': 'something'
+              ':Target': tenant + '|' + 'something'
             },
             Limit: 1
           });
@@ -824,8 +824,8 @@ describe('queryFactory()', () => {
             ExpressionAttributeValues: {
               ':GSIK': prefixTenant(`${gsik}`),
               ':Data': data,
-              ':Target': 'something',
-              ':y1': 'else'
+              ':Target': tenant + '|' + 'something',
+              ':y1': tenant + '|' + 'else'
             },
             Limit: 1
           });

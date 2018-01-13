@@ -108,9 +108,7 @@ function loadCharacters() {
         .create({
           data: item.name
         })
-        .then(result => {
-          var { Item = {} } = result;
-          var { Node: node } = Item;
+        .then(({ Item: { Node: node } }) => {
           var promises = [];
 
           addProps(['gender', 'normalized_name'], item, node, promises);
@@ -195,26 +193,32 @@ function loadEpisodes(doc) {
 }
 
 function addProps(properties, item, node, promises) {
+  var isNumber, data;
+
   properties.forEach(prop => {
-    let isNumber = prop.indexOf('+') === 0;
+    isNumber = prop.indexOf('+') === 0;
 
     prop = prop.replace('+', '');
 
-    var data = isNumber === true ? parseFloat(item[prop]) || 0 : item[prop];
+    data = isNumber === true ? parseFloat(item[prop], 10) : item[prop];
 
-    if (data === null || data === undefined || isNaN(data)) return;
+    if (
+      data === null ||
+      data === undefined ||
+      (isNumber === true && isNaN(data) === true)
+    )
+      return;
 
-    if (item[prop] !== undefined)
-      promises.push(
-        g
-          .node({
-            id: node,
-            type: prop
-          })
-          .create({
-            prop: data
-          })
-      );
+    promises.push(
+      g
+        .node({
+          id: node,
+          type: prop
+        })
+        .create({
+          prop: data
+        })
+    );
   });
 }
 

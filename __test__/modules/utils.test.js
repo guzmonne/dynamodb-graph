@@ -216,6 +216,24 @@ describe('#parseConditionObject', () => {
     });
   });
 
+  test('should add the `tenant` to the query if trying to filter by `node` or by `data`', () => {
+    var value = cuid();
+    var tenant = cuid();
+    var actual = utils.parseConditionObject(
+      {
+        target: { '=': value }
+      },
+      tenant
+    );
+
+    expect(actual).toEqual({
+      attribute: 'target',
+      expression: '#Target = :Target',
+      value: tenant + '|' + value,
+      operator: '='
+    });
+  });
+
   test('should return the attribute, the expression, and the value, if the attribute is `data`', () => {
     var operator = pickOne(utils._operators);
     var attribute = 'data';

@@ -175,95 +175,97 @@ function queryFactory(config = {}) {
       Limit: 100
     };
   }
-}
-/**
- * Applies the where condition into the DynamoDB params object.
- * @param {object} params - DynamoDB query params object.
- * @param {object} where - Where condition object.
- */
-function applyWhereCondition(params, where, node) {
-  if (where === undefined) return;
-
-  var { attribute, expression, value } = parseConditionObject(where);
-
-  attribute = capitalize(attribute);
-
-  if (attribute === 'Type')
-    params.KeyConditionExpression += ` AND ${expression}`;
-  else {
-    if (node !== undefined) params.FilterExpression = expression;
-    else params.KeyConditionExpression += ` AND ${expression}`;
-  }
-
-  params.ExpressionAttributeNames['#' + attribute] = attribute;
-
-  if (Array.isArray(value)) {
-    params.ExpressionAttributeValues[':a'] = value[0];
-    params.ExpressionAttributeValues[':b'] = value[1];
-  } else {
-    params.ExpressionAttributeValues[`:${attribute}`] = value;
-  }
-}
-/**
- * Applies the filter condition into the DynamoDB params object recursively.
- * @param {object} params - DynamoDB query params object.
- * @param {object} filter - Filter condition object.
- */
-function applyFilterCondition(params, filter) {
-  recursiveApply(filter);
-  // ---
   /**
-   * Applies the filter condition into the DynamoDB params object.
-   * @param {object} filter - Filter condition object.
-   * @param {string} [logicOperator] - Logic operator used to concatenate the
-   *                                   condition to the current
-   *                                   FilterExpression.
-   * @param {number} [level=0] - Current recursive condition level.
+   * Applies the where condition into the DynamoDB params object.
+   * @param {object} params - DynamoDB query params object.
+   * @param {object} where - Where condition object.
    */
-  function recursiveApply(filter, logicOperator, level = 0) {
-    if (typeof filter !== 'object') throw new Error('Filter is not an object');
+  function applyWhereCondition(params, where, node) {
+    if (where === undefined) return;
 
-    var nested = level > 0;
-
-    var { attribute, expression, value, operator } = parseConditionObject(
-      filter,
-      level
-    );
+    var { attribute, expression, value } = parseConditionObject(where, tenant);
 
     attribute = capitalize(attribute);
 
-    params.ExpressionAttributeNames['#' + attribute] = attribute;
-
-    if (Array.isArray(value) === true)
-      if (operator === 'BETWEEN') {
-        params.ExpressionAttributeValues[`:${nested ? `y${level}0` : `a`}`] =
-          value[0];
-        params.ExpressionAttributeValues[`:${nested ? `y${level}1` : `b`}`] =
-          value[1];
-      } else
-        value.forEach((v, i) => {
-          params.ExpressionAttributeValues[
-            `:${nested ? `y${level}` : `x`}${i}`
-          ] = v;
-        });
-    else
-      params.ExpressionAttributeValues[
-        `:${nested ? `y${level}` : attribute}`
-      ] = value;
-
-    if (nested) {
-      params.FilterExpression += ` ${logicOperator.toUpperCase()} ${expression}`;
-    } else {
-      params.FilterExpression = expression;
+    if (attribute === 'Type')
+      params.KeyConditionExpression += ` AND ${expression}`;
+    else {
+      if (node !== undefined) params.FilterExpression = expression;
+      else params.KeyConditionExpression += ` AND ${expression}`;
     }
 
-    var logicalExpression = Object.keys(filter).filter(
-      key =>
-        key !== 'data' && key !== 'type' && key !== 'target' && key !== 'node'
-    )[0];
+    params.ExpressionAttributeNames['#' + attribute] = attribute;
 
-    if (logicalExpression !== undefined)
-      recursiveApply(filter[logicalExpression], logicalExpression, level + 1);
+    if (Array.isArray(value)) {
+      params.ExpressionAttributeValues[':a'] = value[0];
+      params.ExpressionAttributeValues[':b'] = value[1];
+    } else {
+      params.ExpressionAttributeValues[`:${attribute}`] = value;
+    }
+  }
+  /**
+   * Applies the filter condition into the DynamoDB params object recursively.
+   * @param {object} params - DynamoDB query params object.
+   * @param {object} filter - Filter condition object.
+   */
+  function applyFilterCondition(params, filter) {
+    recursiveApply(filter);
+    // ---
+    /**
+     * Applies the filter condition into the DynamoDB params object.
+     * @param {object} filter - Filter condition object.
+     * @param {string} [logicOperator] - Logic operator used to concatenate the
+     *                                   condition to the current
+     *                                   FilterExpression.
+     * @param {number} [level=0] - Current recursive condition level.
+     */
+    function recursiveApply(filter, logicOperator, level = 0) {
+      if (typeof filter !== 'object')
+        throw new Error('Filter is not an object');
+
+      var nested = level > 0;
+
+      var { attribute, expression, value, operator } = parseConditionObject(
+        filter,
+        tenant,
+        level
+      );
+
+      attribute = capitalize(attribute);
+
+      params.ExpressionAttributeNames['#' + attribute] = attribute;
+
+      if (Array.isArray(value) === true)
+        if (operator === 'BETWEEN') {
+          params.ExpressionAttributeValues[`:${nested ? `y${level}0` : `a`}`] =
+            value[0];
+          params.ExpressionAttributeValues[`:${nested ? `y${level}1` : `b`}`] =
+            value[1];
+        } else
+          value.forEach((v, i) => {
+            params.ExpressionAttributeValues[
+              `:${nested ? `y${level}` : `x`}${i}`
+            ] = v;
+          });
+      else
+        params.ExpressionAttributeValues[
+          `:${nested ? `y${level}` : attribute}`
+        ] = value;
+
+      if (nested) {
+        params.FilterExpression += ` ${logicOperator.toUpperCase()} ${expression}`;
+      } else {
+        params.FilterExpression = expression;
+      }
+
+      var logicalExpression = Object.keys(filter).filter(
+        key =>
+          key !== 'data' && key !== 'type' && key !== 'target' && key !== 'node'
+      )[0];
+
+      if (logicalExpression !== undefined)
+        recursiveApply(filter[logicalExpression], logicalExpression, level + 1);
+    }
   }
 }
 /**
