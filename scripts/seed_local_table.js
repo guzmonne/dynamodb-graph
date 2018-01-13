@@ -208,7 +208,7 @@ function addProps(properties, item, node, promises) {
       (isNumber === true && isNaN(data) === true)
     )
       return;
-
+    s;
     promises.push(
       g
         .node({
