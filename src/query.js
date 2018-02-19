@@ -23,7 +23,7 @@ module.exports = queryFactory;
  * @return {function} Configured `query` function.
  */
 function queryFactory(config = {}) {
-  var { documentClient, table, tenant, maxGSIK } = config;
+  var { documentClient, table, tenant = '', maxGSIK = 10 } = config;
 
   var prefixTenant = prefixTenantFactory(tenant);
 
