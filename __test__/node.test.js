@@ -388,8 +388,8 @@ describe('nodeFactory', () => {
         expect(() => node({ type }).get()).toThrow('Node is undefined');
       });
 
-      test('should throw if the type is undefined', () => {
-        expect(() => node({ id }).get()).toThrow('Type is undefined');
+      test('should return a promise for id only', () => {
+        expect (node({ id }).get() instanceof Promise).toBe(true);
       });
 
       test('should return a promise', () => {
