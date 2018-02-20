@@ -102,8 +102,17 @@ function nodeFactory(config = {}) {
      */
     function get(types) {
       if (id === undefined) throw new Error('Node is undefined');
-      if (type === undefined && types === undefined)
-        throw new Error('Type is undefined');
+      if (type === undefined && types === undefined){
+        return documentClient
+              .query({
+                TableName: table,
+                KeyConditionExpression: 'Node = :Node',
+                FilterExpression: 'attribute_exists(Target) AND Target = :Node',
+                ExpressionAttributeValues: {':Node': pTenant(id)}
+              })
+              .promise()
+              .then(({Items}) => Items.length && parseItem(Items[0]));
+      }
 
       if (type !== undefined && Array.isArray(types) === true)
         types = [type].concat(types);
